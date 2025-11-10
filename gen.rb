@@ -75,6 +75,14 @@ class PlannerGenerator
       month_name = @month_names[i]
       x = start_x + (i * cell_width)
 
+      # Calculate which week contains the 1st of this month
+      first_of_month = Date.new(@year, i + 1, 1)
+      first_day_of_year = Date.new(@year, 1, 1)
+      days_back = (first_day_of_year.wday + 6) % 7
+      year_start_monday = first_day_of_year - days_back
+      days_from_start = (first_of_month - year_start_monday).to_i
+      week_num = (days_from_start / 7) + 1
+
       @pdf.bounding_box([x, start_y], width: cell_width, height: cell_height) do
         @pdf.stroke_bounds
         @pdf.text_box month_name[0..2],
@@ -84,6 +92,12 @@ class PlannerGenerator
                       align: :center,
                       valign: :center
       end
+
+      # Add clickable link using absolute coordinates (not inside bounding box)
+      y_bottom = start_y - cell_height
+      @pdf.link_annotation([x, y_bottom, x + cell_width, start_y],
+                          Dest: "week_#{week_num}",
+                          Border: [0, 0, 0])
     end
 
     # Draw day grid
