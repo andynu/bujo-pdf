@@ -1,0 +1,6 @@
+*.pdf
+test_*.rb
+vendor/
+gems/
+.bundle/
+Gemfile.lock
