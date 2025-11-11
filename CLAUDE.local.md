@@ -1,5 +1,16 @@
 # Grid-Based Layout System Documentation
 
+## Related Documentation
+
+This file focuses on the **grid system implementation details**. For other aspects of the project, refer to:
+
+- **CLAUDE.md** - Project overview, architecture, development commands, main generator flow
+  - When: Understanding the overall codebase structure, page generation flow, or how components fit together
+- **REFACTORING_PLAN.md** - Future architectural improvements and gem structure
+  - When: Planning new features, discussing refactoring, or considering how to extend the system
+- **idea.md** - Original design specification and requirements
+  - When: Understanding design decisions or the original vision for the planner
+
 ## Overview
 
 This planner uses a grid-based layout system where all positioning is based on a dot grid. Each "box" in the grid corresponds to the spacing between dots (14.17pt ≈ 5mm).
