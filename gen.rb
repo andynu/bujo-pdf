@@ -718,19 +718,23 @@ class PlannerGenerator
   def draw_dot_grid(width, height)
     @pdf.fill_color COLOR_DOT_GRID
 
-    # Calculate starting positions with padding
-    start_x = DOT_GRID_PADDING
-    start_y = height - DOT_GRID_PADDING
+    # Align with grid coordinate system: start at (0, height) which corresponds to
+    # grid position (0, 0) - top-left corner
+    # Draw dots at every grid intersection point
+    start_x = 0
+    start_y = height
 
-    # Draw dots in a grid pattern
-    y = start_y
-    while y > DOT_GRID_PADDING
-      x = start_x
-      while x < width - DOT_GRID_PADDING
+    # Calculate how many dots fit in the given dimensions
+    cols = (width / DOT_SPACING).floor
+    rows = (height / DOT_SPACING).floor
+
+    # Draw dots at exact grid positions
+    (0..rows).each do |row|
+      y = start_y - (row * DOT_SPACING)
+      (0..cols).each do |col|
+        x = start_x + (col * DOT_SPACING)
         @pdf.fill_circle [x, y], DOT_RADIUS
-        x += DOT_SPACING
       end
-      y -= DOT_SPACING
     end
 
     @pdf.fill_color '000000'
