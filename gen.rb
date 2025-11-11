@@ -89,6 +89,7 @@ class PlannerGenerator
   WEEKLY_SUMMARY_TOP_GAP = 5
   WEEKLY_NOTES_HEADER_FONT_SIZE = 10
   WEEKLY_NOTES_LABEL_FONT_SIZE = 9
+  WEEKLY_NOTES_HEADER_PADDING = 3  # Padding below top border for section headers
 
   # Dot Grid
   DOT_SPACING = 14.17  # 5mm in points
@@ -550,6 +551,7 @@ class PlannerGenerator
                      width: cue_column_width,
                      height: main_notes_height) do
       @pdf.stroke_bounds
+      @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
       @pdf.text "Cues/Questions", align: :center, size: WEEKLY_NOTES_LABEL_FONT_SIZE
       draw_dot_grid(cue_column_width, main_notes_height)
     end
@@ -559,6 +561,7 @@ class PlannerGenerator
                      width: notes_column_width,
                      height: main_notes_height) do
       @pdf.stroke_bounds
+      @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
       @pdf.text "Notes", align: :center, size: WEEKLY_NOTES_LABEL_FONT_SIZE
       draw_dot_grid(notes_column_width, main_notes_height)
     end
@@ -570,6 +573,7 @@ class PlannerGenerator
                      height: summary_height) do
       @pdf.stroke_bounds
       @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_LABEL_FONT_SIZE
+      @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
       @pdf.text "Summary", align: :center
       draw_dot_grid(cue_column_width + notes_column_width, summary_height)
     end
