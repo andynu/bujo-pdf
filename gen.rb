@@ -851,6 +851,9 @@ class PlannerGenerator
     @pdf.start_new_page
     @pdf.add_dest("year_events", @pdf.dest_fit)
 
+    # Draw diagnostic grid first (as background when DEBUG_GRID is enabled)
+    draw_diagnostic_grid(label_every: 5)
+
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
     draw_right_sidebar
@@ -862,6 +865,9 @@ class PlannerGenerator
   def generate_year_at_glance_highlights
     @pdf.start_new_page
     @pdf.add_dest("year_highlights", @pdf.dest_fit)
+
+    # Draw diagnostic grid first (as background when DEBUG_GRID is enabled)
+    draw_diagnostic_grid(label_every: 5)
 
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
