@@ -168,6 +168,44 @@ end
 
 **Important**: For `text_box`, the `at` parameter is the **top-left** corner of the text box, but `y` is still measured from the **bottom** of the page.
 
+## Text Rotation
+
+Prawn's `rotate` method rotates content around a specified origin point:
+
+- **Positive angles (+)**: Counter-clockwise rotation
+  - `+90`: Rotates 90° counter-clockwise (text reads bottom-to-top when page is upright)
+  - `+180`: Upside down
+  - `+270`: Rotates 270° counter-clockwise (same as -90°)
+
+- **Negative angles (-)**: Clockwise rotation
+  - `-90`: Rotates 90° clockwise (text reads top-to-bottom when page is upright)
+  - `-180`: Upside down
+  - `-270`: Rotates 270° clockwise (same as +90°)
+
+**Example - Vertical sidebar label (reading bottom-to-top):**
+```ruby
+# Counter-clockwise rotation (+90) for text reading bottom-to-top
+center_x = grid_x(0) + grid_width(0.5)
+center_y = grid_y(5) - grid_height(10) / 2
+
+@pdf.rotate(90, origin: [center_x, center_y]) do
+  @pdf.text_box "Winter",
+                at: [center_x - grid_height(10) / 2, center_y],
+                width: grid_height(10),
+                height: grid_width(1),
+                align: :center,
+                valign: :center
+end
+```
+
+**Example - Vertical tab label (reading top-to-bottom):**
+```ruby
+# Clockwise rotation (-90) for text reading top-to-bottom
+@pdf.rotate(-90, origin: [x, y]) do
+  @pdf.text_box "Year", at: [x, y], width: 50, height: 20
+end
+```
+
 ## Link Annotations with Grid
 
 Links use `[left, bottom, right, top]` format, all measured from page bottom:

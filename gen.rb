@@ -272,33 +272,169 @@ class PlannerGenerator
   end
 
   def draw_seasonal_calendar
-    # Title
-    @pdf.font "Helvetica-Bold", size: SEASONAL_TITLE_FONT_SIZE
+    # Grid-based layout:
+    # - Header: rows 0-1 (2 boxes), full width
+    # - Seasons start at row 2 (no gutter)
+    # - 1 box spacing between months
+
+    # Header (rows 0-1, full width)
+    header = grid_rect(0, 0, GRID_COLS, 2)
+    @pdf.font "Helvetica-Bold", size: 18
     @pdf.text_box "Year #{@year}",
-                  at: [PAGE_MARGIN_HORIZONTAL, PAGE_HEIGHT - SEASONAL_TITLE_Y_OFFSET],
-                  width: PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2),
-                  align: :center
+                  at: [header[:x], header[:y]],
+                  width: header[:width],
+                  height: header[:height],
+                  align: :center,
+                  valign: :center
 
     # Define seasons with their months
+    # Each season will have: label column (1 box) + content
     seasons = [
-      { name: "Winter", months: [1, 2], color: '4A90E2' },
-      { name: "Spring", months: [3, 4, 5], color: '7ED321' },
-      { name: "Summer", months: [6, 7, 8], color: 'F5A623' },
-      { name: "Fall", months: [9, 10, 11, 12], color: 'D0021B' }
+      { name: "Winter", months: [1, 2, 3] },     # Jan, Feb, Mar
+      { name: "Spring", months: [4, 5, 6] },     # Apr, May, Jun
+      { name: "Summer", months: [7, 8, 9] },     # Jul, Aug, Sep
+      { name: "Fall", months: [10, 11, 12] }     # Oct, Nov, Dec
     ]
 
-    # Layout: 2x2 grid
-    grid_width = (PAGE_WIDTH - SEASONAL_GRID_MARGIN) / 2.0
-    grid_height = (PAGE_HEIGHT - SEASONAL_GRID_TOP_MARGIN - FOOTER_HEIGHT) / 2.0
+    # Calculate layout: 2 columns, chronological order
+    # Shift everything 2 boxes to the right for seasonal labels
+    # Left column: Jan-Jun (Winter + Spring)
+    # Right column: Jul-Dec (Summer + Fall)
+    label_offset = 2  # Reserve 2 boxes on left for seasonal labels
+    half_width = (GRID_COLS - label_offset) / 2
 
-    seasons.each_with_index do |season, idx|
-      row = idx / 2
-      col = idx % 2
+    # Winter: top-left (Jan-Mar)
+    winter_row = 2
+    draw_season_grid(seasons[0], label_offset, winter_row, half_width)
 
-      x = SEASONAL_GRID_X_OFFSET + (col * grid_width)
-      y = PAGE_HEIGHT - SEASONAL_GRID_Y_OFFSET - (row * grid_height)
+    # Spring: bottom-left (Apr-Jun, after Winter)
+    spring_row = winter_row + calculate_season_height(seasons[0][:months].length)
+    draw_season_grid(seasons[1], label_offset, spring_row, half_width)
 
-      draw_season_section(season, x, y, grid_width, grid_height)
+    # Summer: top-right (Jul-Sep)
+    summer_row = 2
+    draw_season_grid(seasons[2], label_offset + half_width, summer_row, half_width)
+
+    # Fall: bottom-right (Oct-Dec, after Summer)
+    fall_row = summer_row + calculate_season_height(seasons[2][:months].length)
+    draw_season_grid(seasons[3], label_offset + half_width, fall_row, half_width)
+  end
+
+  def calculate_season_height(num_months)
+    # Each month needs: 1 box for title + 1 box for day headers + 6 boxes for calendar rows = 8
+    # Plus 1 box spacing after each month
+    (num_months * 8) + (num_months * 1)
+  end
+
+  def draw_season_grid(season, start_col, start_row, width_boxes)
+    # Season box - no background, just border (includes the content area, not the label)
+    height_boxes = calculate_season_height(season[:months].length)
+    season_box = grid_rect(start_col, start_row, width_boxes, height_boxes)
+
+    # Draw border around entire season content area
+    @pdf.stroke_color COLOR_BORDERS
+    @pdf.stroke_rectangle [season_box[:x], season_box[:y]], season_box[:width], season_box[:height]
+    @pdf.stroke_color '000000'
+
+    # Rotated season label in reserved column (to the left of content)
+    # Use start_col - 2 to place label in the leftmost reserved column
+    label_box = grid_rect(start_col - 2, start_row, 1, height_boxes)
+
+    # Calculate center point for rotation
+    center_x = label_box[:x] + grid_width(0.5)
+    center_y = label_box[:y] - (label_box[:height] / 2)
+
+    # Rotate +90 degrees (counter-clockwise) so text reads bottom-to-top when page is upright
+    @pdf.rotate(90, origin: [center_x, center_y]) do
+      @pdf.font "Helvetica-Bold", size: 12
+      @pdf.fill_color '000000'
+      @pdf.text_box season[:name],
+                    at: [center_x - (label_box[:height] / 2), center_y],
+                    width: label_box[:height],
+                    height: grid_width(1),
+                    align: :center,
+                    valign: :center
+    end
+
+    # Draw months in the content area (no additional offset needed now)
+    current_row = start_row
+    season[:months].each do |month|
+      draw_month_grid(month, start_col, current_row, width_boxes)
+      current_row += 8  # 1 title + 1 headers + 6 calendar rows
+      current_row += 1  # 1 box gutter after each month
+    end
+  end
+
+  def draw_month_grid(month, start_col, start_row, width_boxes)
+    # Month title (1 box high)
+    title_box = grid_rect(start_col, start_row, width_boxes, 1)
+    @pdf.font "Helvetica-Bold", size: 10
+    @pdf.text_box @month_names[month - 1],
+                  at: [title_box[:x], title_box[:y]],
+                  width: title_box[:width],
+                  height: title_box[:height],
+                  align: :center,
+                  valign: :center
+
+    # Day headers (1 box high): M T W T F S S
+    headers_row = start_row + 1
+    day_names = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+    col_width_boxes = width_boxes / 7.0
+
+    day_names.each_with_index do |day, i|
+      col_x = grid_x(start_col) + (i * grid_width(col_width_boxes))
+      @pdf.font "Helvetica", size: 7
+      @pdf.text_box day,
+                    at: [col_x, grid_y(headers_row)],
+                    width: grid_width(col_width_boxes),
+                    height: grid_height(1),
+                    align: :center,
+                    valign: :center
+    end
+
+    # Calendar days (6 rows of 1 box each)
+    first_day = Date.new(@year, month, 1)
+    last_day = Date.new(@year, month, -1)
+    days_in_month = last_day.day
+    start_wday = first_day.wday
+    start_col_offset = (start_wday + 6) % 7  # Convert to Monday-based
+
+    # Calculate week numbers
+    first_day_of_year = Date.new(@year, 1, 1)
+    days_back = (first_day_of_year.wday + 6) % 7
+    year_start_monday = first_day_of_year - days_back
+
+    @pdf.font "Helvetica", size: 7
+    row = 0
+    col = start_col_offset
+
+    1.upto(days_in_month) do |day|
+      date = Date.new(@year, month, day)
+      days_from_start = (date - year_start_monday).to_i
+      week_num = (days_from_start / 7) + 1
+
+      cal_row = headers_row + 1 + row
+      cell_x = grid_x(start_col) + (col * grid_width(col_width_boxes))
+      cell_y = grid_y(cal_row)
+
+      @pdf.text_box day.to_s,
+                    at: [cell_x, cell_y],
+                    width: grid_width(col_width_boxes),
+                    height: grid_height(1),
+                    align: :center,
+                    valign: :center
+
+      # Add clickable link
+      link_bottom = cell_y - grid_height(1)
+      @pdf.link_annotation([cell_x, link_bottom, cell_x + grid_width(col_width_boxes), cell_y],
+                          Dest: "week_#{week_num}",
+                          Border: [0, 0, 0])
+
+      col += 1
+      if col >= 7
+        col = 0
+        row += 1
+      end
     end
   end
 
