@@ -796,8 +796,19 @@ class PlannerGenerator
       current_y -= (WEEKLY_RIGHT_SIDEBAR_WIDTH + WEEKLY_RIGHT_SIDEBAR_SPACING)
     end
 
-    # Add "Dots" tab at bottom (right-aligned, which means at the end when rotated)
-    bottom_y = FOOTER_HEIGHT + 50  # Position from bottom
+    # Add "Dots" tab at bottom
+    # Text is right-aligned within the 50pt width box, starting from FOOTER_HEIGHT + 50
+    bottom_y = FOOTER_HEIGHT + 50
+
+    # The text "Dots" is approximately 20-25pt wide
+    # When right-aligned in a 50pt box, it starts at position (50 - text_width) from the left
+    # After rotation, this becomes the actual position on the page
+
+    # Calculate where the rotated, right-aligned text actually appears
+    # The text box goes from bottom_y upward by 50pt (the width)
+    # Right-aligned text appears at the END of this range (highest Y value)
+    text_width_approx = 25  # Approximate width of "Dots" text
+    text_start_y = bottom_y + WEEKLY_RIGHT_SIDEBAR_WIDTH - text_width_approx
 
     # Draw text rotated
     @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y]) do
@@ -805,15 +816,12 @@ class PlannerGenerator
                     at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y],
                     width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
                     height: 20,
-                    align: :right  # Right-aligned so it appears at the end when rotated
+                    align: :right
     end
 
-    # Add clickable link area (not rotated, using absolute page coordinates)
-    # When text is right-aligned in the rotated box, it appears at the far end
-    link_bottom = bottom_y
-    link_top = bottom_y + 20
-    @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH - 25, link_bottom,
-                          WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, link_top],
+    # Place link box where the text actually is (after rotation and alignment)
+    @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, text_start_y,
+                          WEEKLY_RIGHT_SIDEBAR_LINK_X + 20, text_start_y + text_width_approx],
                         Dest: "dots",
                         Border: [0, 0, 0])
 
