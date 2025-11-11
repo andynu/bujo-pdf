@@ -260,15 +260,15 @@ class PlannerGenerator
     # Don't call start_new_page - Prawn creates the first page automatically
     @pdf.add_dest("seasonal", @pdf.dest_fit)
 
+    # Draw diagnostic grid first (as background when DEBUG_GRID is enabled)
+    draw_diagnostic_grid(label_every: 5)
+
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
     draw_right_sidebar
 
     draw_seasonal_calendar
     draw_footer
-
-    # Draw diagnostic grid overlay (when DEBUG_GRID is enabled)
-    draw_diagnostic_grid(label_every: 5)
   end
 
   def draw_seasonal_calendar
@@ -1080,14 +1080,14 @@ class PlannerGenerator
     @pdf.start_new_page
     @pdf.add_dest("reference", @pdf.dest_fit)
 
-    # Draw dot grid first (as background)
+    # Draw diagnostic grid first (as background when DEBUG_GRID is enabled)
+    draw_diagnostic_grid(label_every: 5)
+
+    # Draw dot grid
     draw_dot_grid(PAGE_WIDTH, PAGE_HEIGHT)
 
     # Draw reference/calibration elements on top
     draw_reference_calibration
-
-    # Draw diagnostic grid overlay (when DEBUG_GRID is enabled)
-    draw_diagnostic_grid(label_every: 5)
   end
 
   def draw_reference_calibration
