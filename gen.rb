@@ -108,6 +108,9 @@ class PlannerGenerator
   GRID_COLS = (PAGE_WIDTH / DOT_SPACING).floor   # 43 boxes wide
   GRID_ROWS = (PAGE_HEIGHT / DOT_SPACING).floor  # 55 boxes tall
 
+  # Debug mode - set to true to show diagnostic grid overlay
+  DEBUG_GRID = true
+
   # Colors
   COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
   COLOR_BORDERS = 'E5E5E5'  # Lighter gray for borders (appears similar to dots despite continuous lines)
@@ -179,6 +182,74 @@ class PlannerGenerator
 
     # Return as [x, y, width, height] for use in bounding_box or other operations
     { x: x, y: y, width: width, height: height }
+  end
+
+  # Diagnostic grid overlay - draws red dots at grid intersections with numbered labels
+  # Call this after drawing page content to overlay a diagnostic grid
+  # Set DEBUG_GRID = false to disable all diagnostic grids
+  def draw_diagnostic_grid(label_every: 5)
+    return unless DEBUG_GRID
+
+    # Draw red dots at every grid intersection
+    @pdf.fill_color 'FF0000'
+    (0..GRID_ROWS).each do |row|
+      y = grid_y(row)
+      (0..GRID_COLS).each do |col|
+        x = grid_x(col)
+        @pdf.fill_circle [x, y], 1.0  # Slightly larger than regular dots
+      end
+    end
+
+    # Draw grid lines every label_every boxes
+    @pdf.stroke_color 'FF0000'
+    @pdf.line_width 0.25
+    @pdf.dash(1, space: 2)
+
+    # Vertical lines
+    (0..GRID_COLS).step(label_every).each do |col|
+      x = grid_x(col)
+      @pdf.stroke_line [x, 0], [x, PAGE_HEIGHT]
+    end
+
+    # Horizontal lines
+    (0..GRID_ROWS).step(label_every).each do |row|
+      y = grid_y(row)
+      @pdf.stroke_line [0, y], [PAGE_WIDTH, y]
+    end
+
+    @pdf.undash
+    @pdf.line_width 1
+
+    # Add labels at intersections
+    @pdf.fill_color 'FF0000'
+    @pdf.font "Helvetica", size: 6
+
+    (0..GRID_ROWS).step(label_every).each do |row|
+      y = grid_y(row)
+      (0..GRID_COLS).step(label_every).each do |col|
+        x = grid_x(col)
+
+        # Draw label with white background for readability
+        label = "(#{col},#{row})"
+        label_width = 25
+        label_height = 10
+
+        @pdf.fill_color 'FFFFFF'
+        @pdf.fill_rectangle [x + 2, y - 2], label_width, label_height
+
+        @pdf.fill_color 'FF0000'
+        @pdf.text_box label,
+                      at: [x + 2, y - 2],
+                      width: label_width,
+                      height: label_height,
+                      size: 6,
+                      overflow: :shrink_to_fit
+      end
+    end
+
+    # Reset colors
+    @pdf.fill_color '000000'
+    @pdf.stroke_color '000000'
   end
 
   def setup_destinations
@@ -875,6 +946,9 @@ class PlannerGenerator
 
     # Draw reference/calibration elements on top
     draw_reference_calibration
+
+    # Draw diagnostic grid overlay (when DEBUG_GRID is enabled)
+    draw_diagnostic_grid(label_every: 5)
   end
 
   def draw_reference_calibration

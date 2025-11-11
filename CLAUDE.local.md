@@ -10,6 +10,29 @@ This planner uses a grid-based layout system where all positioning is based on a
 - **Box Size**: 14.17pt (5mm) - matches `DOT_SPACING`
 - **Page Size**: 612pt × 792pt (8.5" × 11" letter)
 
+## Debug Mode
+
+The system includes a diagnostic grid overlay for layout debugging:
+
+- **DEBUG_GRID constant**: Set to `true` to enable, `false` to disable
+- When enabled, `draw_diagnostic_grid()` overlays red dots and grid lines with coordinate labels
+- Labels show `(col, row)` at every Nth grid intersection (default: every 5 boxes)
+
+**Usage:**
+```ruby
+# At top of file
+DEBUG_GRID = true  # Enable for development, false for production
+
+# In any page generation method
+draw_diagnostic_grid(label_every: 5)  # Add after page content
+```
+
+**What it shows:**
+- Red dots at every grid intersection (brighter than gray dots)
+- Red dashed lines every N boxes (default 5)
+- Coordinate labels `(col, row)` at line intersections
+- White background behind labels for readability
+
 ## Coordinate System
 
 ### Prawn's Native Coordinate System
