@@ -71,7 +71,7 @@ class PlannerGenerator
   WEEKLY_TITLE_X_RESERVED = 210  # Total space reserved for nav (left + right)
 
   # Weekly Page - Daily Section (top 35%)
-  WEEKLY_DAILY_TOP_SPACING = 10  # Space below title (matches sidebar spacing)
+  WEEKLY_DAILY_TOP_SPACING = 25  # Space below title to prevent touching columns
   WEEKLY_DAY_HEADER_FONT_SIZE = 9
   WEEKLY_DAY_DATE_FONT_SIZE = 8
   WEEKLY_DAY_HEADER_HEIGHT = 30
