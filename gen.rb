@@ -109,7 +109,7 @@ class PlannerGenerator
   GRID_ROWS = (PAGE_HEIGHT / DOT_SPACING).floor  # 55 boxes tall
 
   # Debug mode - set to true to show diagnostic grid overlay
-  DEBUG_GRID = false
+  DEBUG_GRID = true
 
   # Colors
   COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
@@ -1124,11 +1124,15 @@ class PlannerGenerator
   end
 
   def draw_week_sidebar(current_week_num, total_weeks)
-    start_y = PAGE_HEIGHT - WEEKLY_TOP_MARGIN
-    usable_height = PAGE_HEIGHT - WEEKLY_TOP_MARGIN - FOOTER_HEIGHT
+    # Grid-based week sidebar:
+    # - Width: 2 boxes (columns 0-1)
+    # - Start at row 2 (leaving rows 0-1 for header)
+    # - One week per row (53 rows available: rows 2-54)
+    # - Internal padding: 0.5 boxes on each side
 
-    # Calculate spacing for all weeks
-    line_height = usable_height / total_weeks.to_f
+    sidebar_width_boxes = 2
+    sidebar_start_row = 2
+    padding_boxes = 0.5
 
     # Calculate which week each month starts in
     first_day = Date.new(@year, 1, 1)
@@ -1153,8 +1157,10 @@ class PlannerGenerator
 
     total_weeks.times do |i|
       week = i + 1
-      y_top = start_y - (i * line_height)  # Top of this week's text box
-      y_bottom = y_top - line_height       # Bottom of this week's text box
+      row = sidebar_start_row + i  # One week per row, starting at row 2
+
+      # Get grid coordinates for this week's row
+      week_box = grid_rect(0, row, sidebar_width_boxes, 1)
 
       # Build the display text
       month_letter = week_months[week]
@@ -1165,9 +1171,9 @@ class PlannerGenerator
         @pdf.font "Helvetica-Bold", size: WEEKLY_SIDEBAR_FONT_SIZE
         @pdf.fill_color '000000'
         @pdf.text_box display_text,
-                      at: [WEEKLY_SIDEBAR_X, y_top],
-                      width: WEEKLY_SIDEBAR_WIDTH,
-                      height: line_height,
+                      at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
+                      width: week_box[:width] - grid_width(padding_boxes * 2),
+                      height: week_box[:height],
                       align: :right,
                       valign: :center
         @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
@@ -1175,13 +1181,19 @@ class PlannerGenerator
         # Other weeks: gray, with link
         @pdf.fill_color '888888'
         @pdf.text_box display_text,
-                      at: [WEEKLY_SIDEBAR_X, y_top],
-                      width: WEEKLY_SIDEBAR_WIDTH,
-                      height: line_height,
+                      at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
+                      width: week_box[:width] - grid_width(padding_boxes * 2),
+                      height: week_box[:height],
                       align: :right,
                       valign: :center
-        # Link annotation rect using absolute coordinates: [left, bottom, right, top]
-        @pdf.link_annotation([WEEKLY_SIDEBAR_X, y_bottom, WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH, y_top],
+
+        # Link annotation rect: [left, bottom, right, top]
+        link_left = week_box[:x]
+        link_bottom = week_box[:y] - week_box[:height]
+        link_right = week_box[:x] + week_box[:width]
+        link_top = week_box[:y]
+
+        @pdf.link_annotation([link_left, link_bottom, link_right, link_top],
                             Dest: "week_#{week}",
                             Border: [0, 0, 0])
         @pdf.fill_color '000000'
