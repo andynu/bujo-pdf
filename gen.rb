@@ -826,11 +826,10 @@ class PlannerGenerator
     @pdf.start_new_page
     @pdf.add_dest("reference", @pdf.dest_fit)
 
-    # Draw sidebars
-    draw_week_sidebar(nil, calculate_total_weeks)
-    draw_right_sidebar
+    # Draw dot grid first (as background)
+    draw_dot_grid(PAGE_WIDTH, PAGE_HEIGHT)
 
-    # Draw reference/calibration elements
+    # Draw reference/calibration elements on top
     draw_reference_calibration
   end
 
@@ -937,6 +936,66 @@ class PlannerGenerator
       y_pos -= 12
     end
 
+    # 7. Add Prawn coordinate system reference in bottom-right area
+    # Position in bottom third, right third of page
+    ref_x = (PAGE_WIDTH * 2.0 / 3.0) + 10  # Right third, with padding
+    ref_y = (PAGE_HEIGHT / 3.0) + 100      # Bottom third, moved up to avoid cutoff
+    ref_width = (PAGE_WIDTH / 3.0) - 20    # Width of right third minus padding
+
+    @pdf.fill_color '000000'
+    @pdf.font "Helvetica-Bold", size: 7
+    @pdf.text_box "PRAWN COORDINATE REFERENCE",
+                  at: [ref_x, ref_y],
+                  width: ref_width,
+                  height: 12,
+                  size: 7
+
+    @pdf.font "Helvetica", size: 6
+    ref_content = [
+      "",
+      "Coordinate System:",
+      "  Origin: Bottom-left (0, 0)",
+      "  +X: Right direction",
+      "  +Y: Up direction",
+      "  Page: 612pt × 792pt",
+      "",
+      "Text Positioning:",
+      "  text_box at: [x, y]",
+      "  (x, y) = top-left corner",
+      "  y measured from bottom",
+      "",
+      "Link Annotations:",
+      "  [left, bottom, right, top]",
+      "  All coords from page bottom",
+      "",
+      "Common Patterns:",
+      "  Text Y: height - offset",
+      "  Link bottom: y - height",
+      "  Link top: y",
+      "",
+      "Text/Link Offsets Used:",
+      "  Sidebar text: y_top",
+      "  Sidebar link bottom: y_top - height",
+      "  Right sidebar: rotated -90°",
+      "  Nav links: same pattern",
+      "",
+      "Bounding Boxes:",
+      "  Set local origin to [x, y]",
+      "  Coords inside are relative",
+      "  Links inside use local coords"
+    ]
+
+    ref_y_pos = ref_y - 15
+    ref_content.each do |line|
+      @pdf.text_box line,
+                    at: [ref_x, ref_y_pos],
+                    width: ref_width,
+                    height: 10,
+                    size: 6,
+                    overflow: :shrink_to_fit
+      ref_y_pos -= 8
+    end
+
     @pdf.fill_color '000000'
     @pdf.stroke_color '000000'
   end
@@ -944,10 +1003,6 @@ class PlannerGenerator
   def generate_dot_grid_page
     @pdf.start_new_page
     @pdf.add_dest("dots", @pdf.dest_fit)
-
-    # Draw sidebars
-    draw_week_sidebar(nil, calculate_total_weeks)
-    draw_right_sidebar
 
     # Draw full page dot grid
     draw_dot_grid(PAGE_WIDTH, PAGE_HEIGHT)
