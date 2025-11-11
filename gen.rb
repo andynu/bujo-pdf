@@ -235,6 +235,7 @@ class PlannerGenerator
                     legend_padding: 5,
                     font_size: 12,
                     border_color: COLOR_BORDERS,
+                    text_color: '000000',
                     inset_boxes: 0.5,
                     legend_offset_x: 0,
                     legend_offset_y: 0)
@@ -274,7 +275,7 @@ class PlannerGenerator
       @pdf.stroke_line [border_x, border_y - border_height], [border_x, border_y]
 
       # Draw legend text
-      @pdf.fill_color '000000'
+      @pdf.fill_color text_color
       @pdf.text_box legend,
                     at: [legend_x_start + legend_padding, legend_y],
                     width: legend_width,
@@ -302,7 +303,7 @@ class PlannerGenerator
       center_x = legend_x
       center_y = legend_y_start - legend_padding - (legend_width / 2)
       @pdf.rotate(-90, origin: [center_x, center_y]) do
-        @pdf.fill_color '000000'
+        @pdf.fill_color text_color
         @pdf.text_box legend,
                       at: [center_x - (legend_width / 2), center_y + (font_size / 2)],
                       width: legend_width,
@@ -327,7 +328,7 @@ class PlannerGenerator
       @pdf.stroke_line [border_x, border_y - border_height], [border_x, border_y]
 
       # Draw legend text
-      @pdf.fill_color '000000'
+      @pdf.fill_color text_color
       @pdf.text_box legend,
                     at: [legend_x_start + legend_padding, legend_y],
                     width: legend_width,
@@ -355,7 +356,7 @@ class PlannerGenerator
       center_x = legend_x
       center_y = legend_y_start + legend_padding + (legend_width / 2) + legend_offset_y
       @pdf.rotate(90, origin: [center_x, center_y]) do
-        @pdf.fill_color '000000'
+        @pdf.fill_color text_color
         @pdf.text_box legend,
                       at: [center_x - (legend_width / 2), center_y + (font_size / 2)],
                       width: legend_width,
@@ -515,14 +516,16 @@ class PlannerGenerator
     # Calculate season height
     height_boxes = calculate_season_height(season[:months].length)
 
-    # Draw fieldset with legend on left edge (bottom-to-top reading)
+    # Draw fieldset with legend on top edge (left-to-right reading)
     # Position the fieldset box starting 2 columns to the left (where the label will be)
     # Use inset_boxes: 0 to align border with grid box edges (tight spacing)
     # Offset legend 0.5 boxes to the right for better visual spacing
+    # Use gray text color to match borders
     draw_fieldset(start_col, start_row, width_boxes, height_boxes, season[:name],
-                  position: :bottom_right,
+                  position: :top_left,
                   font_size: 10,
                   border_color: COLOR_BORDERS,
+                  text_color: COLOR_BORDERS,
                   inset_boxes: 0,
                   legend_offset_x: grid_width(0.5))
 
