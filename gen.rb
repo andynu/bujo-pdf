@@ -146,6 +146,10 @@ class PlannerGenerator
     # Don't call start_new_page - Prawn creates the first page automatically
     @pdf.add_dest("seasonal", @pdf.dest_fit)
 
+    # Draw sidebars
+    draw_week_sidebar(nil, calculate_total_weeks)
+    draw_right_sidebar
+
     draw_seasonal_calendar
     draw_footer
   end
@@ -283,6 +287,10 @@ class PlannerGenerator
     @pdf.start_new_page
     @pdf.add_dest("year_events", @pdf.dest_fit)
 
+    # Draw sidebars
+    draw_week_sidebar(nil, calculate_total_weeks)
+    draw_right_sidebar
+
     draw_year_at_glance("Year #{@year} - Events")
     draw_footer
   end
@@ -290,6 +298,10 @@ class PlannerGenerator
   def generate_year_at_glance_highlights
     @pdf.start_new_page
     @pdf.add_dest("year_highlights", @pdf.dest_fit)
+
+    # Draw sidebars
+    draw_week_sidebar(nil, calculate_total_weeks)
+    draw_right_sidebar
 
     draw_year_at_glance("Year #{@year} - Highlights")
     draw_footer
@@ -413,6 +425,27 @@ class PlannerGenerator
 
       current_y -= cell_height
     end
+  end
+
+  def calculate_total_weeks
+    # Get all weeks in the year
+    first_day = Date.new(@year, 1, 1)
+    last_day = Date.new(@year, 12, 31)
+
+    # Start from the Monday on or before January 1
+    days_back = (first_day.wday + 6) % 7  # Convert to: Mon=0, Tue=1, ..., Sun=6
+    start_date = first_day - days_back
+
+    # Count weeks
+    current_date = start_date
+    week_num = 0
+
+    while current_date <= last_day || week_num == 0
+      week_num += 1
+      current_date += 7
+    end
+
+    week_num
   end
 
   def generate_weekly_pages
