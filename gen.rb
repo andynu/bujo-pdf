@@ -20,6 +20,7 @@ class PlannerGenerator
       setup_destinations
 
       # Generate all pages
+      generate_seasonal_calendar
       generate_year_at_glance_events
       generate_year_at_glance_highlights
       generate_weekly_pages
@@ -32,6 +33,143 @@ class PlannerGenerator
 
   def setup_destinations
     # We'll add destinations as we create pages
+  end
+
+  def generate_seasonal_calendar
+    @pdf.start_new_page
+    @pdf.add_dest("seasonal", @pdf.dest_fit)
+
+    draw_seasonal_calendar
+    draw_footer
+  end
+
+  def draw_seasonal_calendar
+    # Title
+    @pdf.font "Helvetica-Bold", size: 18
+    @pdf.text_box "Year #{@year}",
+                  at: [40, PAGE_HEIGHT - 40],
+                  width: PAGE_WIDTH - 80,
+                  align: :center
+
+    # Define seasons with their months
+    seasons = [
+      { name: "Winter", months: [1, 2], color: '4A90E2' },
+      { name: "Spring", months: [3, 4, 5], color: '7ED321' },
+      { name: "Summer", months: [6, 7, 8], color: 'F5A623' },
+      { name: "Fall", months: [9, 10, 11, 12], color: 'D0021B' }
+    ]
+
+    # Layout: 2x2 grid
+    grid_width = (PAGE_WIDTH - 120) / 2.0
+    grid_height = (PAGE_HEIGHT - 140 - FOOTER_HEIGHT) / 2.0
+
+    seasons.each_with_index do |season, idx|
+      row = idx / 2
+      col = idx % 2
+
+      x = 60 + (col * grid_width)
+      y = PAGE_HEIGHT - 100 - (row * grid_height)
+
+      draw_season_section(season, x, y, grid_width, grid_height)
+    end
+  end
+
+  def draw_season_section(season, x, y, width, height)
+    # Season header
+    @pdf.font "Helvetica-Bold", size: 14
+    @pdf.text_box season[:name],
+                  at: [x, y],
+                  width: width,
+                  height: 20,
+                  align: :center
+
+    # Draw mini calendars for each month in this season
+    month_height = (height - 30) / season[:months].length.to_f
+
+    season[:months].each_with_index do |month, idx|
+      month_y = y - 30 - (idx * month_height)
+      draw_mini_month_calendar(month, x, month_y, width, month_height)
+    end
+  end
+
+  def draw_mini_month_calendar(month, x, y, width, height)
+    # Month name
+    @pdf.font "Helvetica-Bold", size: 10
+    month_name = @month_names[month - 1]
+    @pdf.text_box month_name,
+                  at: [x + 5, y - 2],
+                  width: width - 10,
+                  height: 15,
+                  size: 9
+
+    # Get calendar info
+    first_day = Date.new(@year, month, 1)
+    last_day = Date.new(@year, month, -1)
+    days_in_month = last_day.day
+
+    # Starting day of week (0=Sunday, 1=Monday, etc.)
+    start_wday = first_day.wday
+
+    # Convert to Monday-based (0=Monday, 6=Sunday)
+    start_col = (start_wday + 6) % 7
+
+    # Calculate dimensions
+    cal_width = width - 40
+    cal_height = height - 20
+    col_width = cal_width / 7.0
+    row_height = cal_height / 6.0  # Max 6 rows needed
+
+    # Draw day headers (M T W T F S S)
+    @pdf.font "Helvetica", size: 6
+    day_names = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+    day_names.each_with_index do |day, i|
+      @pdf.text_box day,
+                    at: [x + 35 + (i * col_width), y - 17],
+                    width: col_width,
+                    height: 10,
+                    align: :center,
+                    size: 6
+    end
+
+    # Draw days
+    @pdf.font "Helvetica", size: 7
+    row = 0
+    col = start_col
+
+    # Calculate week numbers
+    first_day_of_year = Date.new(@year, 1, 1)
+    days_back = (first_day_of_year.wday + 6) % 7
+    year_start_monday = first_day_of_year - days_back
+
+    1.upto(days_in_month) do |day|
+      date = Date.new(@year, month, day)
+
+      # Calculate week number
+      days_from_start = (date - year_start_monday).to_i
+      week_num = (days_from_start / 7) + 1
+
+      cell_x = x + 35 + (col * col_width)
+      cell_y = y - 25 - (row * row_height)
+
+      @pdf.text_box day.to_s,
+                    at: [cell_x, cell_y],
+                    width: col_width,
+                    height: row_height,
+                    align: :center,
+                    valign: :center,
+                    size: 7
+
+      # Add link for this day
+      @pdf.link_annotation([cell_x, cell_y - row_height, cell_x + col_width, cell_y],
+                          Dest: "week_#{week_num}",
+                          Border: [0, 0, 0])
+
+      col += 1
+      if col >= 7
+        col = 0
+        row += 1
+      end
+    end
   end
 
   def generate_year_at_glance_events
@@ -203,7 +341,8 @@ class PlannerGenerator
     end_date = start_date + 6
 
     # Calculate dimensions per spec
-    usable_height = PAGE_HEIGHT - 80 - FOOTER_HEIGHT  # 80pt for title/margins
+    footer_clearance = FOOTER_HEIGHT + 10  # Extra space above footer
+    usable_height = PAGE_HEIGHT - 80 - footer_clearance  # 80pt for title/margins
     daily_section_height = usable_height * 0.35  # 35% for daily section
     notes_section_height = usable_height * 0.65  # 65% for Cornell notes
 
@@ -419,59 +558,48 @@ class PlannerGenerator
     link_width = (PAGE_WIDTH - 80) / 12.0
     start_x = 40
 
-    @pdf.bounding_box([0, footer_y], width: PAGE_WIDTH, height: FOOTER_HEIGHT) do
-      @pdf.stroke_color 'AAAAAA'
-      @pdf.stroke do
-        @pdf.horizontal_line 40, PAGE_WIDTH - 40, at: FOOTER_HEIGHT - 2
-      end
-      @pdf.stroke_color '000000'
+    # Draw horizontal line
+    @pdf.stroke_color 'AAAAAA'
+    @pdf.stroke do
+      @pdf.horizontal_line 40, PAGE_WIDTH - 40, at: FOOTER_HEIGHT - 2
+    end
+    @pdf.stroke_color '000000'
 
-      @pdf.font "Helvetica", size: 10
+    @pdf.font "Helvetica", size: 10
 
-      12.times do |i|
-        x = start_x + (i * link_width)
-        month_letter = @month_names[i][0]  # First letter of month
+    12.times do |i|
+      x = start_x + (i * link_width)
+      month_letter = @month_names[i][0]  # First letter of month
 
-        @pdf.bounding_box([x, FOOTER_HEIGHT - 5], width: link_width, height: 15) do
-          # Calculate which week contains the first of this month
-          first_of_month = Date.new(@year, i + 1, 1)
-          first_day_of_year = Date.new(@year, 1, 1)
+      # Calculate which week contains the first of this month
+      first_of_month = Date.new(@year, i + 1, 1)
+      first_day_of_year = Date.new(@year, 1, 1)
 
-          # Calculate the Monday that starts the year
-          days_back = (first_day_of_year.wday + 6) % 7
-          year_start_monday = first_day_of_year - days_back
+      # Calculate the Monday that starts the year
+      days_back = (first_day_of_year.wday + 6) % 7
+      year_start_monday = first_day_of_year - days_back
 
-          # Calculate which week contains this month's first day
-          days_from_start = (first_of_month - year_start_monday).to_i
-          week_num = (days_from_start / 7) + 1
+      # Calculate which week contains this month's first day
+      days_from_start = (first_of_month - year_start_monday).to_i
+      week_num = (days_from_start / 7) + 1
 
-          # Draw the month letter (links to week)
-          @pdf.font "Helvetica", size: 10
-          @pdf.text_box month_letter,
-                        at: [0, 15],
-                        width: link_width * 0.6,
-                        height: 15,
-                        align: :center
+      # Draw the month letter in gray
+      @pdf.fill_color '888888'
+      text_height = 15
+      text_y = FOOTER_HEIGHT - 5
 
-          # Add clickable link to week
-          @pdf.link_annotation([0, 0, link_width * 0.6, 15],
-                              Dest: "week_#{week_num}",
-                              Border: [0, 0, 0])
+      @pdf.text_box month_letter,
+                    at: [x, text_y],
+                    width: link_width,
+                    height: text_height,
+                    align: :center,
+                    size: 10
+      @pdf.fill_color '000000'
 
-          # Draw small "Y" link (links to year-at-a-glance)
-          @pdf.font "Helvetica", size: 7
-          @pdf.text_box "Y",
-                        at: [link_width * 0.6, 15],
-                        width: link_width * 0.4,
-                        height: 15,
-                        align: :center
-
-          # Add clickable link to year-at-a-glance
-          @pdf.link_annotation([link_width * 0.6, 0, link_width, 15],
-                              Dest: "year_events",
-                              Border: [0, 0, 0])
-        end
-      end
+      # Add clickable link using absolute coordinates
+      @pdf.link_annotation([x, text_y - text_height, x + link_width, text_y],
+                          Dest: "week_#{week_num}",
+                          Border: [0, 0, 0])
     end
   end
 end
