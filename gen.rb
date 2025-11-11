@@ -799,19 +799,23 @@ class PlannerGenerator
     # Add "Dots" tab at bottom (right-aligned, which means at the end when rotated)
     bottom_y = FOOTER_HEIGHT + 50  # Position from bottom
 
+    # Draw text rotated
     @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y]) do
       @pdf.text_box "Dots",
                     at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y],
                     width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
                     height: 20,
                     align: :right  # Right-aligned so it appears at the end when rotated
-
-      # Add clickable link area
-      @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, bottom_y - 20,
-                            WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, bottom_y],
-                          Dest: "dots",
-                          Border: [0, 0, 0])
     end
+
+    # Add clickable link area (not rotated, using absolute page coordinates)
+    # When text is right-aligned in the rotated box, it appears at the far end
+    link_bottom = bottom_y
+    link_top = bottom_y + 20
+    @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH - 25, link_bottom,
+                          WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, link_top],
+                        Dest: "dots",
+                        Border: [0, 0, 0])
 
     @pdf.fill_color '000000'
   end
