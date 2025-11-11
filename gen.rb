@@ -1,6 +1,10 @@
 #!/usr/bin/env ruby
 require 'prawn'
 require 'date'
+require_relative 'lib/bujo_pdf/utilities/styling'
+require_relative 'lib/bujo_pdf/utilities/grid_system'
+require_relative 'lib/bujo_pdf/utilities/dot_grid'
+require_relative 'lib/bujo_pdf/utilities/diagnostics'
 
 class PlannerGenerator
   # Page dimensions
@@ -108,7 +112,7 @@ class PlannerGenerator
   GRID_ROWS = (PAGE_HEIGHT / DOT_SPACING).floor  # 55 boxes tall
 
   # Debug mode - set to true to show diagnostic grid overlay
-  DEBUG_GRID = true
+  DEBUG_GRID = false
 
   # Colors
   COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
@@ -130,6 +134,7 @@ class PlannerGenerator
   def generate(filename = "planner_#{@year}.pdf")
     Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
       @pdf = pdf
+      @grid_system = GridSystem.new(@pdf)
 
       # Add bookmarks/named destinations
       setup_destinations
@@ -176,38 +181,34 @@ class PlannerGenerator
   private
 
   # Grid coordinate system helpers
+  # These methods delegate to the GridSystem instance for backward compatibility
+
   # Convert grid column (0-based) to x coordinate in points
   def grid_x(col)
-    col * DOT_SPACING
+    @grid_system.x(col)
   end
 
   # Convert grid row (0-based from TOP) to y coordinate in points
   # Row 0 is at the top of the page, row increases downward
   def grid_y(row)
-    PAGE_HEIGHT - (row * DOT_SPACING)
+    @grid_system.y(row)
   end
 
   # Get width in points for a given number of grid boxes
   def grid_width(boxes)
-    boxes * DOT_SPACING
+    @grid_system.width(boxes)
   end
 
   # Get height in points for a given number of grid boxes
   def grid_height(boxes)
-    boxes * DOT_SPACING
+    @grid_system.height(boxes)
   end
 
   # Draw a rectangle at grid coordinates
   # col, row: top-left corner in grid coordinates (row 0 = top)
   # width_boxes, height_boxes: size in grid boxes
   def grid_rect(col, row, width_boxes, height_boxes)
-    x = grid_x(col)
-    y = grid_y(row)
-    width = grid_width(width_boxes)
-    height = grid_height(height_boxes)
-
-    # Return as [x, y, width, height] for use in bounding_box or other operations
-    { x: x, y: y, width: width, height: height }
+    @grid_system.rect(col, row, width_boxes, height_boxes)
   end
 
   # Create a text_box positioned using grid coordinates
@@ -219,11 +220,7 @@ class PlannerGenerator
   # Example:
   #   grid_text_box("Hello", 5, 10, 10, 2, align: :center, valign: :center)
   def grid_text_box(text, col, row, width_boxes, height_boxes, **options)
-    @pdf.text_box text,
-                  at: [grid_x(col), grid_y(row)],
-                  width: grid_width(width_boxes),
-                  height: grid_height(height_boxes),
-                  **options
+    @grid_system.text_box(text, col, row, width_boxes, height_boxes, **options)
   end
 
   # Create a link annotation positioned using grid coordinates
@@ -235,17 +232,7 @@ class PlannerGenerator
   # Example:
   #   grid_link(5, 10, 10, 2, "week_42")
   def grid_link(col, row, width_boxes, height_boxes, dest, **options)
-    left = grid_x(col)
-    top = grid_y(row)
-    right = grid_x(col + width_boxes)
-    bottom = grid_y(row + height_boxes)
-
-    # Default to invisible border
-    opts = { Border: [0, 0, 0] }.merge(options)
-
-    @pdf.link_annotation([left, bottom, right, top],
-                        Dest: dest,
-                        **opts)
+    @grid_system.link(col, row, width_boxes, height_boxes, dest, **options)
   end
 
   # Apply grid-based padding to a grid_rect result
@@ -260,13 +247,7 @@ class PlannerGenerator
   #   box = grid_rect(5, 10, 20, 15)
   #   padded = grid_inset(box, 0.5)  # 0.5 boxes of padding on all sides
   def grid_inset(rect, padding_boxes)
-    padding = grid_width(padding_boxes)  # width and height spacing are equal
-    {
-      x: rect[:x] + padding,
-      y: rect[:y] - padding,
-      width: rect[:width] - (padding * 2),
-      height: rect[:height] - (padding * 2)
-    }
+    @grid_system.inset(rect, padding_boxes)
   end
 
   # Calculate the bottom Y coordinate for a grid box (useful for links)
@@ -279,7 +260,7 @@ class PlannerGenerator
   #   top = grid_y(10)
   #   bottom = grid_bottom(10, 2)  # 2 boxes tall
   def grid_bottom(row, height_boxes)
-    grid_y(row + height_boxes)
+    @grid_system.bottom(row, height_boxes)
   end
 
   # Draw a right sidebar navigation tab with rotated text and clickable link
@@ -511,68 +492,7 @@ class PlannerGenerator
   # Call this after drawing page content to overlay a diagnostic grid
   # Set DEBUG_GRID = false to disable all diagnostic grids
   def draw_diagnostic_grid(label_every: 5)
-    return unless DEBUG_GRID
-
-    # Draw red dots at every grid intersection
-    @pdf.fill_color 'FF0000'
-    (0..GRID_ROWS).each do |row|
-      y = grid_y(row)
-      (0..GRID_COLS).each do |col|
-        x = grid_x(col)
-        @pdf.fill_circle [x, y], 1.0  # Slightly larger than regular dots
-      end
-    end
-
-    # Draw grid lines every label_every boxes
-    @pdf.stroke_color 'FF0000'
-    @pdf.line_width 0.25
-    @pdf.dash(1, space: 2)
-
-    # Vertical lines
-    (0..GRID_COLS).step(label_every).each do |col|
-      x = grid_x(col)
-      @pdf.stroke_line [x, 0], [x, PAGE_HEIGHT]
-    end
-
-    # Horizontal lines
-    (0..GRID_ROWS).step(label_every).each do |row|
-      y = grid_y(row)
-      @pdf.stroke_line [0, y], [PAGE_WIDTH, y]
-    end
-
-    @pdf.undash
-    @pdf.line_width 1
-
-    # Add labels at intersections
-    @pdf.fill_color 'FF0000'
-    @pdf.font "Helvetica", size: 6
-
-    (0..GRID_ROWS).step(label_every).each do |row|
-      y = grid_y(row)
-      (0..GRID_COLS).step(label_every).each do |col|
-        x = grid_x(col)
-
-        # Draw label with white background for readability
-        label = "(#{col},#{row})"
-        label_width = 25
-        label_height = 10
-
-        @pdf.fill_color 'FFFFFF'
-        @pdf.fill_rectangle [x + 2, y - 2], label_width, label_height
-
-        @pdf.fill_color 'FF0000'
-        @pdf.text_box label,
-                      at: [x + 2, y - 2],
-                      width: label_width,
-                      height: label_height,
-                      size: 6,
-                      overflow: :shrink_to_fit
-      end
-    end
-
-    # Reset colors
-    @pdf.fill_color '000000'
-    @pdf.stroke_color '000000'
+    Diagnostics.draw_grid(@pdf, @grid_system, enabled: DEBUG_GRID, label_every: label_every)
   end
 
   def setup_destinations
@@ -1298,28 +1218,7 @@ class PlannerGenerator
   end
 
   def draw_dot_grid(width, height)
-    @pdf.fill_color COLOR_DOT_GRID
-
-    # Align with grid coordinate system: start at (0, height) which corresponds to
-    # grid position (0, 0) - top-left corner
-    # Draw dots at every grid intersection point
-    start_x = 0
-    start_y = height
-
-    # Calculate how many dots fit in the given dimensions
-    cols = (width / DOT_SPACING).floor
-    rows = (height / DOT_SPACING).floor
-
-    # Draw dots at exact grid positions
-    (0..rows).each do |row|
-      y = start_y - (row * DOT_SPACING)
-      (0..cols).each do |col|
-        x = start_x + (col * DOT_SPACING)
-        @pdf.fill_circle [x, y], DOT_RADIUS
-      end
-    end
-
-    @pdf.fill_color '000000'
+    DotGrid.draw(@pdf, width, height)
   end
 
   def draw_week_sidebar(current_week_num, total_weeks)
