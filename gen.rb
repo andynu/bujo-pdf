@@ -471,7 +471,7 @@ class PlannerGenerator
     # Link rect: [left, bottom, right, top]
     @pdf.link_annotation([start_x + WEEKLY_NAV_YEAR_X_OFFSET, start_y - WEEKLY_NAV_HEIGHT,
                           start_x + WEEKLY_NAV_YEAR_X_OFFSET + WEEKLY_NAV_YEAR_WIDTH, start_y],
-                        Dest: "year_events",
+                        Dest: "seasonal",
                         Border: [0, 0, 0])
 
     # Navigation: "< w41" on the left (if not first week, in gray)
