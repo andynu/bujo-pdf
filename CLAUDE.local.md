@@ -108,6 +108,62 @@ box = grid_rect(10, 20, 5, 3)
 end
 ```
 
+### `grid_text_box(text, col, row, width_boxes, height_boxes, **options)`
+Create a text_box positioned using grid coordinates. Simplifies the common pattern of placing text at grid positions.
+
+```ruby
+# Before
+@pdf.text_box "Hello", at: [grid_x(5), grid_y(10)],
+              width: grid_width(10), height: grid_height(2),
+              align: :center, valign: :center
+
+# After
+grid_text_box("Hello", 5, 10, 10, 2, align: :center, valign: :center)
+```
+
+### `grid_link(col, row, width_boxes, height_boxes, dest, **options)`
+Create a link annotation positioned using grid coordinates. Handles the complex coordinate conversion for clickable regions.
+
+```ruby
+# Before
+left = grid_x(col)
+top = grid_y(row)
+right = grid_x(col + width_boxes)
+bottom = grid_y(row + height_boxes)
+@pdf.link_annotation([left, bottom, right, top], Dest: "week_1", Border: [0, 0, 0])
+
+# After
+grid_link(col, row, width_boxes, height_boxes, "week_1")
+```
+
+**Note**: Border defaults to invisible `[0, 0, 0]`. Override with `Border: [r, g, b]` option.
+
+### `grid_inset(rect, padding_boxes)`
+Apply grid-based padding to a grid_rect result. Useful for creating inset content within a grid box.
+
+```ruby
+box = grid_rect(5, 10, 20, 15)
+padded = grid_inset(box, 0.5)  # 0.5 boxes of padding on all sides
+
+# padded now has reduced x, y, width, height for the inset area
+@pdf.bounding_box([padded[:x], padded[:y]],
+                  width: padded[:width],
+                  height: padded[:height]) do
+  # Content is now inset by 0.5 boxes from the outer box edges
+end
+```
+
+### `grid_bottom(row, height_boxes)`
+Calculate the bottom Y coordinate for a grid box. Useful when manually constructing rectangles or links.
+
+```ruby
+top = grid_y(10)
+bottom = grid_bottom(10, 2)  # For a box 2 boxes tall starting at row 10
+
+# Equivalent to:
+bottom = grid_y(10 + 2)
+```
+
 ## Common Layout Patterns
 
 ### Full-Width Header (2 boxes tall)

@@ -1,0 +1,12 @@
+{
+  "allowedCommands": [
+    {
+      "command": "ruby gen.rb:*",
+      "description": "Run Ruby PDF generator with any arguments"
+    },
+    {
+      "command": "pdftoppm",
+      "description": "Convert PDF pages to PNG images"
+    }
+  ]
+}

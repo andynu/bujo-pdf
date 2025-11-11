@@ -60,11 +60,10 @@ class PlannerGenerator
   WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
   # Weekly Page - Right Sidebar (tabs to year pages)
-  WEEKLY_RIGHT_SIDEBAR_LINK_X = 597  # Position for clickable link boxes
-  WEEKLY_RIGHT_SIDEBAR_TEXT_X = 607  # Position for text (farther right)
-  WEEKLY_RIGHT_SIDEBAR_WIDTH = 50  # Height when rotated (extends down the page)
-  WEEKLY_RIGHT_SIDEBAR_FONT_SIZE = 8
-  WEEKLY_RIGHT_SIDEBAR_SPACING = 10  # Space between tab labels
+  # NOTE: Right sidebar now uses grid-based layout (see draw_right_sidebar)
+  # - Position: Column 43 (at right edge, beyond last grid column), 1 box wide
+  # - Each tab: 3 boxes tall
+  # - Top tabs start at row 3, bottom tab positioned from bottom
 
   # Weekly Page - Top Navigation Area
   WEEKLY_NAV_HEIGHT = 20
@@ -209,6 +208,78 @@ class PlannerGenerator
 
     # Return as [x, y, width, height] for use in bounding_box or other operations
     { x: x, y: y, width: width, height: height }
+  end
+
+  # Create a text_box positioned using grid coordinates
+  # text: string content to display
+  # col, row: top-left corner in grid coordinates
+  # width_boxes, height_boxes: size in grid boxes
+  # options: hash of additional text_box options (align, valign, size, etc.)
+  #
+  # Example:
+  #   grid_text_box("Hello", 5, 10, 10, 2, align: :center, valign: :center)
+  def grid_text_box(text, col, row, width_boxes, height_boxes, **options)
+    @pdf.text_box text,
+                  at: [grid_x(col), grid_y(row)],
+                  width: grid_width(width_boxes),
+                  height: grid_height(height_boxes),
+                  **options
+  end
+
+  # Create a link annotation positioned using grid coordinates
+  # col, row: top-left corner in grid coordinates
+  # width_boxes, height_boxes: size in grid boxes
+  # dest: destination name (e.g., "week_1", "seasonal")
+  # options: hash of additional link_annotation options (Border, etc.)
+  #
+  # Example:
+  #   grid_link(5, 10, 10, 2, "week_42")
+  def grid_link(col, row, width_boxes, height_boxes, dest, **options)
+    left = grid_x(col)
+    top = grid_y(row)
+    right = grid_x(col + width_boxes)
+    bottom = grid_y(row + height_boxes)
+
+    # Default to invisible border
+    opts = { Border: [0, 0, 0] }.merge(options)
+
+    @pdf.link_annotation([left, bottom, right, top],
+                        Dest: dest,
+                        **opts)
+  end
+
+  # Apply grid-based padding to a grid_rect result
+  # Useful for creating inset content within a grid box
+  #
+  # rect: result from grid_rect (hash with :x, :y, :width, :height)
+  # padding_boxes: inset amount in grid boxes (can be fractional, e.g., 0.5)
+  #
+  # Returns: new hash with padded coordinates and dimensions
+  #
+  # Example:
+  #   box = grid_rect(5, 10, 20, 15)
+  #   padded = grid_inset(box, 0.5)  # 0.5 boxes of padding on all sides
+  def grid_inset(rect, padding_boxes)
+    padding = grid_width(padding_boxes)  # width and height spacing are equal
+    {
+      x: rect[:x] + padding,
+      y: rect[:y] - padding,
+      width: rect[:width] - (padding * 2),
+      height: rect[:height] - (padding * 2)
+    }
+  end
+
+  # Calculate the bottom Y coordinate for a grid box (useful for links)
+  # col, row: top-left corner in grid coordinates
+  # height_boxes: height of the box in grid boxes
+  #
+  # Returns: Y coordinate of the bottom edge (in Prawn coordinates)
+  #
+  # Example:
+  #   top = grid_y(10)
+  #   bottom = grid_bottom(10, 2)  # 2 boxes tall
+  def grid_bottom(row, height_boxes)
+    grid_y(row + height_boxes)
   end
 
   # Component: Fieldset with legend (like HTML <fieldset> and <legend>)
@@ -1202,60 +1273,84 @@ class PlannerGenerator
   end
 
   def draw_right_sidebar
-    # Define tabs for year pages (top-aligned)
-    tabs = [
+    # Grid-based right sidebar: rightmost edge (col 43), 1 box wide
+    # Each tab gets 3 boxes of height for consistent spacing
+    # Top tabs: left-aligned, start at row 3 (gives clearance from top edge)
+    # Bottom tab: right-aligned, positioned from bottom
+
+    # Top tabs (left-aligned when rotated clockwise -90°)
+    top_tabs = [
       { label: "Year", dest: "seasonal" },
       { label: "Events", dest: "year_events" },
       { label: "Highlights", dest: "year_highlights" }
     ]
 
+    draw_right_sidebar_tabs(top_tabs, start_row: 3, align: :left)
+
+    # Bottom tab (right-aligned when rotated clockwise -90°)
+    # Position from bottom: reserve space for footer + margin
+    bottom_tabs = [
+      { label: "Dots", dest: "dots" }
+    ]
+
+    # Calculate bottom position: GRID_ROWS - footer space - tab height
+    # Footer is roughly 3 boxes, add 1 box margin = 4 boxes from bottom
+    bottom_start_row = GRID_ROWS - 4 - 3  # 3 boxes for the tab itself
+
+    draw_right_sidebar_tabs(bottom_tabs, start_row: bottom_start_row, align: :right)
+  end
+
+  # Helper to draw right sidebar tabs at grid positions
+  # tabs: array of {label:, dest:} hashes
+  # start_row: grid row to start from
+  # align: :left or :right (text alignment within rotated space)
+  def draw_right_sidebar_tabs(tabs, start_row:, align:)
+    tab_height_boxes = 3  # Each tab gets 3 boxes of height
+    tab_padding_boxes = 0.5  # Padding at top of each tab
+    # Position text at the absolute right edge (beyond last grid column)
+    text_col = GRID_COLS  # 43 (positions it one box to the right of col 42)
+    # Position link at the last visible grid column
+    link_col = GRID_COLS - 1  # 42 (rightmost visible column)
+
     @pdf.fill_color '888888'
-    @pdf.font "Helvetica", size: WEEKLY_RIGHT_SIDEBAR_FONT_SIZE
+    @pdf.font "Helvetica", size: 8
 
-    # Start from top of page
-    current_y = PAGE_HEIGHT - 50
+    tabs.each_with_index do |tab, idx|
+      row = start_row + (idx * tab_height_boxes)
 
-    tabs.each do |tab|
-      # Rotate text 90 degrees clockwise (text flows down when page is upright)
-      @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, current_y]) do
+      # Get grid coordinates for this tab
+      # Text positioned at right edge (text_col), link at col 42 (link_col)
+      tab_x = grid_x(text_col)
+      tab_y_top = grid_y(row)
+
+      # Text area: full tab minus padding at top (which becomes left side after rotation)
+      text_width_pt = grid_height(tab_height_boxes - tab_padding_boxes)
+      padding_pt = grid_height(tab_padding_boxes)
+
+      # For -90° rotation around point (x, y):
+      # - Text extends downward from rotation point (in rotated space)
+      # - We want the text to appear in the middle of the 3-box region
+      # - Rotate around the CENTER of the tab region for proper alignment
+      rotation_origin_x = tab_x
+      rotation_origin_y = tab_y_top - grid_height(tab_height_boxes / 2.0)  # Center of the 3-box region
+
+      # Draw rotated text with padding offset
+      @pdf.rotate(-90, origin: [rotation_origin_x, rotation_origin_y]) do
+        # In rotated space: position text centered in the available width
         @pdf.text_box tab[:label],
-                      at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, current_y],
-                      width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
-                      height: 20,
-                      align: :left
-
-        # Add clickable link area (positioned to the left of text)
-        # When rotated -90, the text flows from right to left in rotated space
-        @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, current_y - 20,
-                              WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, current_y],
-                            Dest: tab[:dest],
-                            Border: [0, 0, 0])
+                      at: [rotation_origin_x - text_width_pt - padding_pt, rotation_origin_y],
+                      width: text_width_pt,
+                      height: grid_width(1),
+                      align: align,
+                      valign: :center
       end
 
-      # Move down for next tab
-      current_y -= (WEEKLY_RIGHT_SIDEBAR_WIDTH + WEEKLY_RIGHT_SIDEBAR_SPACING)
-    end
-
-    # Add "Dots" tab at bottom (right-aligned within rotated space)
-    bottom_y = FOOTER_HEIGHT + 50
-
-    # Draw text rotated with right alignment
-    @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y]) do
-      @pdf.text_box "Dots",
-                    at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y],
-                    width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
-                    height: 20,
-                    align: :right
-
-      # Add clickable link area in rotated space
-      # In rotated coords: need to SUBTRACT from Y to move down the page
-      # Link box should be tall (along Y in rotated space) and narrow (along X)
-      link_offset = -30  # Negative to move DOWN the page in rotated space
-      text_width = 25  # Approximate width of "Dots" text
-      @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, bottom_y + link_offset - text_width,
-                            WEEKLY_RIGHT_SIDEBAR_LINK_X + 20, bottom_y + link_offset],
-                          Dest: "dots",
-                          Border: [0, 0, 0])
+      # Add clickable link for entire 3-box region at the last visible column
+      # Link positioned at col 42 (within page bounds) even though text is at col 43
+      # IMPORTANT: The rotated text appears 3 rows above where 'row' indicates,
+      # so we need to offset the link by -3 boxes to align with the visible text
+      link_row = row - tab_height_boxes
+      grid_link(link_col, link_row, 1, tab_height_boxes, tab[:dest])
     end
 
     @pdf.fill_color '000000'
