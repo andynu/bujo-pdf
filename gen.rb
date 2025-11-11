@@ -762,7 +762,7 @@ class PlannerGenerator
   end
 
   def draw_right_sidebar
-    # Define tabs for year pages
+    # Define tabs for year pages (top-aligned)
     tabs = [
       { label: "Year", dest: "seasonal" },
       { label: "Events", dest: "year_events" },
@@ -796,11 +796,29 @@ class PlannerGenerator
       current_y -= (WEEKLY_RIGHT_SIDEBAR_WIDTH + WEEKLY_RIGHT_SIDEBAR_SPACING)
     end
 
+    # Add "Dots" tab at bottom (right-aligned, which means at the end when rotated)
+    bottom_y = FOOTER_HEIGHT + 50  # Position from bottom
+
+    @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y]) do
+      @pdf.text_box "Dots",
+                    at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y],
+                    width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
+                    height: 20,
+                    align: :right  # Right-aligned so it appears at the end when rotated
+
+      # Add clickable link area
+      @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, bottom_y - 20,
+                            WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, bottom_y],
+                          Dest: "dots",
+                          Border: [0, 0, 0])
+    end
+
     @pdf.fill_color '000000'
   end
 
   def generate_dot_grid_page
     @pdf.start_new_page
+    @pdf.add_dest("dots", @pdf.dest_fit)
 
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
