@@ -131,6 +131,7 @@ class PlannerGenerator
       generate_seasonal_calendar
       generate_year_at_glance_events
       generate_year_at_glance_highlights
+      generate_reference_page
       generate_weekly_pages
       generate_dot_grid_page
 
@@ -819,6 +820,125 @@ class PlannerGenerator
     end
 
     @pdf.fill_color '000000'
+  end
+
+  def generate_reference_page
+    @pdf.start_new_page
+    @pdf.add_dest("reference", @pdf.dest_fit)
+
+    # Draw sidebars
+    draw_week_sidebar(nil, calculate_total_weeks)
+    draw_right_sidebar
+
+    # Draw reference/calibration elements
+    draw_reference_calibration
+  end
+
+  def draw_reference_calibration
+    # Calculate page dimensions
+    center_x = PAGE_WIDTH / 2.0
+    center_y = PAGE_HEIGHT / 2.0
+
+    # 1. Draw very faint X through center
+    @pdf.stroke_color 'EEEEEE'
+    @pdf.stroke do
+      @pdf.line [0, 0], [PAGE_WIDTH, PAGE_HEIGHT]
+      @pdf.line [0, PAGE_HEIGHT], [PAGE_WIDTH, 0]
+    end
+
+    # 2. Draw faint solid line for halves
+    @pdf.stroke_color 'EEEEEE'
+    @pdf.stroke do
+      @pdf.horizontal_line 0, PAGE_WIDTH, at: center_y
+      @pdf.vertical_line 0, PAGE_HEIGHT, at: center_x
+    end
+
+    # 3. Draw dotted lines for thirds
+    @pdf.stroke_color 'CCCCCC'
+    @pdf.dash(2, space: 3)
+    third_x = PAGE_WIDTH / 3.0
+    third_y = PAGE_HEIGHT / 3.0
+    @pdf.stroke do
+      @pdf.vertical_line 0, PAGE_HEIGHT, at: third_x
+      @pdf.vertical_line 0, PAGE_HEIGHT, at: third_x * 2
+      @pdf.horizontal_line 0, PAGE_WIDTH, at: third_y
+      @pdf.horizontal_line 0, PAGE_WIDTH, at: third_y * 2
+    end
+    @pdf.undash
+
+    # 4. Draw circle with radius = 1/4 page width
+    circle_radius = PAGE_WIDTH / 4.0
+    @pdf.stroke_color 'CCCCCC'
+    @pdf.stroke do
+      @pdf.circle [center_x, center_y], circle_radius
+    end
+
+    # 5. Draw centimeter markings
+    # 1 cm = 28.35 points (approximately)
+    cm_in_points = 28.35
+    @pdf.fill_color '888888'
+    @pdf.font "Helvetica", size: 6
+
+    # Top horizontal centimeter markings
+    num_cm_horizontal = (PAGE_WIDTH / cm_in_points).floor
+    (0..num_cm_horizontal).each do |cm|
+      x = cm * cm_in_points
+      @pdf.stroke_color 'AAAAAA'
+      @pdf.stroke_line [x, PAGE_HEIGHT - 5], [x, PAGE_HEIGHT - 15]
+      @pdf.text_box cm.to_s,
+                    at: [x - 5, PAGE_HEIGHT - 2],
+                    width: 10,
+                    height: 8,
+                    size: 5,
+                    align: :center
+    end
+
+    # Left vertical centimeter markings
+    num_cm_vertical = (PAGE_HEIGHT / cm_in_points).floor
+    (0..num_cm_vertical).each do |cm|
+      y = cm * cm_in_points
+      @pdf.stroke_color 'AAAAAA'
+      @pdf.stroke_line [5, y], [15, y]
+      @pdf.text_box cm.to_s,
+                    at: [2, y - 2],
+                    width: 10,
+                    height: 8,
+                    size: 5
+    end
+
+    # 6. Calculate and display dot grid box counts
+    # Dots are spaced at DOT_SPACING (14.17 points ≈ 5mm)
+    boxes_per_width = (PAGE_WIDTH / DOT_SPACING).floor
+    boxes_per_height = (PAGE_HEIGHT / DOT_SPACING).floor
+
+    # Display measurements in center
+    @pdf.fill_color '000000'
+    @pdf.font "Helvetica", size: 8
+
+    measurements = [
+      "Page: #{PAGE_WIDTH}pt × #{PAGE_HEIGHT}pt",
+      "Page: #{(PAGE_WIDTH / cm_in_points).round(1)}cm × #{(PAGE_HEIGHT / cm_in_points).round(1)}cm",
+      "",
+      "Dot Grid Boxes:",
+      "  Full: #{boxes_per_width} × #{boxes_per_height}",
+      "  Half: #{(boxes_per_width/2).round} × #{(boxes_per_height/2).round}",
+      "  Third: #{(boxes_per_width/3).round} × #{(boxes_per_height/3).round}",
+      "  Quarter: #{(boxes_per_width/4).round} × #{(boxes_per_height/4).round}"
+    ]
+
+    y_pos = center_y + 50
+    measurements.each do |text|
+      @pdf.text_box text,
+                    at: [center_x - 80, y_pos],
+                    width: 160,
+                    height: 15,
+                    size: 8,
+                    align: :center
+      y_pos -= 12
+    end
+
+    @pdf.fill_color '000000'
+    @pdf.stroke_color '000000'
   end
 
   def generate_dot_grid_page
