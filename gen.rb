@@ -100,6 +100,7 @@ class PlannerGenerator
   COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
   COLOR_BORDERS = 'E5E5E5'  # Lighter gray for borders (appears similar to dots despite continuous lines)
   COLOR_SECTION_HEADERS = 'AAAAAA'  # Muted gray for section headers
+  COLOR_WEEKEND_BG = 'FAFAFA'  # Extremely subtle gray for Saturday/Sunday background
 
   # Footer
   FOOTER_LINE_Y_OFFSET = 2
@@ -521,6 +522,13 @@ class PlannerGenerator
       x = start_x + (i * column_width)
 
       @pdf.bounding_box([x, daily_start_y], width: column_width, height: daily_section_height) do
+        # Add subtle background for Saturday (5) and Sunday (6)
+        if i == 5 || i == 6  # Saturday and Sunday
+          @pdf.fill_color COLOR_WEEKEND_BG
+          @pdf.fill_rectangle [0, daily_section_height], column_width, daily_section_height
+          @pdf.fill_color '000000'
+        end
+
         @pdf.stroke_color COLOR_BORDERS
         @pdf.stroke_bounds
         @pdf.stroke_color '000000'
