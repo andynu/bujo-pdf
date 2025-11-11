@@ -59,6 +59,12 @@ class PlannerGenerator
   WEEKLY_SIDEBAR_FONT_SIZE = 7
   WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
+  # Weekly Page - Right Sidebar (tabs to year pages)
+  WEEKLY_RIGHT_SIDEBAR_X = 607  # Distance from left edge (5pt from right edge)
+  WEEKLY_RIGHT_SIDEBAR_WIDTH = 50  # Height when rotated (extends down the page)
+  WEEKLY_RIGHT_SIDEBAR_FONT_SIZE = 8
+  WEEKLY_RIGHT_SIDEBAR_SPACING = 10  # Space between tab labels
+
   # Weekly Page - Top Navigation Area
   WEEKLY_NAV_HEIGHT = 20
   WEEKLY_NAV_YEAR_WIDTH = 60
@@ -460,6 +466,9 @@ class PlannerGenerator
     # Draw week sidebar on the left
     draw_week_sidebar(week_num, total_weeks)
 
+    # Draw right sidebar with year page tabs
+    draw_right_sidebar
+
     # Navigation: "< 2025" link on the left (in gray)
     @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
     @pdf.fill_color '888888'
@@ -715,6 +724,44 @@ class PlannerGenerator
         @pdf.fill_color '000000'
       end
     end
+  end
+
+  def draw_right_sidebar
+    # Define tabs for year pages
+    tabs = [
+      { label: "Year", dest: "seasonal" },
+      { label: "Events", dest: "year_events" },
+      { label: "Highlights", dest: "year_highlights" }
+    ]
+
+    @pdf.fill_color '888888'
+    @pdf.font "Helvetica", size: WEEKLY_RIGHT_SIDEBAR_FONT_SIZE
+
+    # Start from top of page
+    current_y = PAGE_HEIGHT - 50
+
+    tabs.each do |tab|
+      # Rotate text 90 degrees clockwise (text flows down when page is upright)
+      @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_X, current_y]) do
+        @pdf.text_box tab[:label],
+                      at: [WEEKLY_RIGHT_SIDEBAR_X, current_y],
+                      width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
+                      height: 20,
+                      align: :left
+
+        # Add clickable link area
+        # When rotated -90, the text flows from right to left in rotated space
+        @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_X, current_y - 20,
+                              WEEKLY_RIGHT_SIDEBAR_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, current_y],
+                            Dest: tab[:dest],
+                            Border: [0, 0, 0])
+      end
+
+      # Move down for next tab
+      current_y -= (WEEKLY_RIGHT_SIDEBAR_WIDTH + WEEKLY_RIGHT_SIDEBAR_SPACING)
+    end
+
+    @pdf.fill_color '000000'
   end
 
   def draw_footer
