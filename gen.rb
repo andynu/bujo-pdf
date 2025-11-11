@@ -60,7 +60,8 @@ class PlannerGenerator
   WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
   # Weekly Page - Right Sidebar (tabs to year pages)
-  WEEKLY_RIGHT_SIDEBAR_X = 597  # Distance from left edge (moved 10pt left for link boxes)
+  WEEKLY_RIGHT_SIDEBAR_LINK_X = 597  # Position for clickable link boxes
+  WEEKLY_RIGHT_SIDEBAR_TEXT_X = 607  # Position for text (farther right)
   WEEKLY_RIGHT_SIDEBAR_WIDTH = 50  # Height when rotated (extends down the page)
   WEEKLY_RIGHT_SIDEBAR_FONT_SIZE = 8
   WEEKLY_RIGHT_SIDEBAR_SPACING = 10  # Space between tab labels
@@ -775,17 +776,17 @@ class PlannerGenerator
 
     tabs.each do |tab|
       # Rotate text 90 degrees clockwise (text flows down when page is upright)
-      @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_X, current_y]) do
+      @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, current_y]) do
         @pdf.text_box tab[:label],
-                      at: [WEEKLY_RIGHT_SIDEBAR_X, current_y],
+                      at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, current_y],
                       width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
                       height: 20,
                       align: :left
 
-        # Add clickable link area
+        # Add clickable link area (positioned to the left of text)
         # When rotated -90, the text flows from right to left in rotated space
-        @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_X, current_y - 20,
-                              WEEKLY_RIGHT_SIDEBAR_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, current_y],
+        @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, current_y - 20,
+                              WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, current_y],
                             Dest: tab[:dest],
                             Border: [0, 0, 0])
       end
