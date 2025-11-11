@@ -60,7 +60,7 @@ class PlannerGenerator
   WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
   # Weekly Page - Right Sidebar (tabs to year pages)
-  WEEKLY_RIGHT_SIDEBAR_X = 607  # Distance from left edge (5pt from right edge)
+  WEEKLY_RIGHT_SIDEBAR_X = 597  # Distance from left edge (moved 10pt left for link boxes)
   WEEKLY_RIGHT_SIDEBAR_WIDTH = 50  # Height when rotated (extends down the page)
   WEEKLY_RIGHT_SIDEBAR_FONT_SIZE = 8
   WEEKLY_RIGHT_SIDEBAR_SPACING = 10  # Space between tab labels
