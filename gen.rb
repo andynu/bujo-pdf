@@ -49,8 +49,8 @@ class PlannerGenerator
 
   # Weekly Page - Overall Layout
   WEEKLY_TOP_MARGIN = 5  # Minimal gutter above title (3-4 pixels)
-  WEEKLY_DAILY_SECTION_PERCENT = 0.35  # 35% of usable height
-  WEEKLY_NOTES_SECTION_PERCENT = 0.65  # 65% of usable height
+  WEEKLY_DAILY_SECTION_PERCENT = 0.175  # 17.5% of usable height (half of original 35%)
+  WEEKLY_NOTES_SECTION_PERCENT = 0.825  # 82.5% of usable height
 
   # Weekly Page - Sidebar (vertical week navigation with months)
   WEEKLY_SIDEBAR_X = 5  # Distance from left edge of page
@@ -71,7 +71,7 @@ class PlannerGenerator
   WEEKLY_TITLE_X_RESERVED = 210  # Total space reserved for nav (left + right)
 
   # Weekly Page - Daily Section (top 35%)
-  WEEKLY_DAILY_TOP_SPACING = 25  # Space below title to prevent touching columns
+  WEEKLY_DAILY_TOP_SPACING = 15  # Space below title to prevent touching columns
   WEEKLY_DAY_HEADER_FONT_SIZE = 9
   WEEKLY_DAY_DATE_FONT_SIZE = 8
   WEEKLY_DAY_HEADER_HEIGHT = 30
