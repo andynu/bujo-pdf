@@ -796,34 +796,23 @@ class PlannerGenerator
       current_y -= (WEEKLY_RIGHT_SIDEBAR_WIDTH + WEEKLY_RIGHT_SIDEBAR_SPACING)
     end
 
-    # Add "Dots" tab at bottom
-    # Text is right-aligned within the 50pt width box, starting from FOOTER_HEIGHT + 50
+    # Add "Dots" tab at bottom (right-aligned within rotated space)
     bottom_y = FOOTER_HEIGHT + 50
 
-    # The text "Dots" is approximately 20-25pt wide
-    # When right-aligned in a 50pt box, it starts at position (50 - text_width) from the left
-    # After rotation, this becomes the actual position on the page
-
-    # Calculate where the rotated, right-aligned text actually appears
-    # The text box goes from bottom_y upward by 50pt (the width)
-    # Right-aligned text appears at the END of this range (highest Y value)
-    text_width_approx = 25  # Approximate width of "Dots" text
-    text_start_y = bottom_y + WEEKLY_RIGHT_SIDEBAR_WIDTH - text_width_approx
-
-    # Draw text rotated
+    # Draw text rotated with right alignment - same pattern as top tabs
     @pdf.rotate(-90, origin: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y]) do
       @pdf.text_box "Dots",
                     at: [WEEKLY_RIGHT_SIDEBAR_TEXT_X, bottom_y],
                     width: WEEKLY_RIGHT_SIDEBAR_WIDTH,
                     height: 20,
                     align: :right
-    end
 
-    # Place link box where the text actually is (after rotation and alignment)
-    @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, text_start_y,
-                          WEEKLY_RIGHT_SIDEBAR_LINK_X + 20, text_start_y + text_width_approx],
-                        Dest: "dots",
-                        Border: [0, 0, 0])
+      # Add clickable link area - inside the rotation, same as top tabs
+      @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, bottom_y - 20,
+                            WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, bottom_y],
+                          Dest: "dots",
+                          Border: [0, 0, 0])
+    end
 
     @pdf.fill_color '000000'
   end
