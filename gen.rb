@@ -52,10 +52,11 @@ class PlannerGenerator
   WEEKLY_DAILY_SECTION_PERCENT = 0.35  # 35% of usable height
   WEEKLY_NOTES_SECTION_PERCENT = 0.65  # 65% of usable height
 
-  # Weekly Page - Sidebar (vertical week navigation)
-  WEEKLY_SIDEBAR_WIDTH = 30
+  # Weekly Page - Sidebar (vertical week navigation with months)
+  WEEKLY_SIDEBAR_WIDTH = 50
   WEEKLY_SIDEBAR_X = 40
   WEEKLY_SIDEBAR_FONT_SIZE = 7
+  WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
   # Weekly Page - Top Navigation Area
   WEEKLY_NAV_HEIGHT = 20
@@ -601,6 +602,25 @@ class PlannerGenerator
     # Calculate spacing for all weeks
     line_height = usable_height / total_weeks.to_f
 
+    # Calculate which week each month starts in
+    first_day = Date.new(@year, 1, 1)
+    days_back = (first_day.wday + 6) % 7
+    year_start_monday = first_day - days_back
+
+    # Build a map of week_num -> month_letter for months that start in that week
+    week_months = {}
+    12.times do |month_idx|
+      month = month_idx + 1
+      first_of_month = Date.new(@year, month, 1)
+
+      # Calculate which week contains this month's first day
+      days_from_start = (first_of_month - year_start_monday).to_i
+      week_num = (days_from_start / 7) + 1
+
+      # Store the month letter for this week
+      week_months[week_num] = @month_names[month_idx][0]
+    end
+
     @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
 
     total_weeks.times do |i|
@@ -608,25 +628,29 @@ class PlannerGenerator
       y_top = start_y - (i * line_height)  # Top of this week's text box
       y_bottom = y_top - line_height       # Bottom of this week's text box
 
+      # Build the display text
+      month_letter = week_months[week]
+      display_text = month_letter ? "#{month_letter} w#{week}" : "w#{week}"
+
       if week == current_week_num
         # Current week: bold, no link
         @pdf.font "Helvetica-Bold", size: WEEKLY_SIDEBAR_FONT_SIZE
         @pdf.fill_color '000000'
-        @pdf.text_box "w#{week}",
+        @pdf.text_box display_text,
                       at: [WEEKLY_SIDEBAR_X, y_top],
                       width: WEEKLY_SIDEBAR_WIDTH,
                       height: line_height,
-                      align: :center,
+                      align: :right,
                       valign: :center
         @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
       else
         # Other weeks: gray, with link
         @pdf.fill_color '888888'
-        @pdf.text_box "w#{week}",
+        @pdf.text_box display_text,
                       at: [WEEKLY_SIDEBAR_X, y_top],
                       width: WEEKLY_SIDEBAR_WIDTH,
                       height: line_height,
-                      align: :center,
+                      align: :right,
                       valign: :center
         # Link annotation rect using absolute coordinates: [left, bottom, right, top]
         @pdf.link_annotation([WEEKLY_SIDEBAR_X, y_bottom, WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH, y_top],
@@ -638,52 +662,12 @@ class PlannerGenerator
   end
 
   def draw_footer
-    # Footer with month links at bottom of page
-    link_width = (PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2)) / 12.0
-    start_x = PAGE_MARGIN_HORIZONTAL
-
-    # Draw horizontal line
+    # Simple footer with just a horizontal line
     @pdf.stroke_color 'AAAAAA'
     @pdf.stroke do
       @pdf.horizontal_line PAGE_MARGIN_HORIZONTAL, PAGE_WIDTH - PAGE_MARGIN_HORIZONTAL, at: FOOTER_HEIGHT - FOOTER_LINE_Y_OFFSET
     end
     @pdf.stroke_color '000000'
-
-    @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
-
-    12.times do |i|
-      x = start_x + (i * link_width)
-      month_letter = @month_names[i][0]  # First letter of month
-
-      # Calculate which week contains the first of this month
-      first_of_month = Date.new(@year, i + 1, 1)
-      first_day_of_year = Date.new(@year, 1, 1)
-
-      # Calculate the Monday that starts the year
-      days_back = (first_day_of_year.wday + 6) % 7
-      year_start_monday = first_day_of_year - days_back
-
-      # Calculate which week contains this month's first day
-      days_from_start = (first_of_month - year_start_monday).to_i
-      week_num = (days_from_start / 7) + 1
-
-      # Draw the month letter in gray
-      @pdf.fill_color '888888'
-      text_y = FOOTER_HEIGHT - FOOTER_TEXT_Y_OFFSET
-
-      @pdf.text_box month_letter,
-                    at: [x, text_y],
-                    width: link_width,
-                    height: FOOTER_TEXT_HEIGHT,
-                    align: :center,
-                    size: FOOTER_FONT_SIZE
-      @pdf.fill_color '000000'
-
-      # Add clickable link using absolute coordinates
-      @pdf.link_annotation([x, text_y - FOOTER_TEXT_HEIGHT, x + link_width, text_y],
-                          Dest: "week_#{week_num}",
-                          Border: [0, 0, 0])
-    end
   end
 end
 
