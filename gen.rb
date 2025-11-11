@@ -109,7 +109,7 @@ class PlannerGenerator
   GRID_ROWS = (PAGE_HEIGHT / DOT_SPACING).floor  # 55 boxes tall
 
   # Debug mode - set to true to show diagnostic grid overlay
-  DEBUG_GRID = true
+  DEBUG_GRID = false
 
   # Colors
   COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
@@ -488,9 +488,9 @@ class PlannerGenerator
     # Draw fieldset with legend on left edge (bottom-to-top reading)
     # Position the fieldset box starting 2 columns to the left (where the label will be)
     # Use inset_boxes: 0 to align border with grid box edges (tight spacing)
-    draw_fieldset(start_col - 2, start_row, width_boxes + 2, height_boxes, season[:name],
+    draw_fieldset(start_col, start_row, width_boxes, height_boxes, season[:name],
                   position: :bottom_right,
-                  font_size: 12,
+                  font_size: 10,
                   border_color: COLOR_BORDERS,
                   inset_boxes: 0)
 
