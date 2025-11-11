@@ -184,6 +184,159 @@ class PlannerGenerator
     { x: x, y: y, width: width, height: height }
   end
 
+  # Component: Fieldset with legend (like HTML <fieldset> and <legend>)
+  # Draws a border box with a text label that sits on top of and breaks the border line
+  # The border is inset by 0.5 boxes from the specified box boundaries to center on the legend
+  #
+  # Parameters:
+  #   col, row: top-left corner in grid coordinates (controls legend position)
+  #   width_boxes, height_boxes: size in grid boxes
+  #   legend: text for the legend label
+  #   position: where to place legend - :top_left (default), :top_right, :bottom_left, :bottom_right
+  #   legend_padding: space in points on either side of legend text (default: 5)
+  #   font_size: size of legend text (default: 12)
+  #   border_color: color of border (default: COLOR_BORDERS)
+  #
+  # Position behaviors:
+  #   :top_left - Text horizontal (left-to-right), top edge, slightly inset from left
+  #   :top_right - Text rotated clockwise (-90°), right edge, reads top-to-bottom
+  #   :bottom_left - Text horizontal (left-to-right), bottom edge, slightly inset from left
+  #   :bottom_right - Text rotated counter-clockwise (+90°), left edge, reads bottom-to-top
+  def draw_fieldset(col, row, width_boxes, height_boxes, legend,
+                    position: :top_left,
+                    legend_padding: 5,
+                    font_size: 12,
+                    border_color: COLOR_BORDERS)
+
+    # Get the outer box (where legend sits)
+    box = grid_rect(col, row, width_boxes, height_boxes)
+
+    # Border is inset by 0.5 boxes from the outer box
+    inset = grid_width(0.5)
+    border_x = box[:x] + inset
+    border_y = box[:y] - inset
+    border_width = box[:width] - (inset * 2)
+    border_height = box[:height] - (inset * 2)
+
+    # Set up font for measuring legend width
+    @pdf.font "Helvetica-Bold", size: font_size
+    legend_width = @pdf.width_of(legend)
+    legend_total_width = legend_width + (legend_padding * 2)
+
+    @pdf.stroke_color border_color
+
+    case position
+    when :top_left
+      # Draw border with gap for legend on top edge, left side
+      legend_x_start = box[:x] + grid_width(1)  # Inset 1 box from left
+      legend_y = box[:y]
+
+      # Top edge: left corner to legend start
+      @pdf.stroke_line [border_x, border_y], [legend_x_start, border_y]
+      # Top edge: legend end to right corner
+      @pdf.stroke_line [legend_x_start + legend_total_width, border_y], [border_x + border_width, border_y]
+      # Right edge
+      @pdf.stroke_line [border_x + border_width, border_y], [border_x + border_width, border_y - border_height]
+      # Bottom edge
+      @pdf.stroke_line [border_x + border_width, border_y - border_height], [border_x, border_y - border_height]
+      # Left edge
+      @pdf.stroke_line [border_x, border_y - border_height], [border_x, border_y]
+
+      # Draw legend text
+      @pdf.fill_color '000000'
+      @pdf.text_box legend,
+                    at: [legend_x_start + legend_padding, legend_y],
+                    width: legend_width,
+                    height: font_size + 4,
+                    valign: :center
+
+    when :top_right
+      # Draw border with gap for legend on right edge, top
+      # Legend rotated clockwise (-90°), reads top-to-bottom
+      legend_y_start = box[:y] - grid_height(1)  # Inset 1 box from top
+      legend_x = box[:x] + box[:width]
+
+      # Top edge
+      @pdf.stroke_line [border_x, border_y], [border_x + border_width, border_y]
+      # Right edge: top corner to legend start
+      @pdf.stroke_line [border_x + border_width, border_y], [border_x + border_width, legend_y_start]
+      # Right edge: legend end to bottom corner
+      @pdf.stroke_line [border_x + border_width, legend_y_start - legend_total_width], [border_x + border_width, border_y - border_height]
+      # Bottom edge
+      @pdf.stroke_line [border_x + border_width, border_y - border_height], [border_x, border_y - border_height]
+      # Left edge
+      @pdf.stroke_line [border_x, border_y - border_height], [border_x, border_y]
+
+      # Draw legend text (rotated clockwise -90°)
+      center_x = legend_x
+      center_y = legend_y_start - legend_padding - (legend_width / 2)
+      @pdf.rotate(-90, origin: [center_x, center_y]) do
+        @pdf.fill_color '000000'
+        @pdf.text_box legend,
+                      at: [center_x - (legend_width / 2), center_y + (font_size / 2)],
+                      width: legend_width,
+                      height: font_size + 4,
+                      valign: :center
+      end
+
+    when :bottom_left
+      # Draw border with gap for legend on bottom edge, left side
+      legend_x_start = box[:x] + grid_width(1)  # Inset 1 box from left
+      legend_y = box[:y] - box[:height]
+
+      # Top edge
+      @pdf.stroke_line [border_x, border_y], [border_x + border_width, border_y]
+      # Right edge
+      @pdf.stroke_line [border_x + border_width, border_y], [border_x + border_width, border_y - border_height]
+      # Bottom edge: right corner to legend end
+      @pdf.stroke_line [border_x + border_width, border_y - border_height], [legend_x_start + legend_total_width, border_y - border_height]
+      # Bottom edge: legend start to left corner
+      @pdf.stroke_line [legend_x_start, border_y - border_height], [border_x, border_y - border_height]
+      # Left edge
+      @pdf.stroke_line [border_x, border_y - border_height], [border_x, border_y]
+
+      # Draw legend text
+      @pdf.fill_color '000000'
+      @pdf.text_box legend,
+                    at: [legend_x_start + legend_padding, legend_y],
+                    width: legend_width,
+                    height: font_size + 4,
+                    valign: :center
+
+    when :bottom_right
+      # Draw border with gap for legend on left edge, bottom
+      # Legend rotated counter-clockwise (+90°), reads bottom-to-top
+      legend_y_start = box[:y] - box[:height] + grid_height(1)  # Inset 1 box from bottom
+      legend_x = box[:x]
+
+      # Top edge
+      @pdf.stroke_line [border_x, border_y], [border_x + border_width, border_y]
+      # Right edge
+      @pdf.stroke_line [border_x + border_width, border_y], [border_x + border_width, border_y - border_height]
+      # Bottom edge
+      @pdf.stroke_line [border_x + border_width, border_y - border_height], [border_x, border_y - border_height]
+      # Left edge: bottom corner to legend start
+      @pdf.stroke_line [border_x, border_y - border_height], [border_x, legend_y_start]
+      # Left edge: legend end to top corner
+      @pdf.stroke_line [border_x, legend_y_start + legend_total_width], [border_x, border_y]
+
+      # Draw legend text (rotated counter-clockwise +90°)
+      center_x = legend_x
+      center_y = legend_y_start + legend_padding + (legend_width / 2)
+      @pdf.rotate(90, origin: [center_x, center_y]) do
+        @pdf.fill_color '000000'
+        @pdf.text_box legend,
+                      at: [center_x - (legend_width / 2), center_y + (font_size / 2)],
+                      width: legend_width,
+                      height: font_size + 4,
+                      valign: :center
+      end
+    end
+
+    @pdf.stroke_color '000000'
+    @pdf.fill_color '000000'
+  end
+
   # Diagnostic grid overlay - draws red dots at grid intersections with numbered labels
   # Call this after drawing page content to overlay a diagnostic grid
   # Set DEBUG_GRID = false to disable all diagnostic grids
@@ -327,36 +480,17 @@ class PlannerGenerator
   end
 
   def draw_season_grid(season, start_col, start_row, width_boxes)
-    # Season box - no background, just border (includes the content area, not the label)
+    # Calculate season height
     height_boxes = calculate_season_height(season[:months].length)
-    season_box = grid_rect(start_col, start_row, width_boxes, height_boxes)
 
-    # Draw border around entire season content area
-    @pdf.stroke_color COLOR_BORDERS
-    @pdf.stroke_rectangle [season_box[:x], season_box[:y]], season_box[:width], season_box[:height]
-    @pdf.stroke_color '000000'
+    # Draw fieldset with legend on left edge (bottom-to-top reading)
+    # Position the fieldset box starting 2 columns to the left (where the label will be)
+    draw_fieldset(start_col - 2, start_row, width_boxes + 2, height_boxes, season[:name],
+                  position: :bottom_right,
+                  font_size: 12,
+                  border_color: COLOR_BORDERS)
 
-    # Rotated season label in reserved column (to the left of content)
-    # Use start_col - 2 to place label in the leftmost reserved column
-    label_box = grid_rect(start_col - 2, start_row, 1, height_boxes)
-
-    # Calculate center point for rotation
-    center_x = label_box[:x] + grid_width(0.5)
-    center_y = label_box[:y] - (label_box[:height] / 2)
-
-    # Rotate +90 degrees (counter-clockwise) so text reads bottom-to-top when page is upright
-    @pdf.rotate(90, origin: [center_x, center_y]) do
-      @pdf.font "Helvetica-Bold", size: 12
-      @pdf.fill_color '000000'
-      @pdf.text_box season[:name],
-                    at: [center_x - (label_box[:height] / 2), center_y],
-                    width: label_box[:height],
-                    height: grid_width(1),
-                    align: :center,
-                    valign: :center
-    end
-
-    # Draw months in the content area (no additional offset needed now)
+    # Draw months in the content area
     current_row = start_row
     season[:months].each do |month|
       draw_month_grid(month, start_col, current_row, width_boxes)
