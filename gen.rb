@@ -878,39 +878,53 @@ class PlannerGenerator
   end
 
   def draw_year_at_glance(title)
-    # Title
+    # Grid-based layout:
+    # - Columns 0-2: Left sidebar (3 boxes)
+    # - Columns 3-41: Content area (39 boxes)
+    # - Column 42: Right sidebar (1 box)
+    # - Header: rows 0-1 (2 boxes)
+    # - Month headers: row 2 (1 box)
+    # - Days: rows 3-52 (50 rows for 31 days ≈ 1.613 rows per day)
+
+    # Content area dimensions
+    content_start_col = 3
+    content_width_boxes = 39  # Columns 3-41 inclusive
+
+    # Header - rows 0-1 (2 boxes, spans from left sidebar to right sidebar)
+    header_box = grid_rect(content_start_col, 0, content_width_boxes, 2)
     @pdf.font "Helvetica-Bold", size: YEAR_TITLE_FONT_SIZE
     @pdf.text_box title,
-                  at: [PAGE_MARGIN_HORIZONTAL, PAGE_HEIGHT - PAGE_MARGIN_TOP],
-                  width: PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2),
-                  align: :center
+                  at: [header_box[:x], header_box[:y]],
+                  width: header_box[:width],
+                  height: header_box[:height],
+                  align: :center,
+                  valign: :center
 
-    # Calculate dimensions
-    usable_height = PAGE_HEIGHT - YEAR_TOP_MARGIN - FOOTER_HEIGHT  # Leave space for title and footer
-    usable_width = PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2)  # Margins
+    # Calculate month column width (12 months across content area)
+    col_width_boxes = content_width_boxes / 12.0  # ≈ 3.25 boxes per month
 
-    # Calculate cell dimensions - 31 rows (max days) + 1 header
-    cell_height = usable_height / YEAR_MAX_ROWS
-    cell_width = usable_width / 12.0
-
-    start_x = PAGE_MARGIN_HORIZONTAL
-    start_y = PAGE_HEIGHT - YEAR_START_Y
-
-    # Draw header row with month names
+    # Month headers - row 2
     @pdf.font "Helvetica-Bold", size: YEAR_MONTH_HEADER_SIZE
-    12.times do |i|
-      month_name = @month_names[i]
-      x = start_x + (i * cell_width)
+    12.times do |month_index|
+      month_name = @month_names[month_index]
+
+      # Calculate column position (start from content_start_col)
+      col_start = content_start_col + (month_index * col_width_boxes)
+      cell_x = grid_x(0) + (col_start * DOT_SPACING)
+      cell_y = grid_y(2)
+      cell_width = col_width_boxes * DOT_SPACING
+      cell_height = grid_height(1)
 
       # Calculate which week contains the 1st of this month
-      first_of_month = Date.new(@year, i + 1, 1)
+      first_of_month = Date.new(@year, month_index + 1, 1)
       first_day_of_year = Date.new(@year, 1, 1)
       days_back = (first_day_of_year.wday + 6) % 7
       year_start_monday = first_day_of_year - days_back
       days_from_start = (first_of_month - year_start_monday).to_i
       week_num = (days_from_start / 7) + 1
 
-      @pdf.bounding_box([x, start_y], width: cell_width, height: cell_height) do
+      # Draw month header cell
+      @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
         @pdf.stroke_color COLOR_BORDERS
         @pdf.stroke_bounds
         @pdf.stroke_color '000000'
@@ -922,34 +936,45 @@ class PlannerGenerator
                       valign: :center
       end
 
-      # Add clickable link using absolute coordinates (not inside bounding box)
-      y_bottom = start_y - cell_height
-      @pdf.link_annotation([x, y_bottom, x + cell_width, start_y],
+      # Add clickable link
+      link_bottom = cell_y - cell_height
+      @pdf.link_annotation([cell_x, link_bottom, cell_x + cell_width, cell_y],
                           Dest: "week_#{week_num}",
                           Border: [0, 0, 0])
     end
 
-    # Draw day grid
+    # Days grid - rows 3-52 (50 rows for 31 days)
+    # Each day gets 50/31 ≈ 1.613 rows
+    day_height_rows = 50.0 / 31.0
+
     @pdf.font "Helvetica", size: YEAR_DAY_SIZE
-    current_y = start_y - cell_height
 
     31.times do |day_index|
       day_num = day_index + 1
+
+      # Calculate this day's row position
+      day_row_start = 3 + (day_index * day_height_rows)
 
       12.times do |month_index|
         month = month_index + 1
         days_in_month = Date.new(@year, month, -1).day
 
-        x = start_x + (month_index * cell_width)
+        # Calculate cell position (start from content_start_col)
+        col_start = content_start_col + (month_index * col_width_boxes)
+        cell_x = grid_x(0) + (col_start * DOT_SPACING)
+        cell_y = grid_y(0) - (day_row_start * DOT_SPACING)
+        cell_width = col_width_boxes * DOT_SPACING
+        cell_height = day_height_rows * DOT_SPACING
 
         # Only draw if this day exists in this month
         if day_num <= days_in_month
-          @pdf.bounding_box([x, current_y], width: cell_width, height: cell_height) do
+          # Draw day cell
+          @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
             @pdf.stroke_color COLOR_BORDERS
             @pdf.stroke_bounds
             @pdf.stroke_color '000000'
 
-            # Add day number in corner
+            # Add day number and abbreviation
             date = Date.new(@year, month, day_num)
             day_abbrev = date.strftime('%a')[0..1]  # Mo, Tu, We, etc.
 
@@ -982,7 +1007,7 @@ class PlannerGenerator
           end
         else
           # Draw empty cell for days that don't exist
-          @pdf.bounding_box([x, current_y], width: cell_width, height: cell_height) do
+          @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
             @pdf.stroke_color COLOR_BORDERS
             @pdf.stroke_bounds
             @pdf.stroke_color '000000'
@@ -992,8 +1017,6 @@ class PlannerGenerator
           end
         end
       end
-
-      current_y -= cell_height
     end
   end
 
