@@ -103,6 +103,11 @@ class PlannerGenerator
   DOT_RADIUS = 0.5
   DOT_GRID_PADDING = 5
 
+  # Grid-based Layout System
+  # Calculate total grid boxes available on page
+  GRID_COLS = (PAGE_WIDTH / DOT_SPACING).floor   # 43 boxes wide
+  GRID_ROWS = (PAGE_HEIGHT / DOT_SPACING).floor  # 55 boxes tall
+
   # Colors
   COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
   COLOR_BORDERS = 'E5E5E5'  # Lighter gray for borders (appears similar to dots despite continuous lines)
@@ -140,6 +145,41 @@ class PlannerGenerator
   end
 
   private
+
+  # Grid coordinate system helpers
+  # Convert grid column (0-based) to x coordinate in points
+  def grid_x(col)
+    col * DOT_SPACING
+  end
+
+  # Convert grid row (0-based from TOP) to y coordinate in points
+  # Row 0 is at the top of the page, row increases downward
+  def grid_y(row)
+    PAGE_HEIGHT - (row * DOT_SPACING)
+  end
+
+  # Get width in points for a given number of grid boxes
+  def grid_width(boxes)
+    boxes * DOT_SPACING
+  end
+
+  # Get height in points for a given number of grid boxes
+  def grid_height(boxes)
+    boxes * DOT_SPACING
+  end
+
+  # Draw a rectangle at grid coordinates
+  # col, row: top-left corner in grid coordinates (row 0 = top)
+  # width_boxes, height_boxes: size in grid boxes
+  def grid_rect(col, row, width_boxes, height_boxes)
+    x = grid_x(col)
+    y = grid_y(row)
+    width = grid_width(width_boxes)
+    height = grid_height(height_boxes)
+
+    # Return as [x, y, width, height] for use in bounding_box or other operations
+    { x: x, y: y, width: width, height: height }
+  end
 
   def setup_destinations
     # We'll add destinations as we create pages
@@ -936,6 +976,22 @@ class PlannerGenerator
       y_pos -= 12
     end
 
+    # 6b. Draw a sample grid-based box at top (row 0-1, full width)
+    # This demonstrates the grid system in action
+    header_box = grid_rect(0, 0, GRID_COLS, 2)
+    @pdf.stroke_color 'FF0000'  # Red to make it visible
+    @pdf.stroke_rectangle [header_box[:x], header_box[:y]], header_box[:width], header_box[:height]
+
+    @pdf.fill_color '000000'
+    @pdf.font "Helvetica", size: 8
+    @pdf.text_box "GRID DEMO: Row 0-1 (2 boxes tall), Cols 0-#{GRID_COLS-1} (full width)",
+                  at: [header_box[:x] + 5, header_box[:y] - 5],
+                  width: header_box[:width] - 10,
+                  height: header_box[:height] - 10,
+                  align: :center,
+                  valign: :center
+    @pdf.stroke_color '000000'
+
     # 7. Add Prawn coordinate system reference in bottom-right area
     # Position in bottom third, right third of page
     ref_x = (PAGE_WIDTH * 2.0 / 3.0) + 10  # Right third, with padding
@@ -953,36 +1009,34 @@ class PlannerGenerator
     @pdf.font "Helvetica", size: 6
     ref_content = [
       "",
+      "GRID LAYOUT SYSTEM:",
+      "  Grid: #{GRID_COLS} cols x #{GRID_ROWS} rows",
+      "  Box size: #{DOT_SPACING.round(2)}pt (5mm)",
+      "  Row 0 = top, Col 0 = left",
+      "",
+      "Grid Methods:",
+      "  grid_x(col) -> x in points",
+      "  grid_y(row) -> y in points",
+      "  grid_width(boxes) -> width",
+      "  grid_height(boxes) -> height",
+      "  grid_rect(col,row,w,h) ->",
+      "    {x:, y:, width:, height:}",
+      "",
       "Coordinate System:",
       "  Origin: Bottom-left (0, 0)",
-      "  +X: Right direction",
-      "  +Y: Up direction",
+      "  +X: Right, +Y: Up",
       "  Page: 612pt × 792pt",
       "",
       "Text Positioning:",
       "  text_box at: [x, y]",
       "  (x, y) = top-left corner",
-      "  y measured from bottom",
       "",
       "Link Annotations:",
       "  [left, bottom, right, top]",
-      "  All coords from page bottom",
-      "",
-      "Common Patterns:",
-      "  Text Y: height - offset",
-      "  Link bottom: y - height",
-      "  Link top: y",
-      "",
-      "Text/Link Offsets Used:",
-      "  Sidebar text: y_top",
-      "  Sidebar link bottom: y_top - height",
-      "  Right sidebar: rotated -90°",
-      "  Nav links: same pattern",
       "",
       "Bounding Boxes:",
       "  Set local origin to [x, y]",
-      "  Coords inside are relative",
-      "  Links inside use local coords"
+      "  Coords inside are relative"
     ]
 
     ref_y_pos = ref_y - 15
