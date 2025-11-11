@@ -53,8 +53,9 @@ class PlannerGenerator
   WEEKLY_NOTES_SECTION_PERCENT = 0.65  # 65% of usable height
 
   # Weekly Page - Sidebar (vertical week navigation with months)
-  WEEKLY_SIDEBAR_WIDTH = 50
-  WEEKLY_SIDEBAR_X = 40
+  WEEKLY_SIDEBAR_X = 5  # Distance from left edge of page
+  WEEKLY_SIDEBAR_WIDTH = 25  # Width of sidebar (narrowed to save space)
+  WEEKLY_SIDEBAR_GAP = 5  # Gap between sidebar and main content
   WEEKLY_SIDEBAR_FONT_SIZE = 7
   WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
@@ -439,7 +440,7 @@ class PlannerGenerator
     daily_section_height = usable_height * WEEKLY_DAILY_SECTION_PERCENT
     notes_section_height = usable_height * WEEKLY_NOTES_SECTION_PERCENT
 
-    start_x = WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH
+    start_x = WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH + WEEKLY_SIDEBAR_GAP
     start_y = PAGE_HEIGHT - PAGE_MARGIN_TOP
     content_width = PAGE_WIDTH - start_x - PAGE_MARGIN_HORIZONTAL  # Available width excluding sidebar and right margin
 
