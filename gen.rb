@@ -97,8 +97,9 @@ class PlannerGenerator
   DOT_GRID_PADDING = 5
 
   # Colors
-  COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots and borders
-  COLOR_SECTION_HEADERS = '999999'  # Slightly darker gray for section headers
+  COLOR_DOT_GRID = 'CCCCCC'  # Light gray for dots
+  COLOR_BORDERS = 'E5E5E5'  # Lighter gray for borders (appears similar to dots despite continuous lines)
+  COLOR_SECTION_HEADERS = 'AAAAAA'  # Muted gray for section headers
 
   # Footer
   FOOTER_LINE_Y_OFFSET = 2
@@ -321,7 +322,7 @@ class PlannerGenerator
       week_num = (days_from_start / 7) + 1
 
       @pdf.bounding_box([x, start_y], width: cell_width, height: cell_height) do
-        @pdf.stroke_color COLOR_DOT_GRID
+        @pdf.stroke_color COLOR_BORDERS
         @pdf.stroke_bounds
         @pdf.stroke_color '000000'
         @pdf.text_box month_name[0..2],
@@ -355,7 +356,7 @@ class PlannerGenerator
         # Only draw if this day exists in this month
         if day_num <= days_in_month
           @pdf.bounding_box([x, current_y], width: cell_width, height: cell_height) do
-            @pdf.stroke_color COLOR_DOT_GRID
+            @pdf.stroke_color COLOR_BORDERS
             @pdf.stroke_bounds
             @pdf.stroke_color '000000'
 
@@ -393,7 +394,7 @@ class PlannerGenerator
         else
           # Draw empty cell for days that don't exist
           @pdf.bounding_box([x, current_y], width: cell_width, height: cell_height) do
-            @pdf.stroke_color COLOR_DOT_GRID
+            @pdf.stroke_color COLOR_BORDERS
             @pdf.stroke_bounds
             @pdf.stroke_color '000000'
             @pdf.fill_color 'EEEEEE'
@@ -520,7 +521,7 @@ class PlannerGenerator
       x = start_x + (i * column_width)
 
       @pdf.bounding_box([x, daily_start_y], width: column_width, height: daily_section_height) do
-        @pdf.stroke_color COLOR_DOT_GRID
+        @pdf.stroke_color COLOR_BORDERS
         @pdf.stroke_bounds
         @pdf.stroke_color '000000'
 
@@ -540,7 +541,7 @@ class PlannerGenerator
 
         WEEKLY_DAY_LINES_COUNT.to_i.times do |line_num|
           y_pos = line_start_y - (line_num * line_spacing)
-          @pdf.stroke_color COLOR_DOT_GRID
+          @pdf.stroke_color COLOR_BORDERS
           @pdf.stroke_horizontal_line WEEKLY_DAY_LINE_MARGIN, column_width - WEEKLY_DAY_LINE_MARGIN, at: y_pos
           @pdf.stroke_color '000000'
         end
@@ -562,7 +563,7 @@ class PlannerGenerator
     @pdf.bounding_box([start_x, notes_start_y],
                      width: cue_column_width,
                      height: main_notes_height) do
-      @pdf.stroke_color COLOR_DOT_GRID
+      @pdf.stroke_color COLOR_BORDERS
       @pdf.stroke_bounds
       @pdf.stroke_color '000000'
       @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
@@ -576,7 +577,7 @@ class PlannerGenerator
     @pdf.bounding_box([start_x + cue_column_width, notes_start_y],
                      width: notes_column_width,
                      height: main_notes_height) do
-      @pdf.stroke_color COLOR_DOT_GRID
+      @pdf.stroke_color COLOR_BORDERS
       @pdf.stroke_bounds
       @pdf.stroke_color '000000'
       @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
@@ -591,7 +592,7 @@ class PlannerGenerator
     @pdf.bounding_box([start_x, summary_start_y],
                      width: cue_column_width + notes_column_width,
                      height: summary_height) do
-      @pdf.stroke_color COLOR_DOT_GRID
+      @pdf.stroke_color COLOR_BORDERS
       @pdf.stroke_bounds
       @pdf.stroke_color '000000'
       @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_LABEL_FONT_SIZE
