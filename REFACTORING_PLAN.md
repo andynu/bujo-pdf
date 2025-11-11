@@ -22,22 +22,32 @@ Transform the monolithic generator script into a well-structured gem with:
 - [ ] Create executable/CLI entry point
 
 ### 2. Extract Low-Level Utilities
-- [ ] Create `GridSystem` class for grid coordinate helpers
-  - [ ] `grid_x(col)`, `grid_y(row)` methods
-  - [ ] `grid_width(boxes)`, `grid_height(boxes)` methods
-  - [ ] `grid_rect(col, row, width, height)` method
-  - [ ] Grid constants (DOT_SPACING, GRID_COLS, GRID_ROWS)
-- [ ] Create `Diagnostics` module for debug tools
-  - [ ] `draw_diagnostic_grid(label_every:)` method
-  - [ ] Grid overlay rendering
-  - [ ] Coordinate labels
-- [ ] Create `DotGrid` module for dot grid rendering
-  - [ ] `draw_dot_grid(width, height)` method
-  - [ ] Dot positioning and styling
-- [ ] Create `Styling` module for color/font constants
-  - [ ] Color definitions (borders, weekends, section headers, etc.)
-  - [ ] Font size constants
-  - [ ] Spacing constants
+- [x] Create `GridSystem` class for grid coordinate helpers
+  - [x] `grid_x(col)`, `grid_y(row)` methods
+  - [x] `grid_width(boxes)`, `grid_height(boxes)` methods
+  - [x] `grid_rect(col, row, width, height)` method
+  - [x] Grid constants (DOT_SPACING, GRID_COLS, GRID_ROWS)
+- [x] Create `Diagnostics` module for debug tools
+  - [x] `draw_diagnostic_grid(label_every:)` method
+  - [x] Grid overlay rendering
+  - [x] Coordinate labels
+- [x] Create `DotGrid` module for dot grid rendering
+  - [x] `draw_dot_grid(width, height)` method
+  - [x] Dot positioning and styling
+- [x] Create `Styling` module for color/font constants
+  - [x] Color definitions (borders, weekends, section headers, etc.)
+  - [x] Font size constants
+  - [x] Spacing constants
+
+**Status**: ✅ Completed 2025-11-11 (Plan 01)
+- Created `lib/bujo_pdf/utilities/styling.rb`
+- Created `lib/bujo_pdf/utilities/grid_system.rb`
+- Created `lib/bujo_pdf/utilities/dot_grid.rb`
+- Created `lib/bujo_pdf/utilities/diagnostics.rb`
+- Updated PlannerGenerator with backward compatibility layer
+- Added unit tests (20 tests, 86 assertions, all passing)
+- Verified PDF generation working correctly (58 pages)
+- Commit: bf128fc on branch `extract-low-level-utilities`
 
 ### 3. Extract Components into Separate Classes
 - [ ] Create `Component` base class
