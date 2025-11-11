@@ -132,6 +132,7 @@ class PlannerGenerator
       generate_year_at_glance_events
       generate_year_at_glance_highlights
       generate_weekly_pages
+      generate_dot_grid_page
 
       puts "Generated planner with #{pdf.page_count} pages"
     end
@@ -796,6 +797,17 @@ class PlannerGenerator
     end
 
     @pdf.fill_color '000000'
+  end
+
+  def generate_dot_grid_page
+    @pdf.start_new_page
+
+    # Draw sidebars
+    draw_week_sidebar(nil, calculate_total_weeks)
+    draw_right_sidebar
+
+    # Draw full page dot grid
+    draw_dot_grid(PAGE_WIDTH, PAGE_HEIGHT)
   end
 
   def draw_footer
