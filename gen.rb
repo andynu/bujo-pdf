@@ -807,11 +807,13 @@ class PlannerGenerator
                     height: 20,
                     align: :right
 
-      # Add clickable link area - shifted down to align with right-aligned text
-      # Right-aligned text appears at the far end of the box, so shift link down by ~30pt
-      link_offset = 30  # Adjust this to fine-tune alignment
-      @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, bottom_y - 20 + link_offset,
-                            WEEKLY_RIGHT_SIDEBAR_LINK_X + WEEKLY_RIGHT_SIDEBAR_WIDTH, bottom_y + link_offset],
+      # Add clickable link area in rotated space
+      # In rotated coords: need to SUBTRACT from Y to move down the page
+      # Link box should be tall (along Y in rotated space) and narrow (along X)
+      link_offset = -30  # Negative to move DOWN the page in rotated space
+      text_width = 25  # Approximate width of "Dots" text
+      @pdf.link_annotation([WEEKLY_RIGHT_SIDEBAR_LINK_X, bottom_y + link_offset - text_width,
+                            WEEKLY_RIGHT_SIDEBAR_LINK_X + 20, bottom_y + link_offset],
                           Dest: "dots",
                           Border: [0, 0, 0])
     end
