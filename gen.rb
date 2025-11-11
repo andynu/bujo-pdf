@@ -131,7 +131,7 @@ class PlannerGenerator
   end
 
   def generate_seasonal_calendar
-    @pdf.start_new_page
+    # Don't call start_new_page - Prawn creates the first page automatically
     @pdf.add_dest("seasonal", @pdf.dest_fit)
 
     draw_seasonal_calendar
