@@ -266,6 +266,9 @@ class PlannerGenerator
 
     draw_seasonal_calendar
     draw_footer
+
+    # Draw diagnostic grid overlay (when DEBUG_GRID is enabled)
+    draw_diagnostic_grid(label_every: 5)
   end
 
   def draw_seasonal_calendar
