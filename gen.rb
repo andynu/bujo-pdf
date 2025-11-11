@@ -1339,24 +1339,53 @@ class PlannerGenerator
     end
   end
 
+  # Draw right sidebar navigation with automatic tab positioning
+  # Accepts lists of top-aligned and bottom-aligned menu items
+  # Automatically calculates row positions and stacks tabs accordingly
+  #
+  # top_tabs: array of {label:, dest:} hashes (stack top-to-bottom, left-aligned)
+  # bottom_tabs: array of {label:, dest:} hashes (stack bottom-to-top, right-aligned)
+  # start_row: starting row for top tabs (default: 1)
+  # tab_height: height of each tab in boxes (default: 3)
+  # sidebar_col: column position for tabs (default: 42)
+  #
+  # Example:
+  #   draw_right_sidebar_nav(
+  #     top_tabs: [
+  #       { label: "Year", dest: "seasonal" },
+  #       { label: "Events", dest: "year_events" }
+  #     ],
+  #     bottom_tabs: [
+  #       { label: "Dots", dest: "dots" }
+  #     ]
+  #   )
+  def draw_right_sidebar_nav(top_tabs: [], bottom_tabs: [], start_row: 1, tab_height: 3, sidebar_col: 42)
+    # Draw top-aligned tabs (stack downward from start_row)
+    top_tabs.each_with_index do |tab, idx|
+      row = start_row + (idx * tab_height)
+      draw_right_nav_tab(sidebar_col, row, tab_height, tab[:label], tab[:dest], align: :left)
+    end
+
+    # Draw bottom-aligned tabs (stack upward from bottom)
+    bottom_tabs.each_with_index do |tab, idx|
+      # Start from bottommost position and work upward
+      row = GRID_ROWS - tab_height - (idx * tab_height)
+      draw_right_nav_tab(sidebar_col, row, tab_height, tab[:label], tab[:dest], align: :right)
+    end
+  end
+
   def draw_right_sidebar
-    # Grid-based right sidebar using the high-level draw_right_nav_tab helper
-    # Position: Column 42 (rightmost visible column), 1 box wide
-    # Each tab: 3 boxes tall with 0.5 box padding
-
-    sidebar_col = 42
-    tab_height = 3
-
-    # Top tabs (left-aligned): Year, Events, Highlights
-    # Start at row 3 to give clearance from top edge
-    draw_right_nav_tab(sidebar_col, 3, tab_height, "Year", "seasonal", align: :left)
-    draw_right_nav_tab(sidebar_col, 6, tab_height, "Events", "year_events", align: :left)
-    draw_right_nav_tab(sidebar_col, 9, tab_height, "Highlights", "year_highlights", align: :left)
-
-    # Bottom tab (right-aligned): Dots
-    # Position in the absolute bottommost 3 boxes (rows 52-54)
-    bottom_row = GRID_ROWS - 3
-    draw_right_nav_tab(sidebar_col, bottom_row, tab_height, "Dots", "dots", align: :right)
+    # Grid-based right sidebar using declarative menu lists
+    draw_right_sidebar_nav(
+      top_tabs: [
+        { label: "Year", dest: "seasonal" },
+        { label: "Events", dest: "year_events" },
+        { label: "Highlights", dest: "year_highlights" }
+      ],
+      bottom_tabs: [
+        { label: "Dots", dest: "dots" }
+      ]
+    )
   end
 
   def generate_reference_page
