@@ -3,9 +3,101 @@ require 'prawn'
 require 'date'
 
 class PlannerGenerator
+  # Page dimensions
   PAGE_WIDTH = 612    # 8.5 inches
   PAGE_HEIGHT = 792   # 11 inches
+
+  # Global layout
+  PAGE_MARGIN_HORIZONTAL = 40
+  PAGE_MARGIN_TOP = 40
   FOOTER_HEIGHT = 25
+  FOOTER_CLEARANCE = 10  # Extra space above footer
+
+  # Seasonal Calendar Layout
+  SEASONAL_TITLE_FONT_SIZE = 18
+  SEASONAL_TITLE_Y_OFFSET = 40
+  SEASONAL_GRID_MARGIN = 120
+  SEASONAL_GRID_TOP_MARGIN = 140
+  SEASONAL_GRID_X_OFFSET = 60
+  SEASONAL_GRID_Y_OFFSET = 100
+  SEASONAL_SEASON_HEADER_SIZE = 14
+  SEASONAL_SEASON_HEADER_HEIGHT = 20
+  SEASONAL_SEASON_SPACING = 30
+  SEASONAL_MONTH_NAME_SIZE = 10
+  SEASONAL_MONTH_NAME_DISPLAY_SIZE = 9
+  SEASONAL_MONTH_NAME_X_OFFSET = 5
+  SEASONAL_MONTH_NAME_Y_OFFSET = 2
+  SEASONAL_MONTH_NAME_HEIGHT = 15
+  SEASONAL_CAL_WIDTH_OFFSET = 40
+  SEASONAL_CAL_HEIGHT_OFFSET = 20
+  SEASONAL_CAL_X_START = 35
+  SEASONAL_CAL_Y_HEADER = 17
+  SEASONAL_CAL_Y_DAYS = 25
+  SEASONAL_DAY_HEADER_SIZE = 6
+  SEASONAL_DAY_SIZE = 7
+
+  # Year at Glance Layout
+  YEAR_TITLE_FONT_SIZE = 16
+  YEAR_TOP_MARGIN = 80
+  YEAR_START_Y = 100
+  YEAR_MAX_ROWS = 32.0  # 31 days + 1 header
+  YEAR_MONTH_HEADER_SIZE = 8
+  YEAR_DAY_SIZE = 6
+  YEAR_DAY_ABBREV_SIZE = 5
+  YEAR_DAY_NUMBER_OFFSET = 2
+  YEAR_DAY_ABBREV_HEIGHT = 8
+
+  # Weekly Page - Overall Layout
+  WEEKLY_TOP_MARGIN = 80
+  WEEKLY_DAILY_SECTION_PERCENT = 0.35  # 35% of usable height
+  WEEKLY_NOTES_SECTION_PERCENT = 0.65  # 65% of usable height
+
+  # Weekly Page - Sidebar (vertical week navigation)
+  WEEKLY_SIDEBAR_WIDTH = 30
+  WEEKLY_SIDEBAR_X = 40
+  WEEKLY_SIDEBAR_FONT_SIZE = 7
+
+  # Weekly Page - Top Navigation Area
+  WEEKLY_NAV_HEIGHT = 20
+  WEEKLY_NAV_YEAR_WIDTH = 60
+  WEEKLY_NAV_YEAR_X_OFFSET = 0  # Offset from content start
+  WEEKLY_NAV_PREV_WEEK_WIDTH = 60
+  WEEKLY_NAV_PREV_WEEK_X_OFFSET = 70
+  WEEKLY_NAV_NEXT_WEEK_WIDTH = 60
+  WEEKLY_TITLE_FONT_SIZE = 14
+  WEEKLY_TITLE_X_OFFSET = 140  # Space for nav links on left
+  WEEKLY_TITLE_X_RESERVED = 210  # Total space reserved for nav (left + right)
+
+  # Weekly Page - Daily Section (top 35%)
+  WEEKLY_DAILY_TOP_SPACING = 40  # Space below title
+  WEEKLY_DAY_HEADER_FONT_SIZE = 9
+  WEEKLY_DAY_DATE_FONT_SIZE = 8
+  WEEKLY_DAY_HEADER_HEIGHT = 30
+  WEEKLY_DAY_HEADER_PADDING = 2
+  WEEKLY_DAY_LINES_START = 35  # Y offset where lines start
+  WEEKLY_DAY_LINES_PADDING = 40  # Bottom padding for lines
+  WEEKLY_DAY_LINES_COUNT = 4.0
+  WEEKLY_DAY_LINE_MARGIN = 3
+
+  # Weekly Page - Cornell Notes Section (bottom 65%)
+  WEEKLY_NOTES_TOP_GAP = 10  # Gap between daily and notes sections
+  WEEKLY_CUES_WIDTH_PERCENT = 0.25  # 25% of width
+  WEEKLY_NOTES_WIDTH_PERCENT = 0.75  # 75% of width
+  WEEKLY_SUMMARY_HEIGHT_PERCENT = 0.20  # 20% of notes section height
+  WEEKLY_SUMMARY_TOP_GAP = 5
+  WEEKLY_NOTES_HEADER_FONT_SIZE = 10
+  WEEKLY_NOTES_LABEL_FONT_SIZE = 9
+
+  # Dot Grid
+  DOT_SPACING = 14.17  # 5mm in points
+  DOT_RADIUS = 0.5
+  DOT_GRID_PADDING = 5
+
+  # Footer
+  FOOTER_LINE_Y_OFFSET = 2
+  FOOTER_FONT_SIZE = 10
+  FOOTER_TEXT_HEIGHT = 15
+  FOOTER_TEXT_Y_OFFSET = 5
 
   def initialize(year)
     @year = year
@@ -45,10 +137,10 @@ class PlannerGenerator
 
   def draw_seasonal_calendar
     # Title
-    @pdf.font "Helvetica-Bold", size: 18
+    @pdf.font "Helvetica-Bold", size: SEASONAL_TITLE_FONT_SIZE
     @pdf.text_box "Year #{@year}",
-                  at: [40, PAGE_HEIGHT - 40],
-                  width: PAGE_WIDTH - 80,
+                  at: [PAGE_MARGIN_HORIZONTAL, PAGE_HEIGHT - SEASONAL_TITLE_Y_OFFSET],
+                  width: PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2),
                   align: :center
 
     # Define seasons with their months
@@ -60,15 +152,15 @@ class PlannerGenerator
     ]
 
     # Layout: 2x2 grid
-    grid_width = (PAGE_WIDTH - 120) / 2.0
-    grid_height = (PAGE_HEIGHT - 140 - FOOTER_HEIGHT) / 2.0
+    grid_width = (PAGE_WIDTH - SEASONAL_GRID_MARGIN) / 2.0
+    grid_height = (PAGE_HEIGHT - SEASONAL_GRID_TOP_MARGIN - FOOTER_HEIGHT) / 2.0
 
     seasons.each_with_index do |season, idx|
       row = idx / 2
       col = idx % 2
 
-      x = 60 + (col * grid_width)
-      y = PAGE_HEIGHT - 100 - (row * grid_height)
+      x = SEASONAL_GRID_X_OFFSET + (col * grid_width)
+      y = PAGE_HEIGHT - SEASONAL_GRID_Y_OFFSET - (row * grid_height)
 
       draw_season_section(season, x, y, grid_width, grid_height)
     end
@@ -76,31 +168,31 @@ class PlannerGenerator
 
   def draw_season_section(season, x, y, width, height)
     # Season header
-    @pdf.font "Helvetica-Bold", size: 14
+    @pdf.font "Helvetica-Bold", size: SEASONAL_SEASON_HEADER_SIZE
     @pdf.text_box season[:name],
                   at: [x, y],
                   width: width,
-                  height: 20,
+                  height: SEASONAL_SEASON_HEADER_HEIGHT,
                   align: :center
 
     # Draw mini calendars for each month in this season
-    month_height = (height - 30) / season[:months].length.to_f
+    month_height = (height - SEASONAL_SEASON_SPACING) / season[:months].length.to_f
 
     season[:months].each_with_index do |month, idx|
-      month_y = y - 30 - (idx * month_height)
+      month_y = y - SEASONAL_SEASON_SPACING - (idx * month_height)
       draw_mini_month_calendar(month, x, month_y, width, month_height)
     end
   end
 
   def draw_mini_month_calendar(month, x, y, width, height)
     # Month name
-    @pdf.font "Helvetica-Bold", size: 10
+    @pdf.font "Helvetica-Bold", size: SEASONAL_MONTH_NAME_SIZE
     month_name = @month_names[month - 1]
     @pdf.text_box month_name,
-                  at: [x + 5, y - 2],
-                  width: width - 10,
-                  height: 15,
-                  size: 9
+                  at: [x + SEASONAL_MONTH_NAME_X_OFFSET, y - SEASONAL_MONTH_NAME_Y_OFFSET],
+                  width: width - (SEASONAL_MONTH_NAME_X_OFFSET * 2),
+                  height: SEASONAL_MONTH_NAME_HEIGHT,
+                  size: SEASONAL_MONTH_NAME_DISPLAY_SIZE
 
     # Get calendar info
     first_day = Date.new(@year, month, 1)
@@ -114,25 +206,25 @@ class PlannerGenerator
     start_col = (start_wday + 6) % 7
 
     # Calculate dimensions
-    cal_width = width - 40
-    cal_height = height - 20
+    cal_width = width - SEASONAL_CAL_WIDTH_OFFSET
+    cal_height = height - SEASONAL_CAL_HEIGHT_OFFSET
     col_width = cal_width / 7.0
     row_height = cal_height / 6.0  # Max 6 rows needed
 
     # Draw day headers (M T W T F S S)
-    @pdf.font "Helvetica", size: 6
+    @pdf.font "Helvetica", size: SEASONAL_DAY_HEADER_SIZE
     day_names = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
     day_names.each_with_index do |day, i|
       @pdf.text_box day,
-                    at: [x + 35 + (i * col_width), y - 17],
+                    at: [x + SEASONAL_CAL_X_START + (i * col_width), y - SEASONAL_CAL_Y_HEADER],
                     width: col_width,
                     height: 10,
                     align: :center,
-                    size: 6
+                    size: SEASONAL_DAY_HEADER_SIZE
     end
 
     # Draw days
-    @pdf.font "Helvetica", size: 7
+    @pdf.font "Helvetica", size: SEASONAL_DAY_SIZE
     row = 0
     col = start_col
 
@@ -148,8 +240,8 @@ class PlannerGenerator
       days_from_start = (date - year_start_monday).to_i
       week_num = (days_from_start / 7) + 1
 
-      cell_x = x + 35 + (col * col_width)
-      cell_y = y - 25 - (row * row_height)
+      cell_x = x + SEASONAL_CAL_X_START + (col * col_width)
+      cell_y = y - SEASONAL_CAL_Y_DAYS - (row * row_height)
 
       @pdf.text_box day.to_s,
                     at: [cell_x, cell_y],
@@ -157,7 +249,7 @@ class PlannerGenerator
                     height: row_height,
                     align: :center,
                     valign: :center,
-                    size: 7
+                    size: SEASONAL_DAY_SIZE
 
       # Add link for this day
       @pdf.link_annotation([cell_x, cell_y - row_height, cell_x + col_width, cell_y],
@@ -190,25 +282,25 @@ class PlannerGenerator
 
   def draw_year_at_glance(title)
     # Title
-    @pdf.font "Helvetica-Bold", size: 16
+    @pdf.font "Helvetica-Bold", size: YEAR_TITLE_FONT_SIZE
     @pdf.text_box title,
-                  at: [40, PAGE_HEIGHT - 40],
-                  width: PAGE_WIDTH - 80,
+                  at: [PAGE_MARGIN_HORIZONTAL, PAGE_HEIGHT - PAGE_MARGIN_TOP],
+                  width: PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2),
                   align: :center
 
     # Calculate dimensions
-    usable_height = PAGE_HEIGHT - 80 - FOOTER_HEIGHT  # Leave space for title and footer
-    usable_width = PAGE_WIDTH - 80  # Margins
+    usable_height = PAGE_HEIGHT - YEAR_TOP_MARGIN - FOOTER_HEIGHT  # Leave space for title and footer
+    usable_width = PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2)  # Margins
 
     # Calculate cell dimensions - 31 rows (max days) + 1 header
-    cell_height = usable_height / 32.0
+    cell_height = usable_height / YEAR_MAX_ROWS
     cell_width = usable_width / 12.0
 
-    start_x = 40
-    start_y = PAGE_HEIGHT - 100
+    start_x = PAGE_MARGIN_HORIZONTAL
+    start_y = PAGE_HEIGHT - YEAR_START_Y
 
     # Draw header row with month names
-    @pdf.font "Helvetica-Bold", size: 8
+    @pdf.font "Helvetica-Bold", size: YEAR_MONTH_HEADER_SIZE
     12.times do |i|
       month_name = @month_names[i]
       x = start_x + (i * cell_width)
@@ -239,7 +331,7 @@ class PlannerGenerator
     end
 
     # Draw day grid
-    @pdf.font "Helvetica", size: 6
+    @pdf.font "Helvetica", size: YEAR_DAY_SIZE
     current_y = start_y - cell_height
 
     31.times do |day_index|
@@ -261,18 +353,18 @@ class PlannerGenerator
             day_abbrev = date.strftime('%a')[0..1]  # Mo, Tu, We, etc.
 
             @pdf.text_box "#{day_num}",
-                         at: [2, cell_height - 2],
-                         width: cell_width - 4,
-                         height: cell_height - 4,
-                         size: 6,
+                         at: [YEAR_DAY_NUMBER_OFFSET, cell_height - YEAR_DAY_NUMBER_OFFSET],
+                         width: cell_width - (YEAR_DAY_NUMBER_OFFSET * 2),
+                         height: cell_height - (YEAR_DAY_NUMBER_OFFSET * 2),
+                         size: YEAR_DAY_SIZE,
                          overflow: :shrink_to_fit
 
             # Add day of week abbreviation
             @pdf.text_box day_abbrev,
-                         at: [2, 8],
-                         width: cell_width - 4,
-                         height: 8,
-                         size: 5,
+                         at: [YEAR_DAY_NUMBER_OFFSET, YEAR_DAY_ABBREV_HEIGHT],
+                         width: cell_width - (YEAR_DAY_NUMBER_OFFSET * 2),
+                         height: YEAR_DAY_ABBREV_HEIGHT,
+                         size: YEAR_DAY_ABBREV_SIZE,
                          style: :italic,
                          overflow: :shrink_to_fit
 
@@ -341,30 +433,29 @@ class PlannerGenerator
     end_date = start_date + 6
 
     # Calculate dimensions per spec
-    footer_clearance = FOOTER_HEIGHT + 10  # Extra space above footer
-    usable_height = PAGE_HEIGHT - 80 - footer_clearance  # 80pt for title/margins
-    daily_section_height = usable_height * 0.35  # 35% for daily section
-    notes_section_height = usable_height * 0.65  # 65% for Cornell notes
+    footer_clearance = FOOTER_HEIGHT + FOOTER_CLEARANCE  # Extra space above footer
+    usable_height = PAGE_HEIGHT - WEEKLY_TOP_MARGIN - footer_clearance
+    daily_section_height = usable_height * WEEKLY_DAILY_SECTION_PERCENT
+    notes_section_height = usable_height * WEEKLY_NOTES_SECTION_PERCENT
 
-    sidebar_width = 30
-    start_x = 40 + sidebar_width
-    start_y = PAGE_HEIGHT - 40
-    content_width = PAGE_WIDTH - start_x - 40  # Available width excluding sidebar and right margin
+    start_x = WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH
+    start_y = PAGE_HEIGHT - PAGE_MARGIN_TOP
+    content_width = PAGE_WIDTH - start_x - PAGE_MARGIN_HORIZONTAL  # Available width excluding sidebar and right margin
 
     # Draw week sidebar on the left
     draw_week_sidebar(week_num, total_weeks)
 
     # Navigation: "< 2025" link on the left (in gray)
-    @pdf.font "Helvetica", size: 10
-    nav_height = 20
+    @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
     @pdf.fill_color '888888'
     @pdf.text_box "< #{@year}",
-                  at: [start_x, start_y],
-                  width: 60,
-                  height: nav_height
+                  at: [start_x + WEEKLY_NAV_YEAR_X_OFFSET, start_y],
+                  width: WEEKLY_NAV_YEAR_WIDTH,
+                  height: WEEKLY_NAV_HEIGHT
     @pdf.fill_color '000000'
     # Link rect: [left, bottom, right, top]
-    @pdf.link_annotation([start_x, start_y - nav_height, start_x + 60, start_y],
+    @pdf.link_annotation([start_x + WEEKLY_NAV_YEAR_X_OFFSET, start_y - WEEKLY_NAV_HEIGHT,
+                          start_x + WEEKLY_NAV_YEAR_X_OFFSET + WEEKLY_NAV_YEAR_WIDTH, start_y],
                         Dest: "year_events",
                         Border: [0, 0, 0])
 
@@ -372,43 +463,44 @@ class PlannerGenerator
     if week_num > 1
       @pdf.fill_color '888888'
       @pdf.text_box "< w#{week_num - 1}",
-                    at: [start_x + 70, start_y],
-                    width: 60,
-                    height: nav_height
+                    at: [start_x + WEEKLY_NAV_PREV_WEEK_X_OFFSET, start_y],
+                    width: WEEKLY_NAV_PREV_WEEK_WIDTH,
+                    height: WEEKLY_NAV_HEIGHT
       @pdf.fill_color '000000'
-      @pdf.link_annotation([start_x + 70, start_y - nav_height, start_x + 130, start_y],
+      @pdf.link_annotation([start_x + WEEKLY_NAV_PREV_WEEK_X_OFFSET, start_y - WEEKLY_NAV_HEIGHT,
+                            start_x + WEEKLY_NAV_PREV_WEEK_X_OFFSET + WEEKLY_NAV_PREV_WEEK_WIDTH, start_y],
                           Dest: "week_#{week_num - 1}",
                           Border: [0, 0, 0])
     end
 
     # Navigation: "w43 >" on the right (if not last week, in gray)
     if week_num < total_weeks
-      next_x = PAGE_WIDTH - start_x - 60
+      next_x = PAGE_WIDTH - start_x - WEEKLY_NAV_NEXT_WEEK_WIDTH
       @pdf.fill_color '888888'
       @pdf.text_box "w#{week_num + 1} >",
                     at: [next_x, start_y],
-                    width: 60,
-                    height: nav_height,
+                    width: WEEKLY_NAV_NEXT_WEEK_WIDTH,
+                    height: WEEKLY_NAV_HEIGHT,
                     align: :right
       @pdf.fill_color '000000'
-      @pdf.link_annotation([next_x, start_y - nav_height, next_x + 60, start_y],
+      @pdf.link_annotation([next_x, start_y - WEEKLY_NAV_HEIGHT, next_x + WEEKLY_NAV_NEXT_WEEK_WIDTH, start_y],
                           Dest: "week_#{week_num + 1}",
                           Border: [0, 0, 0])
     end
 
     # Title (centered)
-    @pdf.font "Helvetica-Bold", size: 14
+    @pdf.font "Helvetica-Bold", size: WEEKLY_TITLE_FONT_SIZE
     @pdf.text_box "Week #{week_num}: #{start_date.strftime('%b %-d')} - #{end_date.strftime('%b %-d, %Y')}",
-                  at: [start_x + 140, start_y],
-                  width: content_width - 210,
+                  at: [start_x + WEEKLY_TITLE_X_OFFSET, start_y],
+                  width: content_width - WEEKLY_TITLE_X_RESERVED,
                   align: :center
 
     # Daily section - 7 columns (Monday through Sunday)
     column_width = content_width / 7.0
-    daily_start_y = start_y - 40
+    daily_start_y = start_y - WEEKLY_DAILY_TOP_SPACING
 
     # Draw day headers and lines
-    @pdf.font "Helvetica-Bold", size: 9
+    @pdf.font "Helvetica-Bold", size: WEEKLY_DAY_HEADER_FONT_SIZE
     7.times do |i|
       date = start_date + i
       day_name = date.strftime('%A')  # Full day name (Monday, Tuesday, etc.)
@@ -419,44 +511,44 @@ class PlannerGenerator
 
         # Day header
         @pdf.text_box "#{day_name}\n#{date.strftime('%-m/%-d')}",
-                     at: [2, daily_section_height - 2],
-                     width: column_width - 4,
-                     height: 30,
+                     at: [WEEKLY_DAY_HEADER_PADDING, daily_section_height - WEEKLY_DAY_HEADER_PADDING],
+                     width: column_width - (WEEKLY_DAY_HEADER_PADDING * 2),
+                     height: WEEKLY_DAY_HEADER_HEIGHT,
                      align: :center,
-                     size: 8
+                     size: WEEKLY_DAY_DATE_FONT_SIZE
 
-        # Draw 4 evenly-spaced lines for notes
-        @pdf.font "Helvetica", size: 6
-        line_start_y = daily_section_height - 35
-        available_space = daily_section_height - 40
-        line_spacing = available_space / 4.0
+        # Draw evenly-spaced lines for notes
+        @pdf.font "Helvetica", size: YEAR_DAY_SIZE
+        line_start_y = daily_section_height - WEEKLY_DAY_LINES_START
+        available_space = daily_section_height - WEEKLY_DAY_LINES_PADDING
+        line_spacing = available_space / WEEKLY_DAY_LINES_COUNT
 
-        4.times do |line_num|
+        WEEKLY_DAY_LINES_COUNT.to_i.times do |line_num|
           y_pos = line_start_y - (line_num * line_spacing)
           @pdf.stroke_color 'CCCCCC'
-          @pdf.stroke_horizontal_line 3, column_width - 3, at: y_pos
+          @pdf.stroke_horizontal_line WEEKLY_DAY_LINE_MARGIN, column_width - WEEKLY_DAY_LINE_MARGIN, at: y_pos
           @pdf.stroke_color '000000'
         end
       end
     end
 
     # Cornell notes section
-    notes_start_y = daily_start_y - daily_section_height - 10
+    notes_start_y = daily_start_y - daily_section_height - WEEKLY_NOTES_TOP_GAP
 
     # Draw Cornell notes layout per spec: 25% cues, 75% notes
-    cue_column_width = content_width * 0.25
-    notes_column_width = content_width * 0.75
-    summary_height = notes_section_height * 0.20  # 20% for summary
-    main_notes_height = notes_section_height - summary_height - 5
+    cue_column_width = content_width * WEEKLY_CUES_WIDTH_PERCENT
+    notes_column_width = content_width * WEEKLY_NOTES_WIDTH_PERCENT
+    summary_height = notes_section_height * WEEKLY_SUMMARY_HEIGHT_PERCENT
+    main_notes_height = notes_section_height - summary_height - WEEKLY_SUMMARY_TOP_GAP
 
-    @pdf.font "Helvetica-Bold", size: 10
+    @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_HEADER_FONT_SIZE
 
     # Cue column
     @pdf.bounding_box([start_x, notes_start_y],
                      width: cue_column_width,
                      height: main_notes_height) do
       @pdf.stroke_bounds
-      @pdf.text "Cues/Questions", align: :center, size: 9
+      @pdf.text "Cues/Questions", align: :center, size: WEEKLY_NOTES_LABEL_FONT_SIZE
       draw_dot_grid(cue_column_width, main_notes_height)
     end
 
@@ -465,58 +557,51 @@ class PlannerGenerator
                      width: notes_column_width,
                      height: main_notes_height) do
       @pdf.stroke_bounds
-      @pdf.text "Notes", align: :center, size: 9
+      @pdf.text "Notes", align: :center, size: WEEKLY_NOTES_LABEL_FONT_SIZE
       draw_dot_grid(notes_column_width, main_notes_height)
     end
 
     # Summary section (spans full width)
-    summary_start_y = notes_start_y - main_notes_height - 5
+    summary_start_y = notes_start_y - main_notes_height - WEEKLY_SUMMARY_TOP_GAP
     @pdf.bounding_box([start_x, summary_start_y],
                      width: cue_column_width + notes_column_width,
                      height: summary_height) do
       @pdf.stroke_bounds
-      @pdf.font "Helvetica-Bold", size: 9
+      @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_LABEL_FONT_SIZE
       @pdf.text "Summary", align: :center
       draw_dot_grid(cue_column_width + notes_column_width, summary_height)
     end
   end
 
   def draw_dot_grid(width, height)
-    # 5mm in points: 5mm = 5/25.4 inches * 72 points/inch ≈ 14.17 points
-    dot_spacing = 14.17
-    dot_radius = 0.5  # Small dot radius in points
-
     @pdf.fill_color 'CCCCCC'
 
     # Calculate starting positions with padding
-    padding = 5
-    start_x = padding
-    start_y = height - padding
+    start_x = DOT_GRID_PADDING
+    start_y = height - DOT_GRID_PADDING
 
     # Draw dots in a grid pattern
     y = start_y
-    while y > padding
+    while y > DOT_GRID_PADDING
       x = start_x
-      while x < width - padding
-        @pdf.fill_circle [x, y], dot_radius
-        x += dot_spacing
+      while x < width - DOT_GRID_PADDING
+        @pdf.fill_circle [x, y], DOT_RADIUS
+        x += DOT_SPACING
       end
-      y -= dot_spacing
+      y -= DOT_SPACING
     end
 
     @pdf.fill_color '000000'
   end
 
   def draw_week_sidebar(current_week_num, total_weeks)
-    sidebar_x = 40
-    sidebar_width = 30
-    start_y = PAGE_HEIGHT - 80
-    usable_height = PAGE_HEIGHT - 80 - FOOTER_HEIGHT
+    start_y = PAGE_HEIGHT - WEEKLY_TOP_MARGIN
+    usable_height = PAGE_HEIGHT - WEEKLY_TOP_MARGIN - FOOTER_HEIGHT
 
     # Calculate spacing for all weeks
     line_height = usable_height / total_weeks.to_f
 
-    @pdf.font "Helvetica", size: 7
+    @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
 
     total_weeks.times do |i|
       week = i + 1
@@ -525,26 +610,26 @@ class PlannerGenerator
 
       if week == current_week_num
         # Current week: bold, no link
-        @pdf.font "Helvetica-Bold", size: 7
+        @pdf.font "Helvetica-Bold", size: WEEKLY_SIDEBAR_FONT_SIZE
         @pdf.fill_color '000000'
         @pdf.text_box "w#{week}",
-                      at: [sidebar_x, y_top],
-                      width: sidebar_width,
+                      at: [WEEKLY_SIDEBAR_X, y_top],
+                      width: WEEKLY_SIDEBAR_WIDTH,
                       height: line_height,
                       align: :center,
                       valign: :center
-        @pdf.font "Helvetica", size: 7
+        @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
       else
         # Other weeks: gray, with link
         @pdf.fill_color '888888'
         @pdf.text_box "w#{week}",
-                      at: [sidebar_x, y_top],
-                      width: sidebar_width,
+                      at: [WEEKLY_SIDEBAR_X, y_top],
+                      width: WEEKLY_SIDEBAR_WIDTH,
                       height: line_height,
                       align: :center,
                       valign: :center
         # Link annotation rect using absolute coordinates: [left, bottom, right, top]
-        @pdf.link_annotation([sidebar_x, y_bottom, sidebar_x + sidebar_width, y_top],
+        @pdf.link_annotation([WEEKLY_SIDEBAR_X, y_bottom, WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH, y_top],
                             Dest: "week_#{week}",
                             Border: [0, 0, 0])
         @pdf.fill_color '000000'
@@ -554,18 +639,17 @@ class PlannerGenerator
 
   def draw_footer
     # Footer with month links at bottom of page
-    footer_y = FOOTER_HEIGHT
-    link_width = (PAGE_WIDTH - 80) / 12.0
-    start_x = 40
+    link_width = (PAGE_WIDTH - (PAGE_MARGIN_HORIZONTAL * 2)) / 12.0
+    start_x = PAGE_MARGIN_HORIZONTAL
 
     # Draw horizontal line
     @pdf.stroke_color 'AAAAAA'
     @pdf.stroke do
-      @pdf.horizontal_line 40, PAGE_WIDTH - 40, at: FOOTER_HEIGHT - 2
+      @pdf.horizontal_line PAGE_MARGIN_HORIZONTAL, PAGE_WIDTH - PAGE_MARGIN_HORIZONTAL, at: FOOTER_HEIGHT - FOOTER_LINE_Y_OFFSET
     end
     @pdf.stroke_color '000000'
 
-    @pdf.font "Helvetica", size: 10
+    @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
 
     12.times do |i|
       x = start_x + (i * link_width)
@@ -585,19 +669,18 @@ class PlannerGenerator
 
       # Draw the month letter in gray
       @pdf.fill_color '888888'
-      text_height = 15
-      text_y = FOOTER_HEIGHT - 5
+      text_y = FOOTER_HEIGHT - FOOTER_TEXT_Y_OFFSET
 
       @pdf.text_box month_letter,
                     at: [x, text_y],
                     width: link_width,
-                    height: text_height,
+                    height: FOOTER_TEXT_HEIGHT,
                     align: :center,
-                    size: 10
+                    size: FOOTER_FONT_SIZE
       @pdf.fill_color '000000'
 
       # Add clickable link using absolute coordinates
-      @pdf.link_annotation([x, text_y - text_height, x + link_width, text_y],
+      @pdf.link_annotation([x, text_y - FOOTER_TEXT_HEIGHT, x + link_width, text_y],
                           Dest: "week_#{week_num}",
                           Border: [0, 0, 0])
     end
