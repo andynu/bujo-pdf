@@ -137,11 +137,38 @@ class PlannerGenerator
 
       # Generate all pages
       generate_seasonal_calendar
+      seasonal_page = pdf.page_number
+
       generate_year_at_glance_events
+      events_page = pdf.page_number
+
       generate_year_at_glance_highlights
+      highlights_page = pdf.page_number
+
       generate_reference_page
+      reference_page = pdf.page_number
+
+      weekly_start_page = pdf.page_number + 1  # Point to first weekly page (next page)
       generate_weekly_pages
+
       generate_dot_grid_page
+      dots_page = pdf.page_number
+
+      # Build PDF outline (table of contents / bookmarks)
+      pdf.outline.define do
+        section "#{@year} Overview", destination: seasonal_page do
+          page destination: seasonal_page, title: 'Seasonal Calendar'
+          page destination: events_page, title: 'Year at a Glance - Events'
+          page destination: highlights_page, title: 'Year at a Glance - Highlights'
+        end
+
+        page destination: weekly_start_page, title: 'Weekly Pages'
+
+        section 'Templates', destination: dots_page do
+          page destination: reference_page, title: 'Grid Reference & Calibration'
+          page destination: dots_page, title: 'Dot Grid'
+        end
+      end
 
       puts "Generated planner with #{pdf.page_count} pages"
     end
@@ -444,35 +471,36 @@ class PlannerGenerator
 
     # Define seasons with their months
     # Each season will have: label column (1 box) + content
-    seasons = [
-      { name: "Winter", months: [1, 2, 3] },     # Jan, Feb, Mar
-      { name: "Spring", months: [4, 5, 6] },     # Apr, May, Jun
-      { name: "Summer", months: [7, 8, 9] },     # Jul, Aug, Sep
-      { name: "Fall", months: [10, 11, 12] }     # Oct, Nov, Dec
-    ]
+    # Need exactly 6 months per column to maintain balance and fit on one page
+    # Multiple season labels needed where seasons span columns
+    # Left column (6 months): Winter (Jan, Feb) + Spring (Mar, Apr, May, Jun)
+    # Right column (6 months): Summer (Jul, Aug) + Fall (Sep, Oct, Nov) + Winter (Dec)
+    # Note: June is grouped with Spring even though summer solstice is June 21
 
-    # Calculate layout: 2 columns, chronological order
-    # Shift everything 2 boxes to the right for seasonal labels
-    # Left column: Jan-Jun (Winter + Spring)
-    # Right column: Jul-Dec (Summer + Fall)
     label_offset = 2  # Reserve 2 boxes on left for seasonal labels
     half_width = (GRID_COLS - label_offset) / 2
 
-    # Winter: top-left (Jan-Mar)
-    winter_row = 2
-    draw_season_grid(seasons[0], label_offset, winter_row, half_width)
+    # Left column (6 months total)
+    # Winter (Jan, Feb): top-left
+    winter_left_row = 2
+    draw_season_grid({ name: "Winter", months: [1, 2] }, label_offset, winter_left_row, half_width)
 
-    # Spring: bottom-left (Apr-Jun, after Winter)
-    spring_row = winter_row + calculate_season_height(seasons[0][:months].length)
-    draw_season_grid(seasons[1], label_offset, spring_row, half_width)
+    # Spring (Mar, Apr, May, Jun): below Winter on left
+    spring_left_row = winter_left_row + calculate_season_height(2)
+    draw_season_grid({ name: "Spring", months: [3, 4, 5, 6] }, label_offset, spring_left_row, half_width)
 
-    # Summer: top-right (Jul-Sep)
+    # Right column (6 months total)
+    # Summer (Jul, Aug): top-right
     summer_row = 2
-    draw_season_grid(seasons[2], label_offset + half_width, summer_row, half_width)
+    draw_season_grid({ name: "Summer", months: [7, 8] }, label_offset + half_width, summer_row, half_width)
 
-    # Fall: bottom-right (Oct-Dec, after Summer)
-    fall_row = summer_row + calculate_season_height(seasons[2][:months].length)
-    draw_season_grid(seasons[3], label_offset + half_width, fall_row, half_width)
+    # Fall (Sep, Oct, Nov): below Summer
+    fall_row = summer_row + calculate_season_height(2)
+    draw_season_grid({ name: "Fall", months: [9, 10, 11] }, label_offset + half_width, fall_row, half_width)
+
+    # Winter (Dec): below Fall
+    winter_right_row = fall_row + calculate_season_height(3)
+    draw_season_grid({ name: "Winter", months: [12] }, label_offset + half_width, winter_right_row, half_width)
   end
 
   def calculate_season_height(num_months)
