@@ -48,7 +48,7 @@ class PlannerGenerator
   YEAR_DAY_ABBREV_HEIGHT = 8
 
   # Weekly Page - Overall Layout
-  WEEKLY_TOP_MARGIN = 20  # Minimal space above title
+  WEEKLY_TOP_MARGIN = 5  # Minimal gutter above title (3-4 pixels)
   WEEKLY_DAILY_SECTION_PERCENT = 0.35  # 35% of usable height
   WEEKLY_NOTES_SECTION_PERCENT = 0.65  # 65% of usable height
 
