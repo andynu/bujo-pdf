@@ -235,7 +235,9 @@ class PlannerGenerator
                     legend_padding: 5,
                     font_size: 12,
                     border_color: COLOR_BORDERS,
-                    inset_boxes: 0.5)
+                    inset_boxes: 0.5,
+                    legend_offset_x: 0,
+                    legend_offset_y: 0)
 
     # Get the outer box (where legend sits)
     box = grid_rect(col, row, width_boxes, height_boxes)
@@ -336,7 +338,7 @@ class PlannerGenerator
       # Draw border with gap for legend on left edge, bottom
       # Legend rotated counter-clockwise (+90°), reads bottom-to-top
       legend_y_start = box[:y] - box[:height] + grid_height(1)  # Inset 1 box from bottom
-      legend_x = box[:x]
+      legend_x = box[:x] + legend_offset_x
 
       # Top edge
       @pdf.stroke_line [border_x, border_y], [border_x + border_width, border_y]
@@ -345,13 +347,13 @@ class PlannerGenerator
       # Bottom edge
       @pdf.stroke_line [border_x + border_width, border_y - border_height], [border_x, border_y - border_height]
       # Left edge: bottom corner to legend start
-      @pdf.stroke_line [border_x, border_y - border_height], [border_x, legend_y_start]
+      @pdf.stroke_line [border_x, border_y - border_height], [border_x, legend_y_start + legend_offset_y]
       # Left edge: legend end to top corner
-      @pdf.stroke_line [border_x, legend_y_start + legend_total_width], [border_x, border_y]
+      @pdf.stroke_line [border_x, legend_y_start + legend_total_width + legend_offset_y], [border_x, border_y]
 
       # Draw legend text (rotated counter-clockwise +90°)
       center_x = legend_x
-      center_y = legend_y_start + legend_padding + (legend_width / 2)
+      center_y = legend_y_start + legend_padding + (legend_width / 2) + legend_offset_y
       @pdf.rotate(90, origin: [center_x, center_y]) do
         @pdf.fill_color '000000'
         @pdf.text_box legend,
@@ -516,11 +518,13 @@ class PlannerGenerator
     # Draw fieldset with legend on left edge (bottom-to-top reading)
     # Position the fieldset box starting 2 columns to the left (where the label will be)
     # Use inset_boxes: 0 to align border with grid box edges (tight spacing)
+    # Offset legend 0.5 boxes to the right for better visual spacing
     draw_fieldset(start_col, start_row, width_boxes, height_boxes, season[:name],
                   position: :bottom_right,
                   font_size: 10,
                   border_color: COLOR_BORDERS,
-                  inset_boxes: 0)
+                  inset_boxes: 0,
+                  legend_offset_x: grid_width(0.5))
 
     # Draw months in the content area
     current_row = start_row
