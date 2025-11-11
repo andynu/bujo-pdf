@@ -186,7 +186,7 @@ class PlannerGenerator
 
   # Component: Fieldset with legend (like HTML <fieldset> and <legend>)
   # Draws a border box with a text label that sits on top of and breaks the border line
-  # The border is inset by 0.5 boxes from the specified box boundaries to center on the legend
+  # The border can be inset from the specified box boundaries (configurable)
   #
   # Parameters:
   #   col, row: top-left corner in grid coordinates (controls legend position)
@@ -196,6 +196,7 @@ class PlannerGenerator
   #   legend_padding: space in points on either side of legend text (default: 5)
   #   font_size: size of legend text (default: 12)
   #   border_color: color of border (default: COLOR_BORDERS)
+  #   inset_boxes: border inset in grid boxes (default: 0.5 to center on legend text, use 0 for edge alignment)
   #
   # Position behaviors:
   #   :top_left - Text horizontal (left-to-right), top edge, slightly inset from left
@@ -206,13 +207,14 @@ class PlannerGenerator
                     position: :top_left,
                     legend_padding: 5,
                     font_size: 12,
-                    border_color: COLOR_BORDERS)
+                    border_color: COLOR_BORDERS,
+                    inset_boxes: 0.5)
 
     # Get the outer box (where legend sits)
     box = grid_rect(col, row, width_boxes, height_boxes)
 
-    # Border is inset by 0.5 boxes from the outer box
-    inset = grid_width(0.5)
+    # Border is inset by specified amount from the outer box
+    inset = grid_width(inset_boxes)
     border_x = box[:x] + inset
     border_y = box[:y] - inset
     border_width = box[:width] - (inset * 2)
@@ -485,10 +487,12 @@ class PlannerGenerator
 
     # Draw fieldset with legend on left edge (bottom-to-top reading)
     # Position the fieldset box starting 2 columns to the left (where the label will be)
+    # Use inset_boxes: 0 to align border with grid box edges (tight spacing)
     draw_fieldset(start_col - 2, start_row, width_boxes + 2, height_boxes, season[:name],
                   position: :bottom_right,
                   font_size: 12,
-                  border_color: COLOR_BORDERS)
+                  border_color: COLOR_BORDERS,
+                  inset_boxes: 0)
 
     # Draw months in the content area
     current_row = start_row
