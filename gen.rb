@@ -545,6 +545,24 @@ class PlannerGenerator
           @pdf.stroke_horizontal_line WEEKLY_DAY_LINE_MARGIN, column_width - WEEKLY_DAY_LINE_MARGIN, at: y_pos
           @pdf.stroke_color '000000'
         end
+
+        # Add time period labels to Monday only
+        if i == 0  # Monday is the first column
+          labels = ['AM', 'PM', 'EVE']
+          @pdf.fill_color COLOR_BORDERS
+          @pdf.font "Helvetica", size: 6
+
+          labels.each_with_index do |label, idx|
+            # Calculate y position for top of each region
+            region_y = line_start_y - (idx * line_spacing) - 2
+            @pdf.text_box label,
+                         at: [3, region_y],
+                         width: 20,
+                         height: 10,
+                         size: 6
+          end
+          @pdf.fill_color '000000'
+        end
       end
     end
 
