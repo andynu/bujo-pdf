@@ -453,7 +453,7 @@ class PlannerGenerator
     notes_section_height = usable_height * WEEKLY_NOTES_SECTION_PERCENT
 
     start_x = WEEKLY_SIDEBAR_X + WEEKLY_SIDEBAR_WIDTH + WEEKLY_SIDEBAR_GAP
-    start_y = PAGE_HEIGHT - PAGE_MARGIN_TOP
+    start_y = PAGE_HEIGHT - WEEKLY_TOP_MARGIN
     content_width = PAGE_WIDTH - start_x - PAGE_MARGIN_HORIZONTAL  # Available width excluding sidebar and right margin
 
     # Draw week sidebar on the left
