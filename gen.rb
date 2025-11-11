@@ -667,12 +667,7 @@ class PlannerGenerator
   end
 
   def draw_footer
-    # Simple footer with just a horizontal line
-    @pdf.stroke_color 'AAAAAA'
-    @pdf.stroke do
-      @pdf.horizontal_line PAGE_MARGIN_HORIZONTAL, PAGE_WIDTH - PAGE_MARGIN_HORIZONTAL, at: FOOTER_HEIGHT - FOOTER_LINE_Y_OFFSET
-    end
-    @pdf.stroke_color '000000'
+    # Footer removed - no longer needed
   end
 end
 
