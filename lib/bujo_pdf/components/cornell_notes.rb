@@ -61,14 +61,16 @@ module BujoPdf
         @pdf.bounding_box([section_box[:x], section_box[:y]],
                          width: section_box[:width],
                          height: section_box[:height]) do
-          @pdf.stroke_color COLOR_BORDERS
-          @pdf.stroke_bounds
-          @pdf.stroke_color '000000'
-          @pdf.font "Helvetica-Bold", size: HEADER_FONT_SIZE
-          @pdf.move_down HEADER_PADDING
-          @pdf.fill_color COLOR_SECTION_HEADERS
-          @pdf.text label, align: :center, size: label_size
-          @pdf.fill_color '000000'
+          with_stroke_color(COLOR_BORDERS) do
+            @pdf.stroke_bounds
+          end
+
+          with_font("Helvetica-Bold", HEADER_FONT_SIZE) do
+            @pdf.move_down HEADER_PADDING
+            with_fill_color(COLOR_SECTION_HEADERS) do
+              @pdf.text label, align: :center, size: label_size
+            end
+          end
         end
       end
 

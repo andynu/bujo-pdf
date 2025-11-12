@@ -55,60 +55,59 @@ module BujoPdf
       end
 
       def draw_year_link(nav_box)
-        @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
-        @pdf.fill_color NAV_COLOR
+        with_font("Helvetica", FOOTER_FONT_SIZE) do
+          with_fill_color(NAV_COLOR) do
+            nav_year_width = @grid.width(4)
+            @pdf.text_box "< #{context[:year]}",
+                          at: [nav_box[:x], nav_box[:y]],
+                          width: nav_year_width,
+                          height: nav_box[:height],
+                          valign: :center
 
-        nav_year_width = @grid.width(4)
-        @pdf.text_box "< #{context[:year]}",
-                      at: [nav_box[:x], nav_box[:y]],
-                      width: nav_year_width,
-                      height: nav_box[:height],
-                      valign: :center
-
-        @pdf.fill_color '000000'
-        @pdf.link_annotation([nav_box[:x], nav_box[:y] - nav_box[:height],
-                              nav_box[:x] + nav_year_width, nav_box[:y]],
-                            Dest: "seasonal",
-                            Border: [0, 0, 0])
+            @pdf.link_annotation([nav_box[:x], nav_box[:y] - nav_box[:height],
+                                  nav_box[:x] + nav_year_width, nav_box[:y]],
+                                Dest: "seasonal",
+                                Border: [0, 0, 0])
+          end
+        end
       end
 
       def draw_prev_week_link(nav_box)
-        @pdf.fill_color NAV_COLOR
+        with_fill_color(NAV_COLOR) do
+          nav_year_width = @grid.width(4)
+          nav_prev_x = nav_box[:x] + nav_year_width + @grid.width(1)
+          nav_prev_width = @grid.width(3)
 
-        nav_year_width = @grid.width(4)
-        nav_prev_x = nav_box[:x] + nav_year_width + @grid.width(1)
-        nav_prev_width = @grid.width(3)
+          @pdf.text_box "< w#{context[:week_num] - 1}",
+                        at: [nav_prev_x, nav_box[:y]],
+                        width: nav_prev_width,
+                        height: nav_box[:height],
+                        valign: :center
 
-        @pdf.text_box "< w#{context[:week_num] - 1}",
-                      at: [nav_prev_x, nav_box[:y]],
-                      width: nav_prev_width,
-                      height: nav_box[:height],
-                      valign: :center
-
-        @pdf.fill_color '000000'
-        @pdf.link_annotation([nav_prev_x, nav_box[:y] - nav_box[:height],
-                              nav_prev_x + nav_prev_width, nav_box[:y]],
-                            Dest: "week_#{context[:week_num] - 1}",
-                            Border: [0, 0, 0])
+          @pdf.link_annotation([nav_prev_x, nav_box[:y] - nav_box[:height],
+                                nav_prev_x + nav_prev_width, nav_box[:y]],
+                              Dest: "week_#{context[:week_num] - 1}",
+                              Border: [0, 0, 0])
+        end
       end
 
       def draw_next_week_link(nav_box)
-        nav_next_width = @grid.width(3)
-        nav_next_x = nav_box[:x] + nav_box[:width] - nav_next_width
+        with_fill_color(NAV_COLOR) do
+          nav_next_width = @grid.width(3)
+          nav_next_x = nav_box[:x] + nav_box[:width] - nav_next_width
 
-        @pdf.fill_color NAV_COLOR
-        @pdf.text_box "w#{context[:week_num] + 1} >",
-                      at: [nav_next_x, nav_box[:y]],
-                      width: nav_next_width,
-                      height: nav_box[:height],
-                      align: :right,
-                      valign: :center
+          @pdf.text_box "w#{context[:week_num] + 1} >",
+                        at: [nav_next_x, nav_box[:y]],
+                        width: nav_next_width,
+                        height: nav_box[:height],
+                        align: :right,
+                        valign: :center
 
-        @pdf.fill_color '000000'
-        @pdf.link_annotation([nav_next_x, nav_box[:y] - nav_box[:height],
-                              nav_next_x + nav_next_width, nav_box[:y]],
-                            Dest: "week_#{context[:week_num] + 1}",
-                            Border: [0, 0, 0])
+          @pdf.link_annotation([nav_next_x, nav_box[:y] - nav_box[:height],
+                                nav_next_x + nav_next_width, nav_box[:y]],
+                              Dest: "week_#{context[:week_num] + 1}",
+                              Border: [0, 0, 0])
+        end
       end
 
       def draw_title(nav_box)

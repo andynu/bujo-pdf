@@ -154,6 +154,92 @@ module BujoPdf
       end
     end
 
+    # Style Context Managers
+    # ----------------------
+    # These helpers manage temporary style changes (colors, fonts) and automatically
+    # restore the previous state after the block executes.
+
+    # Execute block with temporary fill color, then restore previous color.
+    #
+    # This prevents the common bug of setting a color and forgetting to reset it,
+    # which can affect subsequent rendering operations.
+    #
+    # @param color [String] 6-digit hex color code
+    # @yield Block to execute with color applied
+    # @return [void]
+    #
+    # @example Draw gray text without manual reset
+    #   with_fill_color('888888') do
+    #     @pdf.text "Gray text"
+    #   end
+    #   # Color automatically restored to previous value
+    #
+    # @example Nested color changes
+    #   with_fill_color('888888') do
+    #     @pdf.text "Gray"
+    #     with_fill_color('FF0000') do
+    #       @pdf.text "Red"
+    #     end
+    #     @pdf.text "Gray again"
+    #   end
+    def with_fill_color(color)
+      original = @pdf.fill_color
+      @pdf.fill_color color
+      yield
+    ensure
+      @pdf.fill_color original
+    end
+
+    # Execute block with temporary stroke color, then restore previous color.
+    #
+    # @param color [String] 6-digit hex color code
+    # @yield Block to execute with color applied
+    # @return [void]
+    #
+    # @example Draw border with custom color
+    #   with_stroke_color('CCCCCC') do
+    #     @pdf.stroke_bounds
+    #   end
+    def with_stroke_color(color)
+      original = @pdf.stroke_color
+      @pdf.stroke_color color
+      yield
+    ensure
+      @pdf.stroke_color original
+    end
+
+    # Execute block with temporary font settings, then restore previous font.
+    #
+    # @param family [String] Font family name
+    # @param size [Integer, nil] Font size (optional)
+    # @yield Block to execute with font applied
+    # @return [void]
+    #
+    # @example Bold text with automatic restoration
+    #   with_font("Helvetica-Bold", 14) do
+    #     @pdf.text "Bold title"
+    #   end
+    #   # Font automatically restored to previous family and size
+    #
+    # @example Change family only, preserve size
+    #   with_font("Helvetica-Bold") do
+    #     @pdf.text "Bold text at current size"
+    #   end
+    def with_font(family, size = nil)
+      original_family = @pdf.font.family
+      original_size = @pdf.font_size
+
+      if size
+        @pdf.font family, size: size
+      else
+        @pdf.font family
+      end
+
+      yield
+    ensure
+      @pdf.font original_family, size: original_size
+    end
+
     # Convenience method to check if rendering a specific page.
     #
     # This method provides a safe way to check the current page even when

@@ -78,42 +78,40 @@ module BujoPdf
         font_style = is_current ? "Helvetica-Bold" : "Helvetica"
         color = is_current ? '000000' : NAV_COLOR  # Black for current, gray for others
 
-        @pdf.fill_color color
-        @pdf.font font_style, size: FONT_SIZE
+        with_font(font_style, FONT_SIZE) do
+          with_fill_color(color) do
+            # Calculate text area with padding
+            # Top padding (becomes left after rotation): PADDING_BOXES at top
+            # Right padding (to keep text within box): PADDING_BOXES at right
+            text_height_pt = @grid.height(@tab_height - PADDING_BOXES)
+            padding_pt = @grid.height(PADDING_BOXES)
 
-        # Calculate text area with padding
-        # Top padding (becomes left after rotation): PADDING_BOXES at top
-        # Right padding (to keep text within box): PADDING_BOXES at right
-        text_height_pt = @grid.height(@tab_height - PADDING_BOXES)
-        padding_pt = @grid.height(PADDING_BOXES)
+            # Position for rotated text - rotate around center of tab region
+            # Inset from right edge and adjust Y to push text down into box
+            tab_x = @grid.x(@sidebar_col + 1) - padding_pt
+            # Adjust Y center down by full padding to push text into the box with proper top margin
+            tab_y_center = @grid.y(row) - @grid.height(@tab_height / 2.0) - padding_pt
 
-        # Position for rotated text - rotate around center of tab region
-        # Inset from right edge and adjust Y to push text down into box
-        tab_x = @grid.x(@sidebar_col + 1) - padding_pt
-        # Adjust Y center down by full padding to push text into the box with proper top margin
-        tab_y_center = @grid.y(row) - @grid.height(@tab_height / 2.0) - padding_pt
+            # Draw rotated text centered in the tab
+            @pdf.rotate(-90, origin: [tab_x, tab_y_center]) do
+              # Calculate text box position in rotated space
+              text_x = tab_x - (text_height_pt / 2.0) - padding_pt
+              text_y = tab_y_center + (@grid.width(1) / 2.0)
 
-        # Draw rotated text centered in the tab
-        @pdf.rotate(-90, origin: [tab_x, tab_y_center]) do
-          # Calculate text box position in rotated space
-          text_x = tab_x - (text_height_pt / 2.0) - padding_pt
-          text_y = tab_y_center + (@grid.width(1) / 2.0)
+              @pdf.text_box label,
+                            at: [text_x, text_y],
+                            width: text_height_pt,
+                            height: @grid.width(1),
+                            align: align,
+                            valign: :center
+            end
 
-          @pdf.text_box label,
-                        at: [text_x, text_y],
-                        width: text_height_pt,
-                        height: @grid.width(1),
-                        align: align,
-                        valign: :center
+            # Add clickable link for the entire tab region (skip link for current page)
+            unless is_current
+              @grid.link(@sidebar_col, row, 1, @tab_height, dest)
+            end
+          end
         end
-
-        # Add clickable link for the entire tab region (skip link for current page)
-        unless is_current
-          @grid.link(@sidebar_col, row, 1, @tab_height, dest)
-        end
-
-        # Reset fill color
-        @pdf.fill_color '000000'
       end
     end
   end
