@@ -20,8 +20,9 @@ No active plans.
 - **Priority**: Phase 2 - Medium Priority (Enhancement)
 - **Dependencies**: Plan 01, Plan 02, Plan 05 - ALL COMPLETED
 - **Branch**: extract-components
-- **Commits**: 95f6006
+- **Commits**: 95f6006, 5a3f8eb, 9a081dd
 - **Goal**: Implement formal RenderContext class to enable context-aware rendering (e.g., bold highlight current page in right sidebar)
+- **Bonus**: Refactored to use automatic page numbering from Prawn (eliminates manual tracking)
 
 ### Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
 - **File**: `02_extract_components.md`
@@ -45,7 +46,8 @@ No active plans.
    - **Priority**: Phase 2 - Medium Priority (Enhancement)
    - **Dependencies**: Plan 01, Plan 02, Plan 05 - ALL COMPLETED
    - **Branch**: extract-components
-   - **Commits**: 95f6006
+   - **Commits**: 95f6006, 5a3f8eb, 9a081dd
+   - **Bonus**: Automatic page numbering from Prawn
 
 2. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
    - **File**: `02_extract_components.md`
