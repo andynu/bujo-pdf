@@ -1,30 +1,93 @@
 # Plan 02: Extract Components into Reusable Classes
 
-**Status**: Not Started
+**Status**: Ready to Start (Updated for Plan 05)
 **Priority**: Phase 2 - High Priority (Building on Foundation)
-**Estimated Complexity**: Medium (Reduced from High due to Plan 04)
+**Estimated Complexity**: Medium-Low (Further reduced due to Plan 05)
 **Dependencies**:
 - Plan 01 (Extract Low-Level Utilities) - ✅ COMPLETED
 - Plan 03 (Page Generation Pipeline) - ✅ COMPLETED
 - Plan 04 (Extract Reusable Sub-Components) - ✅ COMPLETED ⭐ **KEY DEPENDENCY**
+- Plan 05 (Page and Layout Abstraction) - ✅ COMPLETED ⭐ **NEW: CRITICAL DEPENDENCY**
 
-## Quick Reference: Plan 02 Updated for Plan 04
+## Quick Reference: Plan 02 Updated for Plans 04 & 05
 
-**What changed:** Plan 04 extracted low-level sub-components (WeekColumn, Fieldset, RuledLines, CalendarDays, DayHeader, etc.). Plan 02 now focuses on **page-level coordinators** that compose these sub-components.
+**Major Update (2025-11-11)**: Plan 05 has been completed, fundamentally changing the component extraction approach.
 
-**Key concept:**
-- **Sub-Components (Plan 04)**: Low-level building blocks with `render_at(col, row, w, h)` interface
-- **Components (Plan 02)**: Page-level coordinators that compose sub-components
+**What Plan 05 provides:**
+- ✅ **Component base class** with content area support (`lib/bujo_pdf/component.rb`)
+- ✅ **Layout system** for defining page structure (`lib/bujo_pdf/layout.rb`)
+- ✅ **Page lifecycle hooks** for chrome vs content separation (`render_chrome`, `render`, `setup_page`)
+- ✅ **Content area helpers** for positioning within layout constraints
+- ✅ **Sub-component factory methods** in Component base class
 
-**Work reduction:** ~40% (from 100-140 hours to 66-86 hours)
+**What Plan 04 provides:**
+- ✅ **Sub-Components**: Low-level building blocks (WeekColumn, Fieldset, RuledLines, CalendarDays, DayHeader)
+- ✅ **ComponentContext**: Hybrid grid/proportional layout helper
+
+**What Plan 02 now focuses on:**
+- **Concrete component classes** that work within the Plan 05 infrastructure
+- **Page class updates** to use layouts and delegate to components
+- **Chrome components** for navigation and sidebars
+
+**Work reduction:** ~50% (from 100-140 hours to 50-70 hours)
+
+## Plan 05 Impact: Architecture Transformation
+
+### Before Plan 05 (Original Plan 02)
+
+The original plan assumed we'd need to:
+1. Create Component base class from scratch
+2. Manually handle grid positioning in every component
+3. Components responsible for both chrome and content
+4. No content area constraints
+5. No layout system
+
+### After Plan 05 (Updated Plan 02)
+
+Plan 05 provides the complete infrastructure:
+
+1. **Component base class exists** (`lib/bujo_pdf/component.rb`)
+   - Content area awareness built-in
+   - Helper methods: `content_col()`, `content_row()`, `content_rect()`
+   - Sub-component factory methods already implemented
+   - Grid system delegators for convenience
+
+2. **Layout system exists** (`lib/bujo_pdf/layout.rb`)
+   - Defines content area and sidebar positions
+   - Factory methods: `Layout.weekly_layout`, `Layout.full_page`, etc.
+   - Background and debug mode configuration
+
+3. **Page lifecycle supports components** (`lib/bujo_pdf/pages/base.rb`)
+   - `render_chrome` hook for navigation/sidebars (outside content area)
+   - `render` hook for content (within content area)
+   - Content area calculated automatically from layout
+   - Background rendering handled by page
+
+4. **Clear separation of concerns:**
+   ```
+   Page → Layout → Content Area → Components → Sub-Components
+   ```
+
+### What This Means for Plan 02
+
+**Original focus**: Create infrastructure + extract components
+**New focus**: Extract concrete component classes that leverage existing infrastructure
 
 **Components still needed:**
-1. Component base class (with sub-component factory methods)
-2. RenderContext
-3. DateCalculator
-4. TopNavigation, WeekSidebar, RightSidebar (navigation)
-5. SeasonalCalendar, YearAtGlance (calendars - use sub-components)
-6. DailySection, CornellNotes, WeeklyPage (weekly page - use sub-components)
+1. ~~Component base class~~ ✅ Done in Plan 05
+2. ~~Layout system~~ ✅ Done in Plan 05
+3. DateCalculator utility (date/week calculations)
+4. **Chrome components**: TopNavigation, WeekSidebar, RightSidebar
+5. **Content components**: SeasonalCalendar, YearAtGlance, DailySection, CornellNotes
+6. **Page updates**: Modify existing pages to use layouts and delegate to components
+
+### Key Simplifications
+
+1. **No Component base class creation** - Already done in Plan 05
+2. **No content area calculations** - Handled by Layout system
+3. **No chrome/content separation logic** - Page lifecycle handles it
+4. **Components automatically constrained** - Layout boundaries enforced
+5. **Sub-component factories ready** - Just use `create_week_column()`, etc.
 
 ---
 
@@ -148,9 +211,11 @@ Component (Base Class) - NEW in Plan 02
 - **Components** (Plan 02): Page-level coordinators that use ComponentContext and compose sub-components
 - **Component → Sub-Component**: Components instantiate and position sub-components
 
-### 2. Component Base Class Design
+### 2. Component Base Class Design (✅ Completed in Plan 05)
 
-Every component will inherit from a base `Component` class that provides:
+**Status**: Already implemented in `lib/bujo_pdf/component.rb`
+
+The Component base class from Plan 05 provides:
 - Access to PDF instance
 - Access to GridSystem instance
 - Access to RenderContext (current page, navigation state)
@@ -1778,12 +1843,65 @@ Only page-level coordinators remain:
 - Add comments for complex logic
 - Follow Ruby style guide
 
+## Summary of Plan 05 Integration (2025-11-11)
+
+### What Changed
+
+Plan 05 completion has fundamentally transformed Plan 02:
+
+**Before Plan 05:**
+- Needed to create Component base class
+- Needed to design content area system
+- Needed to handle chrome/content separation manually
+- Components responsible for grid positioning logic
+- Estimated: 100-140 hours
+
+**After Plan 05:**
+- ✅ Component base class exists with full content area support
+- ✅ Layout system defines page structure automatically
+- ✅ Page lifecycle separates chrome from content
+- ✅ Components receive content area constraints from pages
+- ✅ Sub-component factory methods already implemented
+- **New estimate: 50-70 hours (50% reduction)**
+
+### Updated Implementation Focus
+
+1. **DateCalculator utility** - Extract date/week calculation logic
+2. **Chrome components** - TopNavigation, WeekSidebar, RightSidebar
+   - Render in `render_chrome` hook (outside content area)
+   - Use full page grid coordinates
+3. **Content components** - SeasonalCalendar, YearAtGlance, DailySection, CornellNotes
+   - Render in `render` hook (within content area)
+   - Use `content_rect()` for positioning within constraints
+4. **Page updates** - Migrate existing pages to use layouts
+   - Override `default_layout()` to specify layout
+   - Move chrome rendering to `render_chrome()`
+   - Move content to `render()` using components
+
+### Architecture Benefits
+
+With Plan 05 infrastructure:
+- **Cleaner separation**: Pages define structure, Components define content
+- **Automatic constraints**: Layout system enforces boundaries
+- **Easier testing**: Components test independently with mock content areas
+- **Better reusability**: Components work with any layout
+- **Simpler code**: No manual content area calculations
+
+### Next Steps
+
+1. Extract DateCalculator utility (foundational)
+2. Extract chrome components (navigation/sidebars)
+3. Extract content components (calendars, sections)
+4. Update page classes to use layouts
+5. Integration testing
+
 ## References
 
 - **Original code:** `gen.rb` (full file)
 - **Plan 01:** Extract Low-Level Utilities (completed)
 - **Plan 03:** Page Generation Pipeline (completed)
 - **Plan 04:** Extract Reusable Sub-Components (completed) ← **Key dependency**
+- **Plan 05:** Page and Layout Abstraction (completed) ← **NEW: Critical dependency**
 - **REFACTORING_PLAN.md:** Overall refactoring strategy
 - **CLAUDE.md:** Project documentation
 - **CLAUDE.local.md:** Grid system documentation
@@ -1792,60 +1910,75 @@ Only page-level coordinators remain:
 
 ### Plan 04 Documentation
 
-Refer to `PLANS/04_EXTRACT_REUSABLE_SUB_COMPONENTS.md` for:
+Refer to `plans/04_extract_reusable_sub_components.md` for:
 - SubComponent::Base class design
 - ComponentContext helper for local coordinates
 - Available sub-components (WeekColumn, Fieldset, RuledLines, etc.)
 - Sub-component configuration options
 - Examples of sub-component usage
 
-## Timeline Estimate (Updated for Plan 04 Completion)
+### Plan 05 Documentation
 
-### Week 1: Foundation (12-16 hours) ← Reduced
-- Component base class: 4 hours
-- RenderContext class: 2 hours
-- DateCalculator utility: 6 hours (includes testing edge cases)
-- Test infrastructure: 2 hours
+Refer to `plans/05_page_and_layout_abstraction.md` for:
+- Component base class with content area support
+- Layout system design and factory methods
+- Page lifecycle hooks (setup_page, render_chrome, render, finalize_page)
+- Content area helpers and positioning
+- Examples of layout-aware components
+
+## Timeline Estimate (Updated for Plans 04 & 05)
+
+### Week 1: Foundation (6-8 hours) ← Significantly Reduced
+- ✅ ~~Component base class~~ Already done in Plan 05
+- ✅ ~~RenderContext class~~ May not be needed (context passed via options)
+- DateCalculator utility: 4 hours (includes testing edge cases)
+- Test infrastructure updates: 2 hours
 - ✅ ~~Fieldset component~~ Already done in Plan 04
 - ✅ ~~MonthGrid component~~ Already done in Plan 04
 
-### Week 2: Navigation (16-20 hours) ← Unchanged
-- TopNavigation: 5 hours
-- WeekSidebar: 6 hours
-- RightSidebar + RightNavTab: 5 hours
-- Integration and testing: 4 hours
+### Week 2: Chrome Components (12-16 hours) ← Reduced
+- TopNavigation: 4 hours (simpler with Plan 05 infrastructure)
+- WeekSidebar: 5 hours
+- RightSidebar + RightNavTab: 4 hours
+- Integration and testing: 3 hours
 
-### Week 3: Calendar (12-16 hours) ← Reduced
-- SeasonalCalendar: 6 hours (simpler with sub-components)
-- YearAtGlance: 6 hours
+### Week 3: Content Components (10-14 hours) ← Reduced
+- SeasonalCalendar: 5 hours (uses sub-components + content_rect)
+- YearAtGlance: 5 hours
 - Testing and debugging: 4 hours
 
-### Week 4: Weekly Page (14-18 hours) ← Reduced
-- DailySection: 5 hours (uses WeekColumn sub-components)
-- CornellNotes: 4 hours (uses RuledLines sub-components)
-- WeeklyPage coordinator: 5 hours
+### Week 4: Weekly Page (10-14 hours) ← Reduced
+- DailySection: 4 hours (uses WeekColumn sub-components + content_rect)
+- CornellNotes: 3 hours (uses RuledLines sub-components + content_rect)
+- Update WeeklyPage to use layout: 3 hours
 - Integration and testing: 4 hours
 
-### Week 5: Integration and Cleanup (12-16 hours) ← Reduced
-- Remove old methods: 3 hours
+### Week 5: Page Updates & Cleanup (12-16 hours) ← New Focus
+- Update SeasonalCalendarPage to use layout: 3 hours
+- Update YearAtGlancePage to use layout: 3 hours
+- Remove old methods from pages: 2 hours
 - Full integration testing: 4 hours
-- Visual regression testing: 3 hours
+- Visual regression testing: 2 hours
 - Documentation: 4 hours
-- Code review and final refactoring: 4 hours
 
-**Total Estimate: 66-86 hours (~40% reduction from original 100-140 hours)**
+**Total Estimate: 50-68 hours (~50% reduction from original 100-140 hours)**
 
-**At 10 hours/week: 7-9 weeks (vs original 10-14 weeks)**
+**At 10 hours/week: 5-7 weeks (vs original 10-14 weeks)**
 
-**Reason for reduction:** Low-level rendering logic already extracted to sub-components in Plan 04. Components now focus on coordination, which is simpler and faster to implement.
+**Reasons for reduction:**
+1. **Plan 04**: Low-level rendering extracted to sub-components
+2. **Plan 05**: Component base class, layout system, and page lifecycle already exist
+3. **Plan 05**: Content area calculations handled automatically
+4. **Plan 05**: Chrome/content separation built into page lifecycle
 
 ## Completion Checklist
 
 ### Foundation
-- [ ] Component base class created (with sub-component factory methods)
-- [ ] RenderContext class created
+- [✅] ~~Component base class~~ Completed in Plan 05
+- [✅] ~~Layout system~~ Completed in Plan 05
+- [✅] ~~Page lifecycle hooks~~ Completed in Plan 05
 - [ ] DateCalculator utility created and tested
-- [ ] Test infrastructure set up
+- [ ] Test infrastructure updated for component testing
 - [✅] ~~Fieldset component~~ Completed in Plan 04 as SubComponent::Fieldset
 - [✅] ~~MonthGrid component~~ Completed in Plan 04 as SubComponent::CalendarDays
 - [✅] Sub-components available from Plan 04 (WeekColumn, RuledLines, DayHeader, etc.)
