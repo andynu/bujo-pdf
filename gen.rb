@@ -276,12 +276,16 @@ class PlannerGenerator
   # dest: destination name for the link
   # align: text alignment (:left or :right within the rotated space)
   # padding_boxes: padding at the top of the tab (default 0.5)
+  # context: optional page context (symbol) to check if this is the current page
   #
   # Example:
-  #   draw_right_nav_tab(42, 3, 3, "Year", "seasonal", align: :left)
-  def draw_right_nav_tab(col, row, height_boxes, label, dest, align: :left, padding_boxes: 0.5)
+  #   draw_right_nav_tab(42, 3, 3, "Year", "seasonal", align: :left, context: :seasonal)
+  def draw_right_nav_tab(col, row, height_boxes, label, dest, align: :left, padding_boxes: 0.5, context: nil)
+    # Check if this tab represents the current page
+    is_current = !context.nil? && context.to_s == dest.to_s
+
     @pdf.fill_color '888888'
-    @pdf.font "Helvetica", size: 8
+    @pdf.font(is_current ? "Helvetica-Bold" : "Helvetica", size: 8)
 
     # Calculate text area with padding
     # Top padding (becomes left after rotation): padding_boxes at top
@@ -515,7 +519,7 @@ class PlannerGenerator
 
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
-    draw_right_sidebar
+    draw_right_sidebar(:seasonal)
 
     draw_seasonal_calendar
     draw_footer
@@ -786,7 +790,7 @@ class PlannerGenerator
 
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
-    draw_right_sidebar
+    draw_right_sidebar(:year_events)
 
     draw_year_at_glance("Year #{@year} - Events")
     draw_footer
@@ -804,7 +808,7 @@ class PlannerGenerator
 
     # Draw sidebars
     draw_week_sidebar(nil, calculate_total_weeks)
-    draw_right_sidebar
+    draw_right_sidebar(:year_highlights)
 
     draw_year_at_glance("Year #{@year} - Highlights")
     draw_footer
@@ -1326,6 +1330,7 @@ class PlannerGenerator
   # start_row: starting row for top tabs (default: 1)
   # tab_height: height of each tab in boxes (default: 3)
   # sidebar_col: column position for tabs (default: 42)
+  # context: optional page context (symbol) to highlight current page
   #
   # Example:
   #   draw_right_sidebar_nav(
@@ -1335,24 +1340,25 @@ class PlannerGenerator
   #     ],
   #     bottom_tabs: [
   #       { label: "Dots", dest: "dots" }
-  #     ]
+  #     ],
+  #     context: :seasonal
   #   )
-  def draw_right_sidebar_nav(top_tabs: [], bottom_tabs: [], start_row: 1, tab_height: 3, sidebar_col: 42)
+  def draw_right_sidebar_nav(top_tabs: [], bottom_tabs: [], start_row: 1, tab_height: 3, sidebar_col: 42, context: nil)
     # Draw top-aligned tabs (stack downward from start_row)
     top_tabs.each_with_index do |tab, idx|
       row = start_row + (idx * tab_height)
-      draw_right_nav_tab(sidebar_col, row, tab_height, tab[:label], tab[:dest], align: :left)
+      draw_right_nav_tab(sidebar_col, row, tab_height, tab[:label], tab[:dest], align: :left, context: context)
     end
 
     # Draw bottom-aligned tabs (stack upward from bottom)
     bottom_tabs.each_with_index do |tab, idx|
       # Start from bottommost position and work upward
       row = GRID_ROWS - tab_height - (idx * tab_height)
-      draw_right_nav_tab(sidebar_col, row, tab_height, tab[:label], tab[:dest], align: :right)
+      draw_right_nav_tab(sidebar_col, row, tab_height, tab[:label], tab[:dest], align: :right, context: context)
     end
   end
 
-  def draw_right_sidebar
+  def draw_right_sidebar(page_context = nil)
     # Grid-based right sidebar using declarative menu lists
     draw_right_sidebar_nav(
       top_tabs: [
@@ -1362,7 +1368,8 @@ class PlannerGenerator
       ],
       bottom_tabs: [
         { label: "Dots", dest: "dots" }
-      ]
+      ],
+      context: page_context
     )
   end
 
