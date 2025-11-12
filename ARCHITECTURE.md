@@ -12,6 +12,8 @@ BujoPdf uses a component-based architecture built on top of the [Prawn PDF libra
 4. **Components** - Reusable UI elements (sidebars, fieldsets, headers)
 5. **Utilities** - Core helpers (grid system, date calculations, dot grids)
 
+![System Overview](docs/system-overview.svg)
+
 ## Core Concepts
 
 ### Grid-Based Layout System
@@ -30,6 +32,8 @@ All positioning uses a **grid coordinate system** rather than raw PDF points:
 - `grid_rect(col, row, w, h)` - Get bounding box coordinates
 
 This abstraction ensures all elements align perfectly with the dot grid background.
+
+![Grid System](docs/grid-system.svg)
 
 ### Declarative Layout System
 
@@ -61,6 +65,8 @@ Layouts automatically:
 - Changes to sidebars require editing only the layout class
 - Pages focus on content, not chrome
 
+![Layout System](docs/layout-system.svg)
+
 ### Component Architecture
 
 Reusable components encapsulate UI patterns:
@@ -72,7 +78,11 @@ Reusable components encapsulate UI patterns:
 
 Components receive a `RenderContext` with PDF object, coordinates, and page state.
 
+![Component Hierarchy](docs/component-hierarchy.svg)
+
 ## Key Classes
+
+![Page Generation Flow](docs/page-generation-flow.svg)
 
 ### PlannerGenerator (`lib/bujo_pdf/planner_generator.rb`)
 
