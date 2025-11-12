@@ -3,19 +3,9 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-12 (Starting Plan 17)
+2025-11-12 (Completed Plan 17)
 
 ## Active Plans
-
-### Plan 17: Monthly Table of Contents Pages (In Progress)
-- **File**: `17-month-toc-pages.md`
-- **Status**: In Progress
-- **Created**: 2025-11-12
-- **Last Modified**: 2025-11-12
-- **Last Worked**: 2025-11-12
-- **Changed Since Work**: No
-- **Priority**: Feature Enhancement
-- **Goal**: Add dedicated TOC pages for each month (12 total) providing navigation structure between year-at-a-glance and weekly pages
 
 ### Plan 18: Flat Table of Contents (Not Started)
 - **File**: `18-flat-toc.md`
@@ -63,6 +53,19 @@ This file tracks the status of all plans in the plans directory.
 - **Reason**: Insufficient space on iPad. The 2-box sidebar width cannot accommodate three-letter abbreviations plus week numbers without compromising readability or layout integrity.
 
 ## Recently Completed Plans
+
+### Plan 17: Monthly Bookmarks in PDF Outline (Completed 2025-11-12)
+- **File**: `17-month-toc-pages.md`
+- **Status**: Completed
+- **Created**: 2025-11-12
+- **Last Modified**: 2025-11-12
+- **Last Worked**: 2025-11-12
+- **Changed Since Work**: No
+- **Priority**: Feature Enhancement
+- **Dependencies**: None
+- **Commits**: eeafacc
+- **Goal**: Add monthly groupings to PDF outline/bookmarks (sidebar navigation in PDF readers) to provide better hierarchical navigation from year to month to week
+- **Result**: Successfully implemented hierarchical PDF outline structure with monthly sections. The outline now displays "Monthly Pages" with 12 month subsections (January 2025 - December 2025), each containing their corresponding weekly pages. Weeks spanning months appear in both month sections for easier navigation. Metadata-only change with no impact on page count or file size.
 
 ### Plan 16: Automatic Tab Bolding in Right Navigation Sidebar (Already Implemented)
 - **File**: `16-bold-current-tab-in-nav.md`
@@ -195,6 +198,16 @@ This file tracks the status of all plans in the plans directory.
 - **Note**: Completed core weekly page components. Remaining calendar components (SeasonalCalendar, YearAtGlance) deferred.
 
 ## Completed Plans
+
+1. Plan 17: Monthly Bookmarks in PDF Outline (Completed 2025-11-12)
+   - **File**: `17-month-toc-pages.md`
+   - **Status**: Completed
+   - **Last Modified**: 2025-11-12
+   - **Last Worked**: 2025-11-12
+   - **Priority**: Feature Enhancement
+   - **Dependencies**: None
+   - **Commits**: eeafacc
+   - **Result**: Hierarchical PDF outline with monthly sections grouping weekly pages for improved navigation
 
 1. Plan 14: Remove gen.rb and Standardize on bin/bujo-pdf (Completed 2025-11-12)
    - **File**: `14-remove-gen-rb.md`
