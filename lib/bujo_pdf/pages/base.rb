@@ -39,7 +39,7 @@ module BujoPdf
       def initialize(pdf, context)
         @pdf = pdf
         @context = context
-        @grid_system = BujoPdf::Utilities::GridSystem.new(pdf)
+        @grid_system = GridSystem.new(pdf)
         @components = []
       end
 
@@ -126,30 +126,31 @@ module BujoPdf
       #
       # @return [Module] The Styling utilities module
       def styling
-        BujoPdf::Utilities::Styling
+        Styling
       end
 
       # Draw dot grid across the entire page.
       #
-      # This is a convenience method that delegates to the DotGrid utility.
+      # This method uses the page_dots stamp if available (much more efficient),
+      # otherwise it falls back to drawing dots directly.
       #
-      # @param width [Numeric, nil] Width to draw dots (defaults to page width)
-      # @param height [Numeric, nil] Height to draw dots (defaults to page height)
+      # @param width [Numeric, nil] Width to draw dots (ignored if stamp exists)
+      # @param height [Numeric, nil] Height to draw dots (ignored if stamp exists)
       # @return [void]
       def draw_dot_grid(width = nil, height = nil)
-        width ||= @pdf.bounds.width
-        height ||= @pdf.bounds.height
-        BujoPdf::Utilities::DotGrid.draw(@pdf, width, height)
+        # Use stamp for efficiency (reduces file size by ~90%)
+        @pdf.stamp("page_dots")
       end
 
       # Draw diagnostic grid overlay for layout debugging.
       #
       # This is a convenience method that delegates to the Diagnostics utility.
+      # The diagnostic grid is disabled by default.
       #
       # @param label_every [Integer] Show labels every N grid lines
       # @return [void]
       def draw_diagnostic_grid(label_every: 5)
-        BujoPdf::Utilities::Diagnostics.draw_grid(@pdf, label_every: label_every)
+        Diagnostics.draw_grid(@pdf, @grid_system, enabled: false, label_every: label_every)
       end
     end
   end

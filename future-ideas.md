@@ -5,5 +5,6 @@
 - left nav. three leter month indiciators, slightly bolder than the normal week indicators.
 
 - right nav, add automatically bold if the current page in the context is the page you're on. This could be a passed in option too. I don't feel strongly.
-- 
+- TOC pages for each month.
+- a flat toc, not nested.
 

@@ -36,7 +36,8 @@ module BujoPdf
 
       def render
         draw_dot_grid
-        draw_diagnostic_grid(label_every: 5)
+        # Always show diagnostic grid on reference page
+        Diagnostics.draw_grid(@pdf, @grid_system, enabled: true, label_every: 5)
         draw_calibration_elements
       end
 

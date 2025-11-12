@@ -70,7 +70,7 @@ module BujoPdf
         content_width_boxes = 39  # Columns 3-41 inclusive
 
         # Header - rows 0-1 (2 boxes)
-        header_box = @grid_system.grid_rect(content_start_col, 0, content_width_boxes, 2)
+        header_box = @grid_system.rect(content_start_col, 0, content_width_boxes, 2)
         @pdf.font "Helvetica-Bold", size: YEAR_TITLE_FONT_SIZE
         @pdf.text_box page_title,
                       at: [header_box[:x], header_box[:y]],
@@ -92,10 +92,10 @@ module BujoPdf
 
           # Calculate column position
           col_start = content_start_col + (month_index * col_width_boxes)
-          cell_x = @grid_system.grid_x(0) + (col_start * DOT_SPACING)
-          cell_y = @grid_system.grid_y(2)
+          cell_x = @grid_system.x(0) + (col_start * DOT_SPACING)
+          cell_y = @grid_system.y(2)
           cell_width = col_width_boxes * DOT_SPACING
-          cell_height = @grid_system.grid_height(1)
+          cell_height = @grid_system.height(1)
 
           # Calculate which week contains the 1st of this month
           first_of_month = Date.new(@year, month_index + 1, 1)
@@ -142,8 +142,8 @@ module BujoPdf
 
             # Calculate cell position
             col_start = content_start_col + (month_index * col_width_boxes)
-            cell_x = @grid_system.grid_x(0) + (col_start * DOT_SPACING)
-            cell_y = @grid_system.grid_y(0) - (day_row_start * DOT_SPACING)
+            cell_x = @grid_system.x(0) + (col_start * DOT_SPACING)
+            cell_y = @grid_system.y(0) - (day_row_start * DOT_SPACING)
             cell_width = col_width_boxes * DOT_SPACING
             cell_height = day_height_rows * DOT_SPACING
 

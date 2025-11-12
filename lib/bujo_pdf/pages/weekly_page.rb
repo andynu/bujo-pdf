@@ -75,12 +75,12 @@ module BujoPdf
         content_start_col = 3
         content_width_boxes = 39
 
-        nav_box = @grid_system.grid_rect(content_start_col, 0, content_width_boxes, 2)
+        nav_box = @grid_system.rect(content_start_col, 0, content_width_boxes, 2)
 
         # Year link on the left
         @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
         @pdf.fill_color '888888'
-        nav_year_width = @grid_system.grid_width(4)
+        nav_year_width = @grid_system.width(4)
         @pdf.text_box "< #{@year}",
                       at: [nav_box[:x], nav_box[:y]],
                       width: nav_year_width,
@@ -95,8 +95,8 @@ module BujoPdf
         # Previous week link (if not first week)
         if @week_num > 1
           @pdf.fill_color '888888'
-          nav_prev_x = nav_box[:x] + nav_year_width + @grid_system.grid_width(1)
-          nav_prev_width = @grid_system.grid_width(3)
+          nav_prev_x = nav_box[:x] + nav_year_width + @grid_system.width(1)
+          nav_prev_width = @grid_system.width(3)
           @pdf.text_box "< w#{@week_num - 1}",
                         at: [nav_prev_x, nav_box[:y]],
                         width: nav_prev_width,
@@ -111,7 +111,7 @@ module BujoPdf
 
         # Next week link (if not last week)
         if @week_num < @total_weeks
-          nav_next_width = @grid_system.grid_width(3)
+          nav_next_width = @grid_system.width(3)
           nav_next_x = nav_box[:x] + nav_box[:width] - nav_next_width
           @pdf.fill_color '888888'
           @pdf.text_box "w#{@week_num + 1} >",
@@ -129,8 +129,8 @@ module BujoPdf
 
         # Title (centered)
         @pdf.font "Helvetica-Bold", size: WEEKLY_TITLE_FONT_SIZE
-        title_x = nav_box[:x] + @grid_system.grid_width(8)
-        title_width = nav_box[:width] - @grid_system.grid_width(16)
+        title_x = nav_box[:x] + @grid_system.width(8)
+        title_width = nav_box[:width] - @grid_system.width(16)
         @pdf.text_box "Week #{@week_num}: #{@week_start.strftime('%b %-d')} - #{@week_end.strftime('%b %-d, %Y')}",
                       at: [title_x, nav_box[:y]],
                       width: title_width,
@@ -145,7 +145,7 @@ module BujoPdf
         content_width_boxes = 39
         daily_rows = 9
 
-        daily_box = @grid_system.grid_rect(content_start_col, content_start_row, content_width_boxes, daily_rows)
+        daily_box = @grid_system.rect(content_start_col, content_start_row, content_width_boxes, daily_rows)
         day_col_width_boxes = content_width_boxes / 7.0  # ~5.57 boxes per day
 
         @pdf.font "Helvetica-Bold", size: WEEKLY_DAY_HEADER_FONT_SIZE
@@ -221,9 +221,9 @@ module BujoPdf
         notes_cols = 29
 
         notes_start_row = content_start_row + daily_rows
-        cues_box = @grid_system.grid_rect(content_start_col, notes_start_row, cues_cols, notes_main_rows)
-        notes_box = @grid_system.grid_rect(content_start_col + cues_cols, notes_start_row, notes_cols, notes_main_rows)
-        summary_box = @grid_system.grid_rect(content_start_col, notes_start_row + notes_main_rows, content_width_boxes, summary_rows)
+        cues_box = @grid_system.rect(content_start_col, notes_start_row, cues_cols, notes_main_rows)
+        notes_box = @grid_system.rect(content_start_col + cues_cols, notes_start_row, notes_cols, notes_main_rows)
+        summary_box = @grid_system.rect(content_start_col, notes_start_row + notes_main_rows, content_width_boxes, summary_rows)
 
         @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_HEADER_FONT_SIZE
 

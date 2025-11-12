@@ -46,7 +46,7 @@ module BujoPdf
 
       def draw_header
         # Header: rows 0-1 (2 boxes), full width
-        header = @grid_system.grid_rect(0, 0, GRID_COLS, 2)
+        header = @grid_system.rect(0, 0, GRID_COLS, 2)
         @pdf.font "Helvetica-Bold", size: 18
         @pdf.text_box "Year #{@year}",
                       at: [header[:x], header[:y]],
@@ -108,11 +108,11 @@ module BujoPdf
 
       def draw_fieldset(start_col, start_row, width_boxes, height_boxes, legend)
         # Get the box coordinates
-        box = @grid_system.grid_rect(start_col, start_row, width_boxes, height_boxes)
+        box = @grid_system.rect(start_col, start_row, width_boxes, height_boxes)
 
         font_size = 10
         legend_padding = 5
-        legend_offset_x = @grid_system.grid_width(0.5)
+        legend_offset_x = @grid_system.width(0.5)
 
         # Calculate legend dimensions
         @pdf.font "Helvetica", size: font_size
@@ -158,7 +158,7 @@ module BujoPdf
 
       def draw_month_grid(month, start_col, start_row, width_boxes)
         # Month title (1 box high)
-        title_box = @grid_system.grid_rect(start_col, start_row, width_boxes, 1)
+        title_box = @grid_system.rect(start_col, start_row, width_boxes, 1)
         @pdf.font "Helvetica-Bold", size: 10
         @pdf.text_box MONTH_NAMES[month - 1],
                       at: [title_box[:x], title_box[:y]],
@@ -173,12 +173,12 @@ module BujoPdf
         col_width_boxes = width_boxes / 7.0
 
         day_names.each_with_index do |day, i|
-          col_x = @grid_system.grid_x(start_col) + (i * @grid_system.grid_width(col_width_boxes))
+          col_x = @grid_system.x(start_col) + (i * @grid_system.width(col_width_boxes))
           @pdf.font "Helvetica", size: 7
           @pdf.text_box day,
-                        at: [col_x, @grid_system.grid_y(headers_row)],
-                        width: @grid_system.grid_width(col_width_boxes),
-                        height: @grid_system.grid_height(1),
+                        at: [col_x, @grid_system.y(headers_row)],
+                        width: @grid_system.width(col_width_boxes),
+                        height: @grid_system.height(1),
                         align: :center,
                         valign: :center
         end
@@ -199,19 +199,19 @@ module BujoPdf
           week_num = Utilities::DateCalculator.week_number_for_date(@year, date)
 
           cal_row = headers_row + 1 + row
-          cell_x = @grid_system.grid_x(start_col) + (col * @grid_system.grid_width(col_width_boxes))
-          cell_y = @grid_system.grid_y(cal_row)
+          cell_x = @grid_system.x(start_col) + (col * @grid_system.width(col_width_boxes))
+          cell_y = @grid_system.y(cal_row)
 
           @pdf.text_box day.to_s,
                         at: [cell_x, cell_y],
-                        width: @grid_system.grid_width(col_width_boxes),
-                        height: @grid_system.grid_height(1),
+                        width: @grid_system.width(col_width_boxes),
+                        height: @grid_system.height(1),
                         align: :center,
                         valign: :center
 
           # Add clickable link
-          link_bottom = cell_y - @grid_system.grid_height(1)
-          @pdf.link_annotation([cell_x, link_bottom, cell_x + @grid_system.grid_width(col_width_boxes), cell_y],
+          link_bottom = cell_y - @grid_system.height(1)
+          @pdf.link_annotation([cell_x, link_bottom, cell_x + @grid_system.width(col_width_boxes), cell_y],
                               Dest: "week_#{week_num}",
                               Border: [0, 0, 0])
 
