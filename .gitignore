@@ -5,3 +5,7 @@ gems/
 .bundle/
 Gemfile.lock
 tags
+
+# Gem build artifacts
+*.gem
+pkg/

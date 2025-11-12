@@ -38,7 +38,7 @@ Transform the monolithic generator script into a well-structured gem with:
 
 ## Tasks
 
-### 1. Gem Structure
+### 1. Gem Structure (plans/09_gem_structure.rb)
 - [ ] Convert project to gem format with proper directory structure
 - [ ] Create `lib/bujo_pdf/` directory structure
 - [ ] Add `gemspec` file with dependencies and metadata

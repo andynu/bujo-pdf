@@ -1,10 +1,12 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-# Planner generator using component-based architecture
+# Legacy entry point - now uses gem infrastructure
 require_relative 'lib/bujo_pdf'
 
-year = ARGV[0]&.to_i || Date.today.year
-generator = BujoPdf::PlannerGenerator.new(year)
-generator.generate("planner_#{year}.pdf")
+year = ARGV[0] ? ARGV[0].to_i : Date.today.year
+output_file = "planner_#{year}.pdf"
 
-puts "Generated planner_#{year}.pdf"
+puts "Generating planner for #{year} using BujoPdf gem..."
+BujoPdf.generate(year, output_path: output_file)
+puts "Generated: #{output_file}"

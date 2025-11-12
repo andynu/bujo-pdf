@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/bujo_pdf'
+
+# Simple CLI implementation
+module BujoPdf
+  class CLI
+    def self.run(args = ARGV)
+      case args.first
+      when '--version', '-v'
+        puts "bujo-pdf version #{BujoPdf::VERSION}"
+        exit 0
+      when '--help', '-h', 'help'
+        show_help
+        exit 0
+      when nil
+        # No arguments - generate for current year
+        year = Date.today.year
+      else
+        # First argument is the year
+        year = args.first.to_i
+        if year < 1900 || year > 2100
+          warn "Error: Invalid year '#{args.first}'"
+          warn "Year must be between 1900 and 2100"
+          exit 1
+        end
+      end
+
+      output_file = "planner_#{year}.pdf"
+      puts "Generating planner for #{year}..."
+
+      begin
+        BujoPdf.generate(year, output_path: output_file)
+        puts "✓ Generated: #{output_file}"
+      rescue StandardError => e
+        warn "Error generating planner: #{e.message}"
+        warn e.backtrace.join("\n") if ENV['DEBUG']
+        exit 1
+      end
+    end
+
+    def self.show_help
+      puts <<~HELP
+        bujo-pdf - Generate programmable bullet journal PDFs
+
+        Usage:
+          bujo-pdf [YEAR] [OPTIONS]
+
+        Arguments:
+          YEAR          Year to generate planner for (default: current year)
+
+        Options:
+          --version, -v Show version
+          --help, -h    Show this help message
+
+        Examples:
+          bujo-pdf              # Generate planner for current year
+          bujo-pdf 2025         # Generate planner for 2025
+          bujo-pdf --version    # Show version number
+
+        Output:
+          Creates planner_YEAR.pdf in the current directory
+      HELP
+    end
+  end
+end
+
+# Run CLI
+BujoPdf::CLI.run if __FILE__ == $PROGRAM_NAME
