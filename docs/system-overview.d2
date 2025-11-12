@@ -1,0 +1,120 @@
+direction: right
+
+title: BujoPDF System Architecture {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 20
+    bold: true
+  }
+}
+
+# Main orchestrator
+generator: PlannerGenerator {
+  shape: hexagon
+  style: {
+    fill: "#e3f2fd"
+    stroke: "#1976d2"
+    stroke-width: 2
+  }
+}
+
+# Core modules
+pages: Pages Module {
+  shape: package
+  style.fill: "#fff3e0"
+
+  seasonal: SeasonalCalendar
+  year_events: YearEvents
+  year_highlights: YearHighlights
+  weekly: WeeklyPage
+  reference: ReferencePage
+  blank: BlankDotsPage
+  base: Base
+}
+
+layouts: Layouts Module {
+  shape: package
+  style.fill: "#f3e5f5"
+
+  base_layout: BaseLayout
+  full_page: FullPageLayout
+  standard_sidebars: StandardWithSidebarsLayout
+  factory: LayoutFactory
+}
+
+components: Components Module {
+  shape: package
+  style.fill: "#e8f5e9"
+
+  week_sidebar: WeekSidebar
+  nav_tabs: NavigationTabs
+  fieldset: Fieldset
+  dot_grid: DotGrid
+}
+
+utilities: Utilities Module {
+  shape: package
+  style.fill: "#fce4ec"
+
+  grid_system: GridSystem
+  date_calc: DateCalculator
+}
+
+prawn: Prawn PDF Library {
+  shape: cylinder
+  style: {
+    fill: "#eceff1"
+    stroke: "#546e7a"
+  }
+}
+
+output: planner_YYYY.pdf {
+  shape: document
+  style: {
+    fill: "#ffebee"
+    stroke: "#c62828"
+  }
+}
+
+# Main orchestration flow
+generator -> pages: creates pages
+generator -> layouts.factory: requests layouts
+generator -> prawn: generates PDF
+generator -> output: saves file
+
+# Page dependencies
+pages.base -> layouts.base_layout: uses layout system
+pages.seasonal -> components: uses components
+pages.year_events -> components: uses components
+pages.year_highlights -> components: uses components
+pages.weekly -> components: uses components
+pages.reference -> utilities.grid_system: visualizes grid
+pages.blank -> components.dot_grid: renders dots
+
+# Layout relationships
+layouts.factory -> layouts.full_page: creates
+layouts.factory -> layouts.standard_sidebars: creates
+layouts.base_layout <- layouts.full_page: inherits
+layouts.base_layout <- layouts.standard_sidebars: inherits
+layouts.standard_sidebars -> components.week_sidebar: renders
+layouts.standard_sidebars -> components.nav_tabs: renders
+
+# Component dependencies
+components.week_sidebar -> utilities.grid_system: positioning
+components.nav_tabs -> utilities.grid_system: positioning
+components.fieldset -> utilities.grid_system: positioning
+components.dot_grid -> utilities.grid_system: positioning
+
+# Utility usage
+pages.base -> utilities.grid_system: coordinate calculations
+pages.base -> utilities.date_calc: week/date logic
+generator -> utilities.date_calc: year structure
+
+# Prawn integration
+pages.base -> prawn: drawing operations
+layouts.base_layout -> prawn: drawing operations
+components.week_sidebar -> prawn: drawing operations
+components.nav_tabs -> prawn: drawing operations
+components.fieldset -> prawn: drawing operations
+components.dot_grid -> prawn: drawing operations

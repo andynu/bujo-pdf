@@ -1,0 +1,182 @@
+direction: down
+
+title: Component Architecture {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 20
+    bold: true
+  }
+}
+
+# Base components
+components_module: Components Module {
+  shape: package
+  style: {
+    fill: "#e8f5e9"
+    stroke: "#388e3c"
+    stroke-width: 2
+  }
+}
+
+# Grid system
+grid_system: GridSystem Utilities {
+  shape: hexagon
+  style: {
+    fill: "#fce4ec"
+    stroke: "#c2185b"
+  }
+
+  helpers: Grid Helper Methods {
+    grid_x: grid_x(col) → x
+    grid_y: grid_y(row) → y
+    grid_width: grid_width(boxes) → width
+    grid_height: grid_height(boxes) → height
+    grid_rect: grid_rect(col, row, w, h) → hash
+  }
+}
+
+# Individual components
+week_sidebar: WeekSidebar {
+  shape: rectangle
+  style.fill: "#c8e6c9"
+
+  purpose: Renders vertical week list\nwith month indicators {
+    shape: callout
+    style.fill: "#fff9c4"
+  }
+
+  inputs: Inputs {
+    year: year
+    total_weeks: total_weeks
+    current_week: current_week (highlight)
+  }
+
+  renders: Renders {
+    week_numbers: "Week number boxes (1-53)"
+    month_labels: "Month name labels"
+    links: "Clickable links to week pages"
+    highlight: "Current week highlighting"
+  }
+}
+
+nav_tabs: NavigationTabs {
+  shape: rectangle
+  style.fill: "#c8e6c9"
+
+  purpose: Renders rotated year page tabs {
+    shape: callout
+    style.fill: "#fff9c4"
+  }
+
+  inputs: Inputs {
+    year: year
+    highlight_tab: highlight_tab (which to highlight)
+  }
+
+  renders: Renders {
+    seasonal_tab: "Seasonal calendar tab"
+    events_tab: "Year events tab"
+    highlights_tab: "Year highlights tab"
+    rotation: "90° rotation for vertical text"
+    links: "Clickable links to year pages"
+    highlight: "Current tab highlighting"
+  }
+}
+
+fieldset: Fieldset {
+  shape: rectangle
+  style.fill: "#c8e6c9"
+
+  purpose: Creates bordered sections\nwith legend labels {
+    shape: callout
+    style.fill: "#fff9c4"
+  }
+
+  inputs: Inputs {
+    position: :top_left, :top_right,\n:bottom_left, :bottom_right
+    legend: legend text
+    inset: border inset (grid boxes)
+    rotation: text rotation angle
+  }
+
+  renders: Renders {
+    border: "Stroked rectangle border"
+    legend: "Legend text at position"
+    gap: "Gap in border for legend"
+  }
+}
+
+dot_grid: DotGrid {
+  shape: rectangle
+  style.fill: "#c8e6c9"
+
+  purpose: Draws dot grid background {
+    shape: callout
+    style.fill: "#fff9c4"
+  }
+
+  inputs: Inputs {
+    width_pts: "width in points"
+    height_pts: "height in points"
+    spacing: "dot spacing (14.17pt)"
+  }
+
+  renders: Renders {
+    dots: "Light gray dots at intersections"
+    spacing: "5mm (14.17pt) grid spacing"
+    color_code: "#CCCCCC (light gray)"
+  }
+}
+
+# Prawn integration
+prawn: Prawn PDF {
+  shape: cylinder
+  style: {
+    fill: "#eceff1"
+    stroke: "#546e7a"
+  }
+}
+
+# Pages using components
+pages: Page Classes {
+  shape: package
+  style.fill: "#e3f2fd"
+
+  seasonal: SeasonalCalendar
+  year_pages: Year-at-a-glance
+  weekly: WeeklyPage
+}
+
+# Component usage relationships
+components_module -> week_sidebar: provides
+components_module -> nav_tabs: provides
+components_module -> fieldset: provides
+components_module -> dot_grid: provides
+
+# Grid coordinate usage
+week_sidebar -> grid_system: uses for positioning
+nav_tabs -> grid_system: uses for positioning
+fieldset -> grid_system: uses for positioning
+dot_grid -> grid_system: uses for spacing
+
+# Prawn drawing operations
+week_sidebar -> prawn: text_box, stroke_rectangle,\nlink_annotation
+nav_tabs -> prawn: rotate, text_box,\nlink_annotation
+fieldset -> prawn: stroke_bounds, text_box,\nline operations
+dot_grid -> prawn: fill_circle at grid points
+
+# Pages using components
+pages.seasonal -> fieldset: season sections
+pages.seasonal -> dot_grid: background
+pages.year_pages -> dot_grid: background
+pages.weekly -> dot_grid: background
+
+# Layout system using components
+layouts: StandardWithSidebarsLayout {
+  shape: hexagon
+  style.fill: "#f3e5f5"
+}
+
+layouts -> week_sidebar: renders left sidebar
+layouts -> nav_tabs: renders right sidebar

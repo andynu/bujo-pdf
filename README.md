@@ -12,6 +12,41 @@ A Ruby gem for generating programmable bullet journal PDFs optimized for digital
 - **Grid-Based Layout** - Precise 43×55 grid system for consistent alignment
 - **Component Architecture** - Modular, maintainable code structure
 
+## Sample Pages
+
+### Seasonal Calendar
+The opening page provides a year-at-a-glance view organized by seasons, with mini month calendars for each month.
+
+![Seasonal Calendar](docs/seasonal_calendar.png)
+
+### Year-at-a-Glance: Events
+A 12×31 grid for tracking events throughout the year. Each day is clickable and links to the corresponding weekly page. (A similar Highlights page is also included.)
+
+![Year Events](docs/year_events.png)
+
+### Multi-Year Overview
+A comprehensive view spanning multiple years with monthly indicators for long-term planning and navigation.
+
+![Multi-Year Overview](docs/multi_year_overview.png)
+
+### Weekly Pages
+One page per week with daily sections (Mon-Sun) and Cornell notes layout (Cues, Notes, Summary). Includes navigation to previous/next weeks.
+
+![Weekly Page](docs/weekly.png)
+
+### Reference & Templates
+
+The planner includes a grid calibration/reference page and a blank dot grid template for additional notes.
+
+<details>
+<summary>View reference page and blank template</summary>
+
+![Reference Page](docs/reference.png)
+
+![Blank Dot Grid](docs/blank_dots.png)
+
+</details>
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -124,7 +159,7 @@ The gem uses a component-based architecture with:
 - **Pages** - Page classes that compose components
 - **Utilities** - Date calculations, dot grids, styling helpers
 
-See `CLAUDE.md` for detailed technical documentation.
+See **[ARCHITECTURE.md](ARCHITECTURE.md)** for detailed technical documentation.
 
 ## Testing
 

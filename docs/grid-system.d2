@@ -1,0 +1,173 @@
+direction: right
+
+title: Grid Coordinate System {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 20
+    bold: true
+  }
+}
+
+# Grid structure
+grid_structure: Grid Structure {
+  shape: rectangle
+  style: {
+    fill: "#e3f2fd"
+    stroke: "#1976d2"
+    stroke-width: 2
+  }
+
+  dimensions: 43 columns × 55 rows
+  box_size: 14.17pt (≈5mm)
+  page_size: 612pt × 792pt (US Letter)
+  total_dots: 2,365 dots (43 × 55)
+}
+
+# Prawn coordinate system
+prawn_coords: Prawn Coordinate System {
+  shape: rectangle
+  style: {
+    fill: "#fff3e0"
+    stroke: "#e65100"
+    stroke-width: 2
+  }
+
+  origin: Bottom-left corner (0, 0) {
+    shape: circle
+    style.fill: "#ff6b6b"
+  }
+
+  x_axis: X-axis: increases right →
+  y_axis: Y-axis: increases upward ↑
+  y_measured: Y measured from bottom
+}
+
+# Grid coordinate system
+grid_coords: Grid Coordinate System {
+  shape: rectangle
+  style: {
+    fill: "#e8f5e9"
+    stroke: "#2e7d32"
+    stroke-width: 2
+  }
+
+  origin: Top-left corner\nColumn 0, Row 0 {
+    shape: circle
+    style.fill: "#66bb6a"
+  }
+
+  columns: Columns: 0-42 (left to right) →
+  rows: Rows: 0-54 (top to bottom) ↓
+  inverted: Row 0 at top\n(inverted from Prawn Y)
+}
+
+# Helper methods
+helpers: Grid Helper Methods {
+  shape: package
+  style: {
+    fill: "#f3e5f5"
+    stroke: "#7b1fa2"
+    stroke-width: 2
+  }
+
+  grid_x: grid_x(col) {
+    shape: rectangle
+    style.fill: "#ce93d8"
+    formula: col × 14.17pt
+    example: grid_x(21) → 297.57pt\n(center column)
+  }
+
+  grid_y: grid_y(row) {
+    shape: rectangle
+    style.fill: "#ce93d8"
+    formula: 792 - (row × 14.17)
+    example: grid_y(0) → 792pt (top)\ngrid_y(27) → 409.41pt (center)
+    note: Converts grid row\nto Prawn Y coordinate
+  }
+
+  grid_width: grid_width(boxes) {
+    shape: rectangle
+    style.fill: "#ce93d8"
+    formula: boxes × 14.17pt
+    example: grid_width(10) → 141.7pt
+  }
+
+  grid_height: grid_height(boxes) {
+    shape: rectangle
+    style.fill: "#ce93d8"
+    formula: boxes × 14.17pt
+    example: grid_height(10) → 141.7pt
+  }
+
+  grid_rect: grid_rect(col, row, w, h) {
+    shape: rectangle
+    style.fill: "#ba68c8"
+    returns: "{x, y, width, height} hash"
+    example: "grid_rect(10, 20, 5, 3)\n→ full bounding box"
+  }
+}
+
+# Coordinate conversion
+conversion: Coordinate Conversion {
+  shape: hexagon
+  style: {
+    fill: "#fff9c4"
+    stroke: "#f57f17"
+    stroke-width: 2
+  }
+
+  grid_to_prawn: "Grid → Prawn" {
+    col_to_x: "Column → X: multiply by box size"
+    row_to_y: "Row → Y: subtract from page height"
+  }
+
+  example_box: Example Box {
+    grid_input: "Grid: (col 10, row 20, 5w, 3h)"
+    prawn_output: "Prawn: (141.7, 508.6, 70.85, 42.51)"
+  }
+}
+
+# Usage pattern
+usage: Common Usage Pattern {
+  shape: rectangle
+  style: {
+    fill: "#ffecb3"
+    stroke: "#ff6f00"
+    stroke-dash: 3
+  }
+
+  step1: "1. Calculate grid box\ngrid_rect(col, row, w, h)"
+  step2: "2. Use in bounding_box\n[box[:x], box[:y]]"
+  step3: "3. Draw content\nusing local coordinates"
+}
+
+# Relationships
+grid_structure -> grid_coords: defines coordinate space
+grid_structure -> prawn_coords: maps to Prawn system
+
+grid_coords -> helpers: uses helpers for conversion
+prawn_coords -> helpers: converts to Prawn coordinates
+
+helpers.grid_x -> conversion: X coordinate conversion
+helpers.grid_y -> conversion: Y coordinate conversion
+helpers.grid_rect -> conversion: full box conversion
+
+conversion -> usage: enables positioning
+usage -> prawn_coords: final Prawn drawing
+
+# Links and annotations
+links: Link Annotations {
+  shape: rectangle
+  style: {
+    fill: "#ffcdd2"
+    stroke: "#c62828"
+  }
+
+  format: "[left, bottom, right, top]"
+  measured: "All from page bottom"
+  calculation: "left = grid_x(col)\nbottom = grid_y(row + h)\nright = grid_x(col + w)\ntop = grid_y(row)"
+}
+
+helpers.grid_rect -> links: provides coordinates
+links -> prawn_coords: absolute page coordinates

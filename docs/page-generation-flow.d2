@@ -1,0 +1,111 @@
+direction: down
+
+title: PDF Generation Flow {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 20
+    bold: true
+  }
+}
+
+user: User {shape: person}
+cli: gen.rb {shape: rectangle}
+generator: PlannerGenerator {
+  shape: hexagon
+  style.fill: "#e3f2fd"
+}
+
+pdf_doc: PDF Document {
+  shape: cylinder
+  style.fill: "#fff3e0"
+}
+
+# Generation steps
+step1: 1. Set up named destinations {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+step2: 2. Generate seasonal calendar {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+step3: 3. Generate year-at-a-glance {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+step3a: Events grid {shape: rectangle}
+step3b: Highlights grid {shape: rectangle}
+
+step4: 4. Generate reference page {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+step5: 5. Generate weekly pages {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+step5_detail: Loop 52-53 times {
+  shape: rectangle
+  style: {
+    stroke-dash: 3
+    fill: "#fff9c4"
+  }
+}
+
+step6: 6. Generate blank dots {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+step7: 7. Build PDF outline {
+  shape: step
+  style.fill: "#e8f5e9"
+}
+
+output: planner_YYYY.pdf {
+  shape: document
+  style: {
+    fill: "#ffebee"
+    stroke: "#c62828"
+    stroke-width: 2
+  }
+}
+
+success: Generation complete {
+  shape: oval
+  style: {
+    fill: "#c8e6c9"
+    stroke: "#388e3c"
+    stroke-width: 2
+  }
+}
+
+# Flow connections
+user -> cli: ruby gen.rb 2025
+cli -> generator: PlannerGenerator.new(2025)
+generator -> pdf_doc: create PDF document
+
+pdf_doc -> step1: add named destinations\n(seasonal, year_events, week_N, etc)
+step1 -> step2: start page generation
+
+step2 -> step3: seasonal calendar page complete
+step3 -> step3a: generate events page
+step3 -> step3b: generate highlights page
+step3a -> step4: year pages complete
+step3b -> step4: year pages complete
+
+step4 -> step5: reference page complete
+step5 -> step5_detail: for each week in year
+step5_detail -> step5_detail: create WeeklyPage\nwith navigation links
+step5_detail -> step6: all weeks complete
+
+step6 -> step7: blank dots template complete
+step7 -> output: add bookmarks\nsave to disk
+output -> success: file written
+success -> user: planner ready

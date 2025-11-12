@@ -1,0 +1,116 @@
+direction: right
+
+title: Declarative Layout System {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 20
+    bold: true
+  }
+}
+
+# Page classes
+page_class: Page Class (e.g. WeeklyPage) {
+  shape: rectangle
+  style: {
+    fill: "#e3f2fd"
+    stroke: "#1976d2"
+    stroke-width: 2
+  }
+}
+
+setup_method: setup() method {
+  shape: rectangle
+  style.fill: "#bbdefb"
+}
+
+# Layout factory
+factory: LayoutFactory {
+  shape: hexagon
+  style: {
+    fill: "#f3e5f5"
+    stroke: "#7b1fa2"
+    stroke-width: 2
+  }
+}
+
+# Base layout
+base_layout: BaseLayout {
+  shape: rectangle
+  style.fill: "#ce93d8"
+
+  render_before: render_before() hook {shape: step}
+  render_after: render_after() hook {shape: step}
+}
+
+# Concrete layouts
+full_page: FullPageLayout {
+  shape: rectangle
+  style.fill: "#fff3e0"
+
+  content: Content area:\n43 cols × 55 rows\nFull page access
+}
+
+standard_sidebars: StandardWithSidebarsLayout {
+  shape: rectangle
+  style.fill: "#ffe0b2"
+
+  left_sidebar: Left sidebar:\n3 cols\nWeek list
+
+  right_sidebar: Right sidebar:\n1 col\nYear tabs
+
+  content: Content area:\n39 cols\n(43 - 3 - 1)
+}
+
+# Components used by layouts
+week_sidebar_component: WeekSidebar Component {
+  shape: package
+  style.fill: "#e8f5e9"
+}
+
+nav_tabs_component: NavigationTabs Component {
+  shape: package
+  style.fill: "#c8e6c9"
+}
+
+# Content area output
+content_area: content_area hash {
+  shape: document
+  style: {
+    fill: "#fff9c4"
+    stroke: "#f57f17"
+  }
+
+  details: "{\n  col: start_col\n  row: start_row\n  width: width_in_boxes\n  height: height_in_boxes\n}"
+}
+
+# Page render method
+render_method: render(content_area) {
+  shape: rectangle
+  style: {
+    fill: "#c5cae9"
+    stroke: "#303f9f"
+    stroke-width: 2
+  }
+}
+
+# Flow
+page_class -> setup_method: calls setup()
+setup_method -> factory: use_layout(:standard_with_sidebars,\n  current_week: @week_num,\n  highlight_tab: :year_events,\n  year: @year)
+factory -> base_layout: creates layout instance
+base_layout <- full_page: inheritance
+base_layout <- standard_sidebars: inheritance
+
+# Layout rendering
+factory -> standard_sidebars: returns layout instance
+standard_sidebars -> week_sidebar_component: render left sidebar (render_before)
+standard_sidebars -> nav_tabs_component: render right sidebar (render_before)
+standard_sidebars -> content_area: calculate content boundaries
+
+content_area -> render_method: passed to page
+page_class -> render_method: implements render()
+render_method -> page_class: layout complete (render_after hook)
+
+# Full page alternative
+factory -> full_page: for reference/blank pages
+full_page -> content_area: no sidebars\nfull 43×55 grid

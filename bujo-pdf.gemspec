@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.metadata['source_code_uri'] = spec.homepage
   spec.metadata['changelog_uri'] = "#{spec.homepage}/blob/main/CHANGELOG.md"
 
-  spec.files = Dir['lib/**/*.rb', 'bin/*', 'README.md', 'LICENSE', 'CHANGELOG.md']
+  spec.files = Dir['lib/**/*.rb', 'bin/bujo-pdf', 'README.md', 'ARCHITECTURE.md', 'LICENSE', 'CHANGELOG.md']
   spec.bindir = 'bin'
   spec.executables = ['bujo-pdf']
   spec.require_paths = ['lib']
