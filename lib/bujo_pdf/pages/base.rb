@@ -367,12 +367,12 @@ module BujoPdf
       # Draw diagnostic grid overlay for layout debugging.
       #
       # This is a convenience method that delegates to the Diagnostics utility.
-      # The diagnostic grid is disabled by default.
+      # The diagnostic grid is enabled by default.
       #
       # @param label_every [Integer] Show labels every N grid lines
       # @return [void]
       def draw_diagnostic_grid(label_every: 5)
-        Diagnostics.draw_grid(@pdf, @grid_system, enabled: false, label_every: label_every)
+        Diagnostics.draw_grid(@pdf, @grid_system, enabled: true, label_every: label_every)
       end
 
       # Content Area Helpers

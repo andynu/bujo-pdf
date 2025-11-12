@@ -9,9 +9,9 @@ module BujoPdf
     # Standard layout with left week sidebar and right navigation tabs.
     #
     # Layout structure:
-    #   - Left sidebar (columns 0-2): Week list with month indicators
-    #   - Content area (columns 3-41): Page content (39 boxes wide)
-    #   - Right sidebar (column 42): Year page tabs
+    #   - Left sidebar (columns 0-1): Week list with month indicators (2 boxes)
+    #   - Content area (columns 2-41): Page content (40 boxes wide)
+    #   - Right sidebar (column 42): Year page tabs (1 box)
     #
     # This is the standard layout used by most planner pages including
     # weekly pages and year-at-a-glance pages.
@@ -34,15 +34,15 @@ module BujoPdf
     class StandardWithSidebarsLayout < BaseLayout
       # Content area excluding sidebars.
       #
-      # Content spans columns 3-41 (39 boxes wide) and full page height,
-      # leaving space for left week sidebar and right navigation tabs.
+      # Content spans columns 2-41 (40 boxes wide) and full page height,
+      # leaving space for left week sidebar (2 boxes) and right navigation tabs (1 box).
       #
       # @return [Hash] Content area specification
       def content_area
         {
-          col: 3,              # Start after left sidebar (3 boxes)
+          col: 2,              # Start after left sidebar (2 boxes)
           row: 0,              # Start at top
-          width_boxes: 39,     # Columns 3-41 inclusive (39 boxes)
+          width_boxes: 40,     # Columns 2-41 inclusive (40 boxes)
           height_boxes: 55     # Full page height
         }
       end

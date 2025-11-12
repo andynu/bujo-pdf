@@ -74,8 +74,8 @@ module BujoPdf
 
       def draw_header
         # Content area dimensions
-        content_start_col = 3
-        content_width_boxes = 39  # Columns 3-41 inclusive
+        content_start_col = 2
+        content_width_boxes = 40  # Columns 2-41 inclusive
 
         # Header - rows 0-1 (2 boxes)
         header_box = @grid_system.rect(content_start_col, 0, content_width_boxes, 2)
@@ -89,9 +89,9 @@ module BujoPdf
       end
 
       def draw_month_headers
-        content_start_col = 3
-        content_width_boxes = 39
-        col_width_boxes = content_width_boxes / 12.0  # ≈ 3.25 boxes per month
+        content_start_col = 2
+        content_width_boxes = 40
+        col_width_boxes = content_width_boxes / 12.0  # ≈ 3.33 boxes per month
 
         @pdf.font "Helvetica-Bold", size: YEAR_MONTH_HEADER_SIZE
 
@@ -131,8 +131,8 @@ module BujoPdf
       end
 
       def draw_days_grid
-        content_start_col = 3
-        content_width_boxes = 39
+        content_start_col = 2
+        content_width_boxes = 40
         col_width_boxes = content_width_boxes / 12.0
 
         # Days grid - rows 3-52 (50 rows for 31 days)

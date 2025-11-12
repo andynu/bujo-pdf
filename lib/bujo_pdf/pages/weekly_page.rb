@@ -87,7 +87,9 @@ module BujoPdf
           week_num: @week_num,
           total_weeks: @total_weeks,
           week_start: @week_start,
-          week_end: @week_end
+          week_end: @week_end,
+          content_start_col: 2,
+          content_width_boxes: 40
         )
         nav.render
       end
@@ -96,9 +98,9 @@ module BujoPdf
         # Use DailySection component
         section = Components::DailySection.new(@pdf, @grid_system,
           week_start: @week_start,
-          content_start_col: 3,
+          content_start_col: 2,
           content_start_row: 2,
-          content_width_boxes: 39,
+          content_width_boxes: 40,
           daily_rows: 9,
           line_count: WEEKLY_DAY_LINES_COUNT.to_i,
           header_height: WEEKLY_DAY_HEADER_HEIGHT,
@@ -115,10 +117,10 @@ module BujoPdf
       def draw_cornell_notes
         # Use CornellNotes component
         notes = Components::CornellNotes.new(@pdf, @grid_system,
-          content_start_col: 3,
+          content_start_col: 2,
           notes_start_row: 11,  # After daily section (rows 2-10)
           cues_cols: 10,
-          notes_cols: 29,
+          notes_cols: 30,
           notes_main_rows: 35,
           summary_rows: 9
         )
