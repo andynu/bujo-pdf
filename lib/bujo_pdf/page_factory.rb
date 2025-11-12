@@ -2,6 +2,7 @@
 
 require_relative 'pages/base'
 require_relative 'pages/blank_dot_grid'
+require_relative 'pages/grid_showcase'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -24,6 +25,7 @@ module BujoPdf
     # Registry mapping page keys to page classes
     @registry = {
       dots: Pages::BlankDotGrid,
+      grid_showcase: Pages::GridShowcase,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,

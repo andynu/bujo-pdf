@@ -37,7 +37,7 @@ module BujoPdf
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = 4 + total_weeks + 2  # 4 overview + weeks + 2 template pages
+      @total_pages = 4 + total_weeks + 3  # 4 overview + weeks + 3 template pages
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -91,6 +91,10 @@ module BujoPdf
     end
 
     def generate_template_pages
+      @pdf.start_new_page
+      generate_page(:grid_showcase)
+      @grid_showcase_page = @pdf.page_number
+
       @pdf.start_new_page
       generate_page(:reference)
       @reference_page = @pdf.page_number
@@ -159,6 +163,7 @@ module BujoPdf
       multi_year_page = @multi_year_page
       weekly_start_page = @weekly_start_page
       week_pages = @week_pages
+      grid_showcase_page = @grid_showcase_page
       reference_page = @reference_page
       dots_page = @dots_page
 
@@ -189,7 +194,8 @@ module BujoPdf
           end
         end
 
-        section 'Templates', destination: reference_page do
+        section 'Templates', destination: grid_showcase_page do
+          page destination: grid_showcase_page, title: 'Grid Types Showcase'
           page destination: reference_page, title: 'Grid Reference & Calibration'
           page destination: dots_page, title: 'Dot Grid'
         end

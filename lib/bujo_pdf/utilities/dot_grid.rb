@@ -66,7 +66,7 @@ module DotGrid
     end
 
     # Create and render the appropriate grid type
-    renderer = GridFactory.create(type, pdf, width, height, options)
+    renderer = BujoPdf::Utilities::GridFactory.create(type, pdf, width, height, **options)
     renderer.render
   end
 
