@@ -2,6 +2,7 @@
 
 require_relative 'base'
 require_relative '../utilities/date_calculator'
+require_relative '../sub_components/fieldset'
 
 module BujoPdf
   module Pages
@@ -107,53 +108,18 @@ module BujoPdf
       end
 
       def draw_fieldset(start_col, start_row, width_boxes, height_boxes, legend)
-        # Get the box coordinates
-        box = @grid_system.rect(start_col, start_row, width_boxes, height_boxes)
-
-        font_size = 10
-        legend_padding = 5
-        legend_offset_x = @grid_system.width(0.5)
-
-        # Calculate legend dimensions
-        @pdf.font "Helvetica", size: font_size
-        legend_width = @pdf.width_of(legend)
-        legend_total_width = legend_width + (legend_padding * 2)
-
-        # Legend position: centered on top edge with offset
-        legend_x_start = box[:x] + (box[:width] / 2) - (legend_total_width / 2) + legend_offset_x
-        legend_y = box[:y] + (font_size / 2)
-
-        # Border inset (0 boxes = tight spacing)
-        border_x = box[:x]
-        border_y = box[:y]
-        border_width = box[:width]
-        border_height = box[:height]
-
-        # Draw border with gap for legend on top edge
-        @pdf.stroke_color COLOR_BORDERS
-        @pdf.fill_color 'FFFFFF'
-
-        # Top edge: left corner to legend start
-        @pdf.stroke_line [border_x, border_y], [legend_x_start, border_y]
-        # Top edge: legend end to right corner
-        @pdf.stroke_line [legend_x_start + legend_total_width, border_y], [border_x + border_width, border_y]
-        # Right edge
-        @pdf.stroke_line [border_x + border_width, border_y], [border_x + border_width, border_y - border_height]
-        # Bottom edge
-        @pdf.stroke_line [border_x + border_width, border_y - border_height], [border_x, border_y - border_height]
-        # Left edge
-        @pdf.stroke_line [border_x, border_y - border_height], [border_x, border_y]
-
-        # Draw legend text
-        @pdf.fill_color COLOR_BORDERS
-        @pdf.text_box legend,
-                      at: [legend_x_start + legend_padding, legend_y],
-                      width: legend_width,
-                      height: font_size + 4,
-                      valign: :center
-
-        @pdf.stroke_color '000000'
-        @pdf.fill_color '000000'
+        # Use Fieldset sub-component
+        fieldset = SubComponent::Fieldset.new(@pdf, @grid_system,
+          legend: legend,
+          position: :top_center,
+          font_size: 10,
+          legend_padding: 5,
+          inset_boxes: 0,  # No inset for seasonal calendar
+          legend_offset_x: @grid_system.width(0.5),  # Match original offset
+          border_color: COLOR_BORDERS,
+          text_color: COLOR_BORDERS
+        )
+        fieldset.render_at(start_col, start_row, width_boxes, height_boxes)
       end
 
       def draw_month_grid(month, start_col, start_row, width_boxes)
