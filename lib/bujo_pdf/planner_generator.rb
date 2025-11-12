@@ -79,12 +79,14 @@ module BujoPdf
 
     def generate_weekly_pages
       @weekly_start_page = @pdf.page_number + 1  # Next page
+      @week_pages = {}
 
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
       total_weeks.times do |i|
         week_num = i + 1
         @pdf.start_new_page
         generate_weekly_page(week_num)
+        @week_pages[week_num] = @pdf.page_number
       end
     end
 
@@ -149,19 +151,47 @@ module BujoPdf
     end
 
     def build_outline
+      # Capture instance variables in local scope for use in outline block
+      year = @year
+      seasonal_page = @seasonal_page
+      events_page = @events_page
+      highlights_page = @highlights_page
+      multi_year_page = @multi_year_page
+      weekly_start_page = @weekly_start_page
+      week_pages = @week_pages
+      reference_page = @reference_page
+      dots_page = @dots_page
+
       @pdf.outline.define do
-        section "#{@year} Overview", destination: @seasonal_page do
-          page destination: @seasonal_page, title: 'Seasonal Calendar'
-          page destination: @events_page, title: 'Year at a Glance - Events'
-          page destination: @highlights_page, title: 'Year at a Glance - Highlights'
-          page destination: @multi_year_page, title: 'Multi-Year Overview'
+        section "#{year} Overview", destination: seasonal_page do
+          page destination: seasonal_page, title: 'Seasonal Calendar'
+          page destination: events_page, title: 'Year at a Glance - Events'
+          page destination: highlights_page, title: 'Year at a Glance - Highlights'
+          page destination: multi_year_page, title: 'Multi-Year Overview'
         end
 
-        page destination: @weekly_start_page, title: 'Weekly Pages'
+        # Monthly groupings of weekly pages
+        section 'Monthly Pages', destination: weekly_start_page do
+          (1..12).each do |month|
+            month_name = Date::MONTHNAMES[month]
+            weeks_in_month = Utilities::DateCalculator.weeks_for_month(year, month)
 
-        section 'Templates', destination: @dots_page do
-          page destination: @reference_page, title: 'Grid Reference & Calibration'
-          page destination: @dots_page, title: 'Dot Grid'
+            # Only create section if there are weeks for this month
+            if weeks_in_month.any?
+              first_week = weeks_in_month.first
+              section "#{month_name} #{year}", destination: week_pages[first_week] do
+                weeks_in_month.each do |week_num|
+                  page_num = week_pages[week_num]
+                  page destination: page_num, title: "Week #{week_num}" if page_num
+                end
+              end
+            end
+          end
+        end
+
+        section 'Templates', destination: reference_page do
+          page destination: reference_page, title: 'Grid Reference & Calibration'
+          page destination: dots_page, title: 'Dot Grid'
         end
       end
     end

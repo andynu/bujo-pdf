@@ -3,19 +3,17 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-12 (Completed Plan 11)
+2025-11-12 (Starting Plan 17)
 
 ## Active Plans
 
-### Plan 15: Three-Letter Month Indicators in Week Sidebar (Not Started)
-- **File**: `15-month-indicators-in-nav.md`
-- **Status**: Not Started
-- **Priority**: Feature Enhancement
-- **Goal**: Change from single-character month indicators to three-letter month abbreviations (JAN, FEB, MAR, etc.) in the week sidebar
-
-### Plan 17: Monthly Table of Contents Pages (Not Started)
+### Plan 17: Monthly Table of Contents Pages (In Progress)
 - **File**: `17-month-toc-pages.md`
-- **Status**: Not Started
+- **Status**: In Progress
+- **Created**: 2025-11-12
+- **Last Modified**: 2025-11-12
+- **Last Worked**: 2025-11-12
+- **Changed Since Work**: No
 - **Priority**: Feature Enhancement
 - **Goal**: Add dedicated TOC pages for each month (12 total) providing navigation structure between year-at-a-glance and weekly pages
 
@@ -54,6 +52,15 @@ This file tracks the status of all plans in the plans directory.
 - **Status**: Not Started
 - **Priority**: Code Quality
 - **Goal**: Create WeekGrid component with quantized column widths for consistent visual rhythm across 7-day grids in different contexts
+
+## Discarded Plans
+
+### Plan 15: Three-Letter Month Indicators in Week Sidebar (Discarded)
+- **File**: `15-month-indicators-in-nav.md`
+- **Status**: Discarded
+- **Priority**: Feature Enhancement
+- **Goal**: Change from single-character month indicators to three-letter month abbreviations (JAN, FEB, MAR, etc.) in the week sidebar
+- **Reason**: Insufficient space on iPad. The 2-box sidebar width cannot accommodate three-letter abbreviations plus week numbers without compromising readability or layout integrity.
 
 ## Recently Completed Plans
 

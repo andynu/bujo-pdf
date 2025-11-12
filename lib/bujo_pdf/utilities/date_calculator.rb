@@ -168,6 +168,22 @@ module BujoPdf
         end
         map
       end
+
+      # Get all week numbers that include any dates in the given month.
+      # A week is included if any of its 7 days fall within the month.
+      #
+      # @param year [Integer] The year
+      # @param month [Integer] The month number (1-12)
+      # @return [Array<Integer>] Week numbers that include dates in this month
+      def self.weeks_for_month(year, month)
+        first_of_month = Date.new(year, month, 1)
+        last_of_month = Date.new(year, month, -1)
+
+        first_week = week_number_for_date(year, first_of_month)
+        last_week = week_number_for_date(year, last_of_month)
+
+        (first_week..last_week).to_a
+      end
     end
   end
 end
