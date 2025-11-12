@@ -32,7 +32,7 @@ module BujoPdf
       SIDEBAR_WIDTH_BOXES = 2
       SIDEBAR_START_ROW = 2
       PADDING_BOXES = 0.3
-      FONT_SIZE = 7
+      FONT_SIZE = 6
       NAV_COLOR = '888888'
 
       def render
