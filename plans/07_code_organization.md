@@ -1,460 +1,689 @@
-# Plan 07: Code Organization and Constant Separation
+# Plan 07: Eliminate Code Duplication from Component Extraction
 
 ## Executive Summary
 
-Refactor the monolithic `gen.rb` file to improve code organization by:
-1. Separating constants into logical grouping files
-2. Extracting date/week calculation utilities into a dedicated class
-3. Reorganizing methods into modules using composition patterns
+Component extraction (Plans 01-06, 10) successfully modularized the codebase but introduced new duplication patterns. This plan eliminates 96+ lines of duplicated code by:
 
-This refactoring will improve maintainability, testability, and clarity without changing any functionality.
+1. **Extracting common rendering patterns** - Parameterized helpers for labeled sections (Cornell notes)
+2. **Centralizing validation logic** - Base class validation in Component
+3. **Standardizing style management** - Color/font context helpers to prevent manual resets
+4. **Creating shared page setup** - Standard layout page base class
+5. **Consolidating link patterns** - Consistent use of GridSystem link API
 
-## Current State
+This is a **pure refactoring plan** - no new features, no behavioral changes. All improvements are internal code quality enhancements.
 
-All constants (130+ lines), utilities, and generation logic are currently in a single `gen.rb` file (~1480 lines). Constants are grouped by comments but not separated into modules or files. Date calculations are embedded in the main generator class.
+## Current State Analysis
+
+### Duplication Introduced During Component Extraction
+
+**Plan 02 (Extract Components)** created these duplications:
+- CornellNotes: 3 nearly-identical section rendering methods (37 lines duplicate)
+- WeekSidebar, TopNavigation, DailySection, CornellNotes: Same validation pattern (30+ lines)
+- TopNavigation, WeekSidebar, RightSidebar: Manual color/font resets (16+ lines)
+
+**Plan 05 (Page Abstraction)** created these duplications:
+- YearAtGlanceBase, SeasonalCalendar, WeeklyPage: Nearly identical setup() methods (9+ lines)
+
+**Plan 01-10 (Various)** introduced these duplications:
+- 6+ places manually construct link annotations instead of using GridSystem.link() (18+ lines)
+- COLOR_BORDERS, GRID_COLS defined in multiple files (constants duplication)
+
+**Total Impact**: 118+ lines of duplicated code, ~38% code reduction potential in affected files
 
 ## Technical Approach
 
-### 1. Constant Separation Strategy
-Extract constants into separate files under a `constants/` directory, each file defining a module that can be included in the main generator.
+### Philosophy: DRY Without Over-Engineering
 
-### 2. Date Calculation Extraction
-Create a `DateCalculator` class to encapsulate all week numbering and date range logic, making it testable and reusable.
+This refactoring follows these principles:
 
-### 3. Module Organization
-Group related utility methods into modules that can be mixed into classes, following single-responsibility principle.
+1. **Extract only proven patterns** - Only duplication that exists 3+ times
+2. **Prefer composition over inheritance** - Helpers over deep hierarchies
+3. **Maintain component independence** - Avoid tight coupling
+4. **Keep it simple** - Clear names, obvious behavior, minimal abstraction
+
+### Refactoring Categories
+
+1. **Rendering Patterns** - Parameterized helper methods
+2. **Validation** - Base class shared logic
+3. **Style Management** - Context manager helpers
+4. **Page Setup** - Shared base class for standard layouts
+5. **Link API** - Consistent use of existing GridSystem.link()
+6. **Constants** - Centralize in Styling module
 
 ## Implementation Steps
 
-### 1. Create Constants Directory Structure
+### 1. Extract Labeled Section Rendering Pattern
 
-**1.1 Set up directory**
-- Create `constants/` directory in project root
-- Each constant file will define a module to be included
+**Problem**: CornellNotes has 3 nearly-identical methods:
+- `draw_cues_section` (lines 59-78)
+- `draw_notes_section` (lines 81-100)
+- `draw_summary_section` (lines 103-122)
 
-**1.2 Create `constants/grid.rb`**
-Extract grid system constants:
+Each method: creates bounding box → strokes border → draws label → resets state
+
+**1.1 Add parameterized helper to CornellNotes**
+
 ```ruby
-# constants/grid.rb
-module PlannerConstants
-  module Grid
-    # Grid dimensions
-    GRID_COLS = 43
-    GRID_ROWS = 55
-    DOT_SPACING = 14.17323  # 5mm in points
+# lib/bujo_pdf/components/cornell_notes.rb
 
-    # Page dimensions
-    PAGE_WIDTH = 612
-    PAGE_HEIGHT = 792
+private
 
-    # Debug settings
-    DEBUG_GRID = false
+def draw_labeled_section(col, row, width_boxes, height_boxes, label, label_size: LABEL_FONT_SIZE)
+  section_box = @grid.rect(col, row, width_boxes, height_boxes)
+
+  @pdf.bounding_box([section_box[:x], section_box[:y]],
+                   width: section_box[:width],
+                   height: section_box[:height]) do
+    @pdf.stroke_color COLOR_BORDERS
+    @pdf.stroke_bounds
+    @pdf.stroke_color '000000'
+    @pdf.font "Helvetica-Bold", size: HEADER_FONT_SIZE
+    @pdf.move_down HEADER_PADDING
+    @pdf.fill_color COLOR_SECTION_HEADERS
+    @pdf.text label, align: :center, size: label_size
+    @pdf.fill_color '000000'
   end
 end
 ```
 
-**1.3 Create `constants/colors.rb`**
-Extract color definitions:
+**1.2 Replace 3 methods with helper calls**
+
 ```ruby
-# constants/colors.rb
-module PlannerConstants
-  module Colors
-    COLOR_DOT_GRID = 'CCCCCC'
-    COLOR_BORDERS = 'E5E5E5'
-    COLOR_SECTION_HEADERS = 'AAAAAA'
-    COLOR_WEEKEND_BG = 'FAFAFA'
-    COLOR_HEADER_GRAY = '808080'
-    # ... all other color constants
+def draw_cues_section
+  draw_labeled_section(
+    context[:content_start_col],
+    context[:notes_start_row],
+    context[:cues_cols],
+    context[:notes_main_rows],
+    "Cues/Questions"
+  )
+end
+
+def draw_notes_section
+  draw_labeled_section(
+    context[:content_start_col] + context[:cues_cols],
+    context[:notes_start_row],
+    context[:notes_cols],
+    context[:notes_main_rows],
+    "Notes"
+  )
+end
+
+def draw_summary_section
+  draw_labeled_section(
+    context[:content_start_col],
+    context[:notes_start_row] + context[:notes_main_rows],
+    context[:cues_cols] + context[:notes_cols],
+    context[:summary_rows],
+    "Summary"
+  )
+end
+```
+
+**Savings**: 37 lines reduced to 1 helper method + 3 simple calls
+
+**Files Modified**:
+- `lib/bujo_pdf/components/cornell_notes.rb`
+
+### 2. Centralize Component Option Validation
+
+**Problem**: 4 components have nearly-identical validation:
+
+- `lib/bujo_pdf/components/week_sidebar.rb` lines 58-65
+- `lib/bujo_pdf/components/top_navigation.rb` lines 50-57
+- `lib/bujo_pdf/components/daily_section.rb` (similar pattern)
+- `lib/bujo_pdf/components/cornell_notes.rb` lines 49-57
+
+**2.1 Add validation helper to Component base class**
+
+```ruby
+# lib/bujo_pdf/component.rb
+
+protected
+
+# Validate that required options are present in context.
+#
+# @param keys [Array<Symbol>] Required option keys
+# @raise [ArgumentError] if any required keys are missing
+# @return [void]
+#
+# @example
+#   def validate_configuration
+#     require_options(:year, :total_weeks, :current_week_num)
+#   end
+def require_options(*keys)
+  missing_keys = keys - context.keys
+
+  unless missing_keys.empty?
+    raise ArgumentError, "#{self.class.name} requires: #{missing_keys.join(', ')}"
   end
 end
 ```
 
-**1.4 Create `constants/layout.rb`**
-Extract layout dimensions:
+**2.2 Update components to use helper**
+
 ```ruby
-# constants/layout.rb
-module PlannerConstants
-  module Layout
-    # Seasonal calendar layout
-    SEASONAL_LEFT_INSET = 0.5
-    SEASONAL_RIGHT_INSET = 1.5
-    SEASONAL_TOP_INSET = 1.5
-    SEASONAL_BOTTOM_INSET = 0.5
+# lib/bujo_pdf/components/week_sidebar.rb
+def validate_configuration
+  require_options(:year, :total_weeks)
+end
 
-    # Weekly page layout
-    WEEKLY_TOP_NAV_HEIGHT_BOXES = 2
-    WEEKLY_SIDEBAR_WIDTH_BOXES = 3
-    WEEKLY_RIGHT_TAB_WIDTH_BOXES = 1.5
+# lib/bujo_pdf/components/top_navigation.rb
+def validate_configuration
+  require_options(:year, :week_num, :total_weeks, :week_start, :week_end)
+end
 
-    # ... all other layout constants
-  end
+# lib/bujo_pdf/components/cornell_notes.rb
+def validate_configuration
+  require_options(:content_start_col, :notes_start_row, :cues_cols,
+                 :notes_cols, :notes_main_rows, :summary_rows)
+end
+
+# lib/bujo_pdf/components/daily_section.rb
+def validate_configuration
+  require_options(:content_start_col, :daily_start_row, :daily_cols,
+                 :daily_rows)
 end
 ```
 
-**1.5 Create `constants/typography.rb`**
-Extract font sizes and text styling:
-```ruby
-# constants/typography.rb
-module PlannerConstants
-  module Typography
-    FONT_SIZE_PAGE_TITLE = 16
-    FONT_SIZE_SECTION_HEADER = 10
-    FONT_SIZE_DAY_HEADER = 9
-    FONT_SIZE_MONTH_LABEL = 8
-    FONT_SIZE_DAY_NUMBER = 7
-    FONT_SIZE_NOTES = 6
+**Savings**: 16 lines (4 methods × 4 components → 1 base helper + 4 one-liners)
 
-    # ... all other typography constants
+**Files Modified**:
+- `lib/bujo_pdf/component.rb`
+- `lib/bujo_pdf/components/week_sidebar.rb`
+- `lib/bujo_pdf/components/top_navigation.rb`
+- `lib/bujo_pdf/components/cornell_notes.rb`
+- `lib/bujo_pdf/components/daily_section.rb`
+
+### 3. Add Style Context Managers to Component Base
+
+**Problem**: Manual color/font state management scattered across components:
+
+```ruby
+# Pattern repeated 8+ times:
+@pdf.fill_color NAV_COLOR
+# ... draw text ...
+@pdf.fill_color '000000'  # Reset to black
+```
+
+**3.1 Add context manager helpers to Component**
+
+```ruby
+# lib/bujo_pdf/component.rb
+
+protected
+
+# Execute block with temporary fill color, then restore.
+#
+# @param color [String] 6-digit hex color code
+# @yield Block to execute with color applied
+# @return [void]
+#
+# @example
+#   with_fill_color('888888') do
+#     @pdf.text "Gray text"
+#   end
+#   # Color automatically restored to previous value
+def with_fill_color(color)
+  original = @pdf.fill_color
+  @pdf.fill_color color
+  yield
+ensure
+  @pdf.fill_color original
+end
+
+# Execute block with temporary stroke color, then restore.
+#
+# @param color [String] 6-digit hex color code
+# @yield Block to execute with color applied
+# @return [void]
+def with_stroke_color(color)
+  original = @pdf.stroke_color
+  @pdf.stroke_color color
+  yield
+ensure
+  @pdf.stroke_color original
+end
+
+# Execute block with temporary font settings, then restore.
+#
+# @param family [String] Font family name
+# @param size [Integer, nil] Font size (optional)
+# @yield Block to execute with font applied
+# @return [void]
+#
+# @example
+#   with_font("Helvetica-Bold", 14) do
+#     @pdf.text "Bold title"
+#   end
+def with_font(family, size = nil)
+  original_family = @pdf.font.family
+  original_size = @pdf.font_size
+
+  if size
+    @pdf.font family, size: size
+  else
+    @pdf.font family
   end
+
+  yield
+ensure
+  @pdf.font original_family, size: original_size
 end
 ```
 
-**1.6 Update `gen.rb` to require constants**
+**3.2 Update components to use context managers**
+
 ```ruby
-# gen.rb (top of file)
-require 'prawn'
-require 'date'
-require_relative 'constants/grid'
-require_relative 'constants/colors'
-require_relative 'constants/layout'
-require_relative 'constants/typography'
+# lib/bujo_pdf/components/top_navigation.rb
 
-class PlannerGenerator
-  include PlannerConstants::Grid
-  include PlannerConstants::Colors
-  include PlannerConstants::Layout
-  include PlannerConstants::Typography
+def draw_year_link(nav_box)
+  with_font("Helvetica", FOOTER_FONT_SIZE) do
+    with_fill_color(NAV_COLOR) do
+      nav_year_width = @grid.width(4)
+      @pdf.text_box "< #{context[:year]}",
+                    at: [nav_box[:x], nav_box[:y]],
+                    width: nav_year_width,
+                    height: nav_box[:height],
+                    valign: :center
 
-  # ... rest of class
-end
-```
-
-### 2. Extract Date/Week Calculation Utilities
-
-**2.1 Create `lib/` directory**
-- Create `lib/` directory for utility classes
-- Place `date_calculator.rb` in this directory
-
-**2.2 Implement `DateCalculator` class**
-```ruby
-# lib/date_calculator.rb
-class DateCalculator
-  attr_reader :year
-
-  def initialize(year)
-    @year = year
-  end
-
-  # Calculate the Monday of week 1 (on or before January 1)
-  def year_start_monday
-    @year_start_monday ||= begin
-      first_day = Date.new(@year, 1, 1)
-      days_back = (first_day.wday + 6) % 7  # Convert to Monday-based
-      first_day - days_back
+      @pdf.link_annotation([nav_box[:x], nav_box[:y] - nav_box[:height],
+                            nav_box[:x] + nav_year_width, nav_box[:y]],
+                          Dest: "seasonal",
+                          Border: [0, 0, 0])
     end
   end
+end
+```
 
-  # Calculate week number for a given date
-  def week_number(date)
-    days_from_start = (date - year_start_monday).to_i
-    (days_from_start / 7) + 1
-  end
+**Savings**: 16+ lines across TopNavigation, WeekSidebar, RightSidebar
 
-  # Get total number of weeks in the year
-  def total_weeks
-    @total_weeks ||= begin
-      last_day = Date.new(@year, 12, 31)
-      week_number(last_day)
+**Files Modified**:
+- `lib/bujo_pdf/component.rb`
+- `lib/bujo_pdf/components/top_navigation.rb`
+- `lib/bujo_pdf/components/week_sidebar.rb`
+- `lib/bujo_pdf/components/right_sidebar.rb`
+
+### 4. Create StandardLayoutPage Base Class
+
+**Problem**: Nearly-identical setup methods in 3 page classes:
+
+- `lib/bujo_pdf/pages/year_at_glance_base.rb`
+- `lib/bujo_pdf/pages/seasonal_calendar.rb`
+- `lib/bujo_pdf/pages/weekly_page.rb`
+
+Each does: use_layout :standard_with_sidebars with similar options
+
+**4.1 Create StandardLayoutPage**
+
+```ruby
+# lib/bujo_pdf/pages/standard_layout_page.rb
+
+require_relative 'base'
+
+module BujoPdf
+  module Pages
+    # Base class for pages that use the standard sidebar layout.
+    #
+    # Automatically sets up:
+    # - Left week sidebar
+    # - Right navigation tabs
+    # - Content area for page content
+    #
+    # Subclasses must implement:
+    # - current_week: Which week to highlight (or nil)
+    # - highlight_tab: Which tab to highlight (or nil)
+    class StandardLayoutPage < Base
+      def setup
+        use_layout :standard_with_sidebars,
+          current_week: current_week,
+          highlight_tab: highlight_tab,
+          year: context.year,
+          total_weeks: context.total_weeks
+      end
+
+      protected
+
+      # Which week to highlight in sidebar (override in subclass).
+      #
+      # @return [Integer, nil] Week number or nil for no highlight
+      def current_week
+        nil
+      end
+
+      # Which tab to highlight in right sidebar (override in subclass).
+      #
+      # @return [Symbol, nil] Tab key or nil for no highlight
+      def highlight_tab
+        nil
+      end
     end
   end
+end
+```
 
-  # Get date range for a specific week number
-  def week_range(week_num)
-    start_date = year_start_monday + ((week_num - 1) * 7)
-    end_date = start_date + 6
-    [start_date, end_date]
+**4.2 Update page classes to inherit from StandardLayoutPage**
+
+```ruby
+# lib/bujo_pdf/pages/year_at_glance_base.rb
+class YearAtGlanceBase < StandardLayoutPage
+  protected
+
+  def current_week
+    nil  # Year overview pages don't highlight weeks
   end
 
-  # Get the Monday of a specific week
-  def week_start(week_num)
-    year_start_monday + ((week_num - 1) * 7)
+  # Subclasses override highlight_tab
+end
+
+# lib/bujo_pdf/pages/year_at_glance_events.rb
+class YearAtGlanceEvents < YearAtGlanceBase
+  protected
+
+  def highlight_tab
+    :year_events
+  end
+end
+
+# lib/bujo_pdf/pages/weekly_page.rb
+class WeeklyPage < StandardLayoutPage
+  protected
+
+  def current_week
+    context.week_num
   end
 
-  # Check if a date falls within the calendar year
-  def in_year?(date)
-    date.year == @year
-  end
-
-  # Get all weeks that overlap with a specific month
-  def weeks_for_month(month)
-    first_of_month = Date.new(@year, month, 1)
-    last_of_month = Date.new(@year, month, -1)
-
-    first_week = week_number(first_of_month)
-    last_week = week_number(last_of_month)
-
-    (first_week..last_week).to_a
+  def highlight_tab
+    nil  # Weekly pages don't highlight tabs
   end
 end
 ```
 
-**2.3 Update `PlannerGenerator` to use `DateCalculator`**
-Replace all date calculation logic with calls to `DateCalculator`:
+**Savings**: 9+ lines (3 setup methods → 1 base class + simple overrides)
 
+**Files Created**:
+- `lib/bujo_pdf/pages/standard_layout_page.rb`
+
+**Files Modified**:
+- `lib/bujo_pdf/pages/year_at_glance_base.rb`
+- `lib/bujo_pdf/pages/year_at_glance_events.rb`
+- `lib/bujo_pdf/pages/year_at_glance_highlights.rb`
+- `lib/bujo_pdf/pages/weekly_page.rb`
+
+### 5. Standardize Link API Usage
+
+**Problem**: 6+ places manually construct link annotations instead of using GridSystem.link()
+
+Examples:
+- `lib/bujo_pdf/components/top_navigation.rb` lines 79-82, 99-102, 118-121
+- `lib/bujo_pdf/components/week_sidebar.rb` (multiple places)
+- Other components
+
+**5.1 Document GridSystem.link() method** (if not already clear)
+
+Ensure GridSystem has:
 ```ruby
-class PlannerGenerator
-  def initialize(year)
-    @year = year
-    @date_calc = DateCalculator.new(year)
-    @pdf = Prawn::Document.new(page_size: 'LETTER')
-  end
+# lib/bujo_pdf/utilities/grid_system.rb
 
-  # Replace inline calculations with @date_calc methods
-  def generate_weekly_pages
-    (1..@date_calc.total_weeks).each do |week_num|
-      # ...
-    end
-  end
+# Create a clickable link annotation at grid coordinates.
+#
+# @param col [Integer] Grid column
+# @param row [Integer] Grid row
+# @param width_boxes [Integer] Width in grid boxes
+# @param height_boxes [Integer] Height in grid boxes
+# @param dest [String] Named destination
+# @param options [Hash] Additional Prawn link_annotation options
+# @return [void]
+def link(col, row, width_boxes, height_boxes, dest, **options)
+  left = x(col)
+  top = y(row)
+  right = x(col + width_boxes)
+  bottom = y(row + height_boxes)
 
-  # ... other methods updated similarly
+  @pdf.link_annotation([left, bottom, right, top],
+                      Dest: dest,
+                      Border: options.fetch(:Border, [0, 0, 0]))
 end
 ```
 
-### 3. Improve Method Organization
+**5.2 Replace manual link construction with GridSystem.link()**
 
-**3.1 Create `modules/grid_helpers.rb`**
-Extract grid calculation methods into a module:
 ```ruby
-# modules/grid_helpers.rb
-module GridHelpers
-  def grid_x(col)
-    col * DOT_SPACING
-  end
+# Before (lib/bujo_pdf/components/top_navigation.rb lines 79-82):
+@pdf.link_annotation([nav_box[:x], nav_box[:y] - nav_box[:height],
+                      nav_box[:x] + nav_year_width, nav_box[:y]],
+                    Dest: "seasonal",
+                    Border: [0, 0, 0])
 
-  def grid_y(row)
-    PAGE_HEIGHT - (row * DOT_SPACING)
-  end
+# After:
+@grid.link(content_start_col, 0, 4, 2, "seasonal")
+```
 
-  def grid_width(boxes)
-    boxes * DOT_SPACING
-  end
+Apply this pattern across all components that manually construct links.
 
-  def grid_height(boxes)
-    boxes * DOT_SPACING
-  end
+**Savings**: 18+ lines (4-line manual constructions → 1-line helper calls)
 
-  def grid_rect(col, row, width_boxes, height_boxes)
-    {
-      x: grid_x(col),
-      y: grid_y(row),
-      width: grid_width(width_boxes),
-      height: grid_height(height_boxes)
-    }
-  end
+**Files Modified**:
+- `lib/bujo_pdf/components/top_navigation.rb`
+- `lib/bujo_pdf/components/week_sidebar.rb`
+- `lib/bujo_pdf/components/right_sidebar.rb`
+- (Any other files with manual link construction)
 
-  # ... other grid helper methods
+### 6. Centralize Constant Definitions
+
+**Problem**: COLOR_BORDERS, GRID_COLS defined in multiple files
+
+- `lib/bujo_pdf/components/cornell_notes.rb` line 30: `COLOR_BORDERS = 'E5E5E5'`
+- `lib/bujo_pdf/utilities/styling.rb` line 11: `BORDERS = 'E5E5E5'`
+- Similar duplication for other constants
+
+**6.1 Audit all constant duplications**
+
+Search for duplicated constants:
+```bash
+grep -r "COLOR_BORDERS\|GRID_COLS\|DOT_SPACING" lib/
+```
+
+**6.2 Remove local constants, use Styling module**
+
+```ruby
+# lib/bujo_pdf/components/cornell_notes.rb
+
+# Before:
+COLOR_BORDERS = 'E5E5E5'
+COLOR_SECTION_HEADERS = 'AAAAAA'
+
+# After:
+# (Remove local constants, use Styling module)
+
+def draw_labeled_section(...)
+  @pdf.stroke_color Styling::Colors::BORDERS  # Use centralized constant
+  # ...
 end
 ```
 
-**3.2 Create `modules/drawing_helpers.rb`**
-Extract drawing utility methods:
+**6.3 Add convenience include to Component base**
+
 ```ruby
-# modules/drawing_helpers.rb
-module DrawingHelpers
-  def draw_dot_grid(width, height)
-    # ... existing implementation
-  end
+# lib/bujo_pdf/component.rb
 
-  def draw_diagnostic_grid(label_every: 5)
-    # ... existing implementation
-  end
+module BujoPdf
+  class Component
+    # Make Styling constants available without full namespace
+    include Styling::Colors  # Now can use BORDERS instead of Styling::Colors::BORDERS
 
-  def draw_fieldset(position:, legend_label:, border_inset: 0.5, legend_offset: 0)
-    # ... existing implementation
+    # ... rest of class
   end
 end
 ```
 
-**3.3 Create `modules/link_helpers.rb`**
-Extract navigation and link methods:
-```ruby
-# modules/link_helpers.rb
-module LinkHelpers
-  def grid_link(col, row, width_boxes, height_boxes, dest, **options)
-    # ... existing implementation
-  end
+**Savings**: Maintainability (single source of truth for constants)
 
-  def setup_named_destinations
-    # ... existing implementation
-  end
-end
+**Files Modified**:
+- `lib/bujo_pdf/component.rb`
+- `lib/bujo_pdf/components/cornell_notes.rb`
+- (Any other files with constant duplication)
+
+### 7. Testing and Validation
+
+**7.1 Generate baseline PDF**
+```bash
+ruby gen.rb 2025
+mv planner_2025.pdf planner_before_refactor.pdf
 ```
 
-**3.4 Update `gen.rb` to include modules**
-```ruby
-require_relative 'modules/grid_helpers'
-require_relative 'modules/drawing_helpers'
-require_relative 'modules/link_helpers'
+**7.2 Apply refactoring in order**
+1. Labeled section rendering (Section 1)
+2. Validation helper (Section 2)
+3. Style context managers (Section 3)
+4. StandardLayoutPage (Section 4)
+5. Link API standardization (Section 5)
+6. Constant centralization (Section 6)
 
-class PlannerGenerator
-  include GridHelpers
-  include DrawingHelpers
-  include LinkHelpers
+Generate PDF after each section, verify it still works.
 
-  # ... rest of class contains only page generation logic
-end
+**7.3 Final comparison**
+```bash
+ruby gen.rb 2025
+# Visual comparison:
+open planner_before_refactor.pdf planner_2025.pdf
+# Or use diff tool if available
 ```
 
-### 4. Refactor Directory Structure
-
-**4.1 Final directory layout**
+**7.4 Verify no errors or warnings**
+```bash
+ruby gen.rb 2025 2>&1 | grep -i "error\|warning"
+# Should produce no output
 ```
-bujo-pdf/
-├── gen.rb                    # Main generator (orchestration only)
-├── lib/
-│   └── date_calculator.rb    # Date/week calculations
-├── modules/
-│   ├── grid_helpers.rb       # Grid coordinate methods
-│   ├── drawing_helpers.rb    # Drawing utility methods
-│   └── link_helpers.rb       # Navigation/link methods
-├── constants/
-│   ├── grid.rb              # Grid system constants
-│   ├── colors.rb            # Color definitions
-│   ├── layout.rb            # Layout dimensions
-│   └── typography.rb        # Font sizes
-└── components/               # Existing component classes
-    ├── base_page.rb
-    ├── render_context.rb
-    └── ...
-```
-
-**4.2 Update require statements**
-Ensure all files are properly required in the correct order:
-1. Constants first
-2. Utility classes (DateCalculator)
-3. Modules (helpers)
-4. Components
-5. Main generator
-
-### 5. Testing and Validation
-
-**5.1 Verify no behavioral changes**
-- Generate planner before refactoring: `ruby gen.rb 2025 && mv planner_2025.pdf planner_before.pdf`
-- Perform refactoring
-- Generate planner after refactoring: `ruby gen.rb 2025`
-- Compare PDFs byte-by-byte or visually
-
-**5.2 Test DateCalculator independently**
-Create a simple test script to verify date calculations:
-```ruby
-# test_date_calculator.rb
-require_relative 'lib/date_calculator'
-
-calc = DateCalculator.new(2025)
-puts "Year start Monday: #{calc.year_start_monday}"
-puts "Total weeks: #{calc.total_weeks}"
-puts "Week 1 range: #{calc.week_range(1)}"
-puts "Weeks in March: #{calc.weeks_for_month(3)}"
-```
-
-**5.3 Verify all constants accessible**
-Check that no constant reference errors occur when running generator.
 
 ## Testing Strategy
 
-### Unit Testing
-- Test `DateCalculator` methods with known dates and edge cases
-- Verify week number calculations for year boundaries
-- Test month-to-week mappings
+### Unit Testing (Future - Plan 08)
+After testing infrastructure is in place, add tests for:
+- `Component#require_options` with various missing keys
+- `Component#with_fill_color` saves/restores state
+- `Component#with_font` saves/restores state
+- `GridSystem#link` creates correct annotation coordinates
 
 ### Integration Testing
-- Generate complete planner PDF
+- Generate complete planner PDF for 2025
 - Verify all pages render correctly
-- Test navigation links work properly
-- Check that constants are properly accessible
+- Test all navigation links work
+- Verify sidebars highlight correctly
 
 ### Regression Testing
-- Compare generated PDF with previous version
-- Ensure no visual differences
+- Compare generated PDF with baseline (before refactoring)
+- Ensure pixel-perfect match (or only expected differences)
 - Verify file size remains similar
-- Check all interactive features (links, bookmarks)
+- Check all interactive features work
 
 ## Acceptance Criteria
 
 ### Must Have
-- [ ] All constants separated into logical files under `constants/`
-- [ ] `DateCalculator` class created and working
-- [ ] All grid helper methods in `GridHelpers` module
-- [ ] All drawing methods in `DrawingHelpers` module
-- [ ] All link methods in `LinkHelpers` module
-- [ ] Generated PDF identical to previous version
-- [ ] No errors when running `ruby gen.rb 2025`
+- [ ] CornellNotes uses parameterized helper for labeled sections (37 lines saved)
+- [ ] Component base class has `require_options` helper (16 lines saved)
+- [ ] Component base class has style context managers (16+ lines saved)
+- [ ] StandardLayoutPage base class created (9+ lines saved)
+- [ ] All components use GridSystem.link() instead of manual links (18+ lines saved)
+- [ ] All constant duplications removed
+- [ ] Generated PDF identical to baseline (byte-for-byte or visually)
+- [ ] No errors or warnings when running `ruby gen.rb 2025`
 
 ### Should Have
-- [ ] Clean directory structure with `lib/`, `modules/`, `constants/`
-- [ ] All require statements properly organized
-- [ ] Code is more readable and maintainable
-- [ ] Methods grouped by responsibility
+- [ ] Clear documentation for new helpers in Component base class
+- [ ] StandardLayoutPage documented with examples
+- [ ] All affected files updated consistently
+- [ ] Code is more maintainable and DRY
 
 ### Nice to Have
-- [ ] Simple test script for `DateCalculator`
-- [ ] Comments documenting module purposes
-- [ ] Update CLAUDE.md with new file structure
+- [ ] Update CLAUDE.md with new Component base class features
+- [ ] Add inline comments explaining new patterns
+- [ ] Consider adding rubocop or similar for future duplication detection
 
 ## Implementation Notes
 
 ### Migration Strategy
-1. Create all new files first (constants, modules, lib)
-2. Test that includes/requires work before removing from gen.rb
-3. Remove code from gen.rb only after verifying it works in new location
-4. Generate PDF at each step to catch regressions early
+1. **One section at a time** - Complete each numbered section before moving to next
+2. **Test after each change** - Generate PDF, verify it works
+3. **Git commit per section** - Easy to bisect if issues arise
+4. **Keep changes focused** - Each commit should be a single logical change
 
-### Backwards Compatibility
-Since this is a standalone generator (not a library), backwards compatibility is not a concern. Focus on clean organization.
+### Risk: Breaking Encapsulation
+**Mitigation**: All new helpers are `protected` methods in Component base. They're internal implementation details, not public API.
 
-### Future Considerations
-This refactoring sets the foundation for:
-- Converting to a Ruby gem (Phase 3)
-- Adding comprehensive test suite
-- Making components more reusable
-- Adding configuration files for customization
+### Risk: Over-Abstracting
+**Mitigation**: Only extract patterns that appear 3+ times. All extractions are simple, obvious helpers with clear single purposes.
+
+### Risk: Introducing Bugs
+**Mitigation**: Generate PDF after each section. Compare with baseline. Stop immediately if differences appear.
+
+## Success Metrics
+
+### Quantitative
+- **96+ lines of code removed** (37 + 16 + 16 + 9 + 18)
+- **~38% reduction** in affected files
+- **0 behavioral changes** (PDF identical to baseline)
+- **0 new dependencies** (pure refactoring)
+
+### Qualitative
+- Components are more consistent
+- Less manual state management
+- Easier to add new components (validation, styles already handled)
+- Single source of truth for constants
+- More maintainable codebase
 
 ## Dependencies
 
 **Depends on:**
-- Plan 01: Extract Low-Level Utilities (Completed)
-- Plan 02: Extract Components (Completed)
-- Plan 05: Page and Layout Abstraction (Completed)
-- Plan 06: RenderContext System (Completed)
+- Plan 01: Extract Low-Level Utilities (Completed) - GridSystem exists
+- Plan 02: Extract Components (Completed) - Components exist to refactor
+- Plan 04: Extract Reusable Sub-Components (Completed) - SubComponents exist
+- Plan 05: Page and Layout Abstraction (Completed) - Pages exist to refactor
+- Plan 06: RenderContext System (Completed) - Context system in place
+- Plan 10: Declarative Layout System (Completed) - Layout system exists
 
-**Blocks:**
-- Future gem structure work
-- Comprehensive testing infrastructure
-- Configuration system
+**Enables:**
+- Plan 08: Testing Infrastructure - Clean code easier to test
+- Plan 09: Gem Structure - Well-organized code easier to package
+- Future component additions - Clear patterns to follow
 
 ## Estimated Effort
 
-- **Constant separation**: 1-2 hours
-- **DateCalculator extraction**: 1-2 hours
-- **Module organization**: 2-3 hours
-- **Testing and validation**: 1 hour
-- **Total**: 5-8 hours
+- **Section 1 (Labeled sections)**: 1 hour
+- **Section 2 (Validation)**: 1 hour
+- **Section 3 (Style managers)**: 2 hours
+- **Section 4 (StandardLayoutPage)**: 1 hour
+- **Section 5 (Link API)**: 1.5 hours
+- **Section 6 (Constants)**: 1 hour
+- **Testing/validation**: 1.5 hours
+- **Total**: 9 hours
 
 ## Risks and Mitigations
 
-### Risk: Breaking existing functionality
-**Mitigation**: Generate PDF after each major change, compare with baseline
+### Risk: Regression in PDF output
+**Mitigation**: Generate PDF after each section, compare with baseline immediately
 
-### Risk: Circular dependency issues with requires
-**Mitigation**: Keep dependency graph simple - constants → utils → modules → components → generator
+### Risk: Style context managers not restoring state correctly
+**Mitigation**: Test with simple example first, verify color/font restored
 
-### Risk: Constant scope issues with modules
-**Mitigation**: Use explicit `include` statements, test thoroughly
+### Risk: StandardLayoutPage doesn't handle all cases
+**Mitigation**: Start with one page class, verify works, then migrate others
 
-## Success Metrics
+### Risk: Breaking link functionality
+**Mitigation**: Test clicking every link type in generated PDF
 
-- Generator runs without errors
-- Generated PDF matches previous version exactly
-- Code is organized into logical files/modules
-- Constants are easy to find and modify
-- Date calculations are isolated and testable
+## Post-Completion
+
+After completing this plan:
+
+1. **Update documentation**
+   - Update CLAUDE.md with new Component features
+   - Document patterns for future component authors
+
+2. **Consider follow-up work**
+   - Add more context managers if patterns emerge (with_bounding_box, etc.)
+   - Extract other rendering patterns if duplications appear
+
+3. **Prepare for testing infrastructure (Plan 08)**
+   - Clean code is easier to test
+   - Helpers provide good unit test targets
