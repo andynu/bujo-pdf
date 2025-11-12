@@ -15,10 +15,10 @@ module BujoPdf
     #   - Gray color for non-current weeks
     #
     # Grid positioning:
-    #   - Columns 0-1 (2 boxes wide)
+    #   - Columns 0.25-2.25 (2 boxes wide, inset 0.25 from left edge)
     #   - Starts at row 2
     #   - One week per row
-    #   - Internal padding: 0.5 boxes on each side
+    #   - Internal padding: 0.3 boxes on each side
     #
     # Example usage:
     #   sidebar = WeekSidebar.new(pdf, grid_system,
@@ -28,6 +28,7 @@ module BujoPdf
     #   )
     #   sidebar.render
     class WeekSidebar < Component
+      SIDEBAR_START_COL = 0.25
       SIDEBAR_WIDTH_BOXES = 2
       SIDEBAR_START_ROW = 2
       PADDING_BOXES = 0.3
@@ -64,7 +65,7 @@ module BujoPdf
       end
 
       def draw_week_entry(week, row)
-        week_box = @grid.rect(0, row, SIDEBAR_WIDTH_BOXES, 1)
+        week_box = @grid.rect(SIDEBAR_START_COL, row, SIDEBAR_WIDTH_BOXES, 1)
 
         # Get month abbreviation if this is the first week of a month
         month_abbrev = @week_months[week]

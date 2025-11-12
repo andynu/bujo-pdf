@@ -1238,11 +1238,12 @@ class PlannerGenerator
 
   def draw_week_sidebar(current_week_num, total_weeks)
     # Grid-based week sidebar:
-    # - Width: 2 boxes (columns 0-1)
+    # - Width: 2 boxes (columns 0.25-2.25)
     # - Start at row 2 (leaving rows 0-1 for header)
     # - One week per row (53 rows available: rows 2-54)
     # - Internal padding: 0.5 boxes on each side
 
+    sidebar_start_col = 0.25
     sidebar_width_boxes = 2
     sidebar_start_row = 2
     padding_boxes = 0.5
@@ -1273,7 +1274,7 @@ class PlannerGenerator
       row = sidebar_start_row + i  # One week per row, starting at row 2
 
       # Get grid coordinates for this week's row
-      week_box = grid_rect(0, row, sidebar_width_boxes, 1)
+      week_box = grid_rect(sidebar_start_col, row, sidebar_width_boxes, 1)
 
       # Build the display text
       month_letter = week_months[week]
