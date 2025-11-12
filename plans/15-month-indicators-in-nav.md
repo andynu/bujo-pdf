@@ -1,5 +1,9 @@
 # Plan #15: Three-Letter Month Indicators in Week Sidebar
 
+> **⚠️ PLAN DISCARDED**
+>
+> This plan has been abandoned due to insufficient space constraints on iPad. The sidebar width calculation showed that even with 2.5 boxes, there is not enough room for three-letter month abbreviations plus week numbers without compromising readability or layout integrity. The single-character month indicators (J, F, M, etc.) remain the optimal solution for the 2-box sidebar width.
+
 ## Current State Analysis
 
 The `WeekSidebar` component currently displays:
