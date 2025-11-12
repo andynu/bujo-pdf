@@ -107,7 +107,7 @@ module BujoPdf
 
       # Build top navigation tabs with optional highlighting.
       #
-      # Creates tabs for seasonal calendar, events, and highlights pages.
+      # Creates tabs for seasonal calendar, events, highlights, and multi-year pages.
       # Marks the appropriate tab as current if highlight_tab option is set.
       #
       # @return [Array<Hash>] Array of tab specifications
@@ -115,7 +115,8 @@ module BujoPdf
         tabs = [
           { label: "Year", dest: "seasonal" },
           { label: "Events", dest: "year_events" },
-          { label: "Highlights", dest: "year_highlights" }
+          { label: "Highlights", dest: "year_highlights" },
+          { label: "Multi", dest: "multi_year" }
         ]
 
         # Apply highlighting if specified

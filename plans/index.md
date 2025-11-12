@@ -3,9 +3,20 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-12
+2025-11-12 (Started Plan 11 implementation)
 
 ## Active Plans
+
+### Plan 11: Multi-Year Layout Implementation (In Progress 2025-11-12)
+- **File**: `11-multi-year-layout.md`
+- **Status**: In Progress
+- **Created**: 2025-11-11 (estimated)
+- **Last Modified**: 2025-11-12 00:46 EST
+- **Last Worked**: 2025-11-12 00:52 EST
+- **Changed Since Work**: No
+- **Priority**: Feature Enhancement
+- **Dependencies**: Plan 10 (Declarative Layout System) - COMPLETED
+- **Goal**: Create multi-year overview page displaying multiple years side-by-side with months as rows, enabling year-over-year comparison with clickable week links
 
 ### Plan 21: Multi-Tap Navigation Cycling for Right Sidebar (Not Started 2025-11-11)
 - **File**: `21-multi-tap-navigation-cycling.md`
@@ -87,6 +98,18 @@ This file tracks the status of all plans in the plans directory.
 - **Dependencies**: None
 - **Commits**: 640b2f4, 57bda26
 - **Result**: Successfully added subtle weekend background shading to all calendar views using WEEKEND_BG color ('CCCCCC') at 10% opacity. Shading now appears on: (1) Year-at-a-glance pages (Events and Highlights) for all valid Saturday/Sunday cells, (2) Seasonal calendar mini month grids for weekend columns. Consistent weekend visual indicators across entire planner.
+
+### Plan 12: Inline Weekday Indicators with Day Numbers (Completed 2025-11-11)
+- **File**: `12-weekday-indicators-inline.md`
+- **Status**: Completed
+- **Created**: 2025-11-11 (estimated)
+- **Last Modified**: 2025-11-11 22:22 EST
+- **Last Worked**: 2025-11-11 22:22 EST
+- **Changed Since Work**: No
+- **Priority**: Feature Enhancement
+- **Dependencies**: None
+- **Commits**: 4e2e312
+- **Result**: Successfully moved weekday abbreviations (Mon, Tue, etc.) to appear inline with day numbers in year-at-a-glance pages. Weekday text rendered in muted gray (AAAAAA) at slightly smaller size (5pt vs 6pt) using formatted_text_box for clean visual hierarchy. Applied to both Events and Highlights pages via shared YearAtGlanceBase class.
 
 ### Plan 08: Testing Infrastructure (Completed 2025-11-11)
 - **File**: `08_testing_infrastructure.md`
@@ -183,7 +206,17 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 640b2f4, 57bda26
    - **Result**: Weekend background shading added to all calendar views (year-at-a-glance and seasonal calendar) using 10% opacity WEEKEND_BG color
 
-3. Plan 08: Testing Infrastructure (Completed 2025-11-11)
+3. Plan 12: Inline Weekday Indicators with Day Numbers (Completed 2025-11-11)
+   - **File**: `12-weekday-indicators-inline.md`
+   - **Status**: Completed
+   - **Last Modified**: 2025-11-11 22:22 EST
+   - **Last Worked**: 2025-11-11 22:22 EST
+   - **Priority**: Feature Enhancement
+   - **Dependencies**: None
+   - **Commits**: 4e2e312
+   - **Result**: Inline weekday abbreviations with day numbers in muted gray, applied to both Events and Highlights pages
+
+4. Plan 08: Testing Infrastructure (Completed 2025-11-11)
    - **File**: `08_testing_infrastructure.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:15 EST
@@ -193,7 +226,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 8ddbb6f, b91f005, 5919fe6, 28a4e1a
    - **Result**: Comprehensive testing infrastructure with 98 tests, 2428 assertions
 
-4. Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
+5. Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
    - **File**: `09_gem_structure.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:15 EST
@@ -203,7 +236,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: e620ab7
    - **Result**: Ruby gem v0.1.0 with full distribution infrastructure
 
-5. Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
+6. Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
    - **File**: `07_code_organization.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 23:10 EST
@@ -213,7 +246,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: fc6f4db, 9d56730, 259b085, 619248d, 26dabee
    - **Result**: Eliminated 85+ lines of code duplication
 
-6. Plan 10: Declarative Layout System (Completed 2025-11-11)
+7. Plan 10: Declarative Layout System (Completed 2025-11-11)
    - **File**: `10_declarative_layout_system.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:33 EST
@@ -223,7 +256,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 47003c9
    - **Result**: Removed ~80 lines of duplicated sidebar code
 
-7. Plan 06: RenderContext System (Completed 2025-11-11)
+8. Plan 06: RenderContext System (Completed 2025-11-11)
    - **File**: `06_render_context_system.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:52 EST
@@ -234,7 +267,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 95f6006, 5a3f8eb, 9a081dd
    - **Bonus**: Automatic page numbering from Prawn
 
-8. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
+9. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
    - **File**: `02_extract_components.md`
    - **Status**: Completed (Core Components)
    - **Last Modified**: 2025-11-11 20:50 EST
@@ -244,7 +277,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: extract-components
    - **Commits**: 961d331, 6721c64, 6d11767
 
-9. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
+10. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
    - **File**: `05_page_and_layout_abstraction.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:40 EST
@@ -254,7 +287,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: page-and-layout-abstraction
    - **Commits**: b1a40dc, 86f12bc
 
-10. Plan 04: Extract Reusable Sub-Components (Completed 2025-11-11)
+11. Plan 04: Extract Reusable Sub-Components (Completed 2025-11-11)
    - **File**: `04_extract_reusable_sub_components.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 19:29 EST
@@ -264,7 +297,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: extract-reusable-sub-components
    - **Commits**: dc53d6c, c9b3774, bef41e5, deb98e5
 
-11. Plan 03: Page Generation Pipeline Refactoring (Completed 2025-11-11)
+12. Plan 03: Page Generation Pipeline Refactoring (Completed 2025-11-11)
    - **File**: `03_page_generation_pipeline.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 19:25 EST
@@ -274,7 +307,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: page-generation-pipeline
    - **Commits**: f857b1f, fcefc03, f0625ec, 383bf8f
 
-12. Plan 01: Extract Low-Level Utilities (Completed 2025-11-11)
+13. Plan 01: Extract Low-Level Utilities (Completed 2025-11-11)
    - **File**: `01_extract_low_level_utilities.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 18:20 PST

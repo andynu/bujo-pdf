@@ -37,7 +37,7 @@ module BujoPdf
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = 3 + total_weeks + 2  # 3 overview + weeks + 2 template pages
+      @total_pages = 4 + total_weeks + 2  # 4 overview + weeks + 2 template pages
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -71,6 +71,10 @@ module BujoPdf
       @pdf.start_new_page
       generate_page(:year_highlights)
       @highlights_page = @pdf.page_number
+
+      @pdf.start_new_page
+      generate_multi_year_page
+      @multi_year_page = @pdf.page_number
     end
 
     def generate_weekly_pages
@@ -105,6 +109,20 @@ module BujoPdf
       page.generate
     end
 
+    def generate_multi_year_page
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+      context = RenderContext.new(
+        page_key: :multi_year,
+        page_number: @pdf.page_number,
+        year: @year,
+        year_count: 4,  # Show 4 years
+        total_weeks: total_weeks,
+        total_pages: @total_pages
+      )
+      page = PageFactory.create(:multi_year, @pdf, context)
+      page.generate
+    end
+
     def generate_weekly_page(week_num)
       # Calculate week dates
       week_start = Utilities::DateCalculator.week_start(@year, week_num)
@@ -136,6 +154,7 @@ module BujoPdf
           page destination: @seasonal_page, title: 'Seasonal Calendar'
           page destination: @events_page, title: 'Year at a Glance - Events'
           page destination: @highlights_page, title: 'Year at a Glance - Highlights'
+          page destination: @multi_year_page, title: 'Multi-Year Overview'
         end
 
         page destination: @weekly_start_page, title: 'Weekly Pages'
