@@ -3,14 +3,28 @@
 require 'bundler/gem_tasks'
 require 'rake/testtask'
 
-Rake::TestTask.new(:test) do |t|
+Rake::TestTask.new(:test_unit) do |t|
   t.libs << 'test'
   t.libs << 'lib'
-  t.test_files = FileList['test/**/*_test.rb']
+  t.test_files = FileList['test/unit/**/*_test.rb']
   t.verbose = true
 end
 
-desc 'Run tests'
+Rake::TestTask.new(:test_integration) do |t|
+  t.libs << 'test'
+  t.libs << 'lib'
+  t.test_files = FileList['test/integration/**/*_test.rb']
+  t.verbose = true
+end
+
+Rake::TestTask.new(:test) do |t|
+  t.libs << 'test'
+  t.libs << 'lib'
+  t.test_files = FileList['test/unit/**/*_test.rb', 'test/integration/**/*_test.rb']
+  t.verbose = true
+end
+
+desc 'Run all tests (unit + integration)'
 task default: :test
 
 desc 'Generate a test planner PDF'
