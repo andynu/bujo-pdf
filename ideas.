@@ -1,4 +1,0 @@
-- multi-year layout one line per month. multiple years in columns.
-- on the month-day layout, keep the day numbers where they are, but move the weekday indicator to the same line but muted as gray text.
-- on the month-day layout, make weekends be the ultra-light background.
-
