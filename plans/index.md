@@ -3,20 +3,9 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-12 (Started Plan 11 implementation)
+2025-11-12 (Completed Plan 11)
 
 ## Active Plans
-
-### Plan 11: Multi-Year Layout Implementation (In Progress 2025-11-12)
-- **File**: `11-multi-year-layout.md`
-- **Status**: In Progress
-- **Created**: 2025-11-11 (estimated)
-- **Last Modified**: 2025-11-12 00:46 EST
-- **Last Worked**: 2025-11-12 00:52 EST
-- **Changed Since Work**: No
-- **Priority**: Feature Enhancement
-- **Dependencies**: Plan 10 (Declarative Layout System) - COMPLETED
-- **Goal**: Create multi-year overview page displaying multiple years side-by-side with months as rows, enabling year-over-year comparison with clickable week links
 
 ### Plan 21: Multi-Tap Navigation Cycling for Right Sidebar (Not Started 2025-11-11)
 - **File**: `21-multi-tap-navigation-cycling.md`
@@ -75,6 +64,19 @@ This file tracks the status of all plans in the plans directory.
   - Section 5 (Link API standardization) skipped as components already using @grid.link where appropriate
 
 ## Recently Completed Plans
+
+### Plan 11: Multi-Year Layout Implementation (Completed 2025-11-12)
+- **File**: `11-multi-year-layout.md`
+- **Status**: Completed
+- **Created**: 2025-11-11 (estimated)
+- **Last Modified**: 2025-11-12 00:46 EST
+- **Last Worked**: 2025-11-12 01:15 EST
+- **Changed Since Work**: No
+- **Priority**: Feature Enhancement
+- **Dependencies**: Plan 10 (Declarative Layout System) - COMPLETED
+- **Commits**: 7f1b8a2
+- **Goal**: Create multi-year overview page displaying multiple years side-by-side with months as rows, enabling year-over-year comparison with clickable week links
+- **Result**: Successfully implemented multi-year overview page showing 4 years (2024-2027) with 12 months as rows. Uses 3-letter month abbreviations, blank cells for data collection with invisible links to week pages, integrated with standard sidebar layout and "Multi" navigation tab.
 
 ### Plan 14: Remove gen.rb and Standardize on bin/bujo-pdf (Completed 2025-11-12)
 - **File**: `14-remove-gen-rb.md`
