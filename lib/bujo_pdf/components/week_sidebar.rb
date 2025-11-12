@@ -124,39 +124,15 @@ module BujoPdf
 
         if month_abbrev
           # Month abbreviation is bold, week number is regular weight
-          # Render as two overlapping text boxes with careful width management
-
-          # Calculate widths with proper font context
-          @pdf.font "Helvetica", size: FONT_SIZE
-          week_width = @pdf.width_of(week_text, size: FONT_SIZE) + 2  # Add small buffer
-
-          @pdf.font "Helvetica-Bold", size: FONT_SIZE
-          month_width = @pdf.width_of("#{month_abbrev} ", size: FONT_SIZE) + 2  # Add small buffer
-
-          # Calculate total width needed
-          total_width = month_width + week_width
-          available_width = week_box[:width] - @grid.width(PADDING_BOXES * 2)
-
-          # Right-align the entire text block
-          text_start_x = week_box[:x] + week_box[:width] - @grid.width(PADDING_BOXES) - total_width
-
-          # Render month abbreviation (bold)
-          @pdf.font "Helvetica-Bold", size: FONT_SIZE
-          @pdf.text_box "#{month_abbrev} ",
-                        at: [text_start_x, week_box[:y]],
-                        width: month_width,
+          # Use formatted_text_box for consistent right-alignment
+          @pdf.formatted_text_box [
+            { text: "#{month_abbrev} ", styles: [:bold], size: FONT_SIZE, color: NAV_COLOR },
+            { text: week_text, size: FONT_SIZE, color: NAV_COLOR }
+          ],
+                        at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
+                        width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
                         height: week_box[:height],
-                        align: :left,
-                        valign: :center,
-                        overflow: :shrink_to_fit
-
-          # Render week number (regular weight)
-          @pdf.font "Helvetica", size: FONT_SIZE
-          @pdf.text_box week_text,
-                        at: [text_start_x + month_width, week_box[:y]],
-                        width: week_width,
-                        height: week_box[:height],
-                        align: :left,
+                        align: :right,
                         valign: :center,
                         overflow: :shrink_to_fit
         else
@@ -166,7 +142,8 @@ module BujoPdf
                         width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
                         height: week_box[:height],
                         align: :right,
-                        valign: :center
+                        valign: :center,
+                        overflow: :shrink_to_fit
         end
 
         # Link annotation rect: [left, bottom, right, top]

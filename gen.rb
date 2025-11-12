@@ -1278,30 +1278,56 @@ class PlannerGenerator
 
       # Build the display text
       month_letter = week_months[week]
-      display_text = month_letter ? "#{month_letter} w#{week}" : "w#{week}"
+      week_text = "w#{week}"
 
       if week == current_week_num
         # Current week: bold, no link
-        @pdf.font "Helvetica-Bold", size: WEEKLY_SIDEBAR_FONT_SIZE
-        @pdf.fill_color '000000'
-        @pdf.text_box display_text,
-                      at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
-                      width: week_box[:width] - grid_width(padding_boxes * 2),
-                      height: week_box[:height],
-                      align: :right,
-                      valign: :center,
-                      overflow: :shrink_to_fit
-        @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
+        if month_letter
+          @pdf.formatted_text_box [
+            { text: "#{month_letter} ", styles: [:bold], size: WEEKLY_SIDEBAR_FONT_SIZE },
+            { text: week_text, styles: [:bold], size: WEEKLY_SIDEBAR_FONT_SIZE }
+          ],
+                        at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
+                        width: week_box[:width] - grid_width(padding_boxes * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center,
+                        overflow: :shrink_to_fit
+        else
+          @pdf.font "Helvetica-Bold", size: WEEKLY_SIDEBAR_FONT_SIZE
+          @pdf.text_box week_text,
+                        at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
+                        width: week_box[:width] - grid_width(padding_boxes * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center,
+                        overflow: :shrink_to_fit
+          @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
+        end
       else
         # Other weeks: gray, with link
-        @pdf.fill_color '888888'
-        @pdf.text_box display_text,
-                      at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
-                      width: week_box[:width] - grid_width(padding_boxes * 2),
-                      height: week_box[:height],
-                      align: :right,
-                      valign: :center,
-                      overflow: :shrink_to_fit
+        if month_letter
+          @pdf.formatted_text_box [
+            { text: "#{month_letter} ", styles: [:bold], size: WEEKLY_SIDEBAR_FONT_SIZE, color: '888888' },
+            { text: week_text, size: WEEKLY_SIDEBAR_FONT_SIZE, color: '888888' }
+          ],
+                        at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
+                        width: week_box[:width] - grid_width(padding_boxes * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center,
+                        overflow: :shrink_to_fit
+        else
+          @pdf.fill_color '888888'
+          @pdf.text_box week_text,
+                        at: [week_box[:x] + grid_width(padding_boxes), week_box[:y]],
+                        width: week_box[:width] - grid_width(padding_boxes * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center,
+                        overflow: :shrink_to_fit
+          @pdf.fill_color '000000'
+        end
 
         # Link annotation rect: [left, bottom, right, top]
         link_left = week_box[:x]
@@ -1312,7 +1338,6 @@ class PlannerGenerator
         @pdf.link_annotation([link_left, link_bottom, link_right, link_top],
                             Dest: "week_#{week}",
                             Border: [0, 0, 0])
-        @pdf.fill_color '000000'
       end
     end
   end
