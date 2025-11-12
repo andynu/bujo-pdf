@@ -126,6 +126,34 @@ module BujoPdf
       # Default: no validation, subclasses can override
     end
 
+    # Validate that required options are present in context.
+    #
+    # This is a convenience helper for subclasses that need to ensure specific
+    # options are provided. Call this from your validate_configuration method.
+    #
+    # @param keys [Array<Symbol>] Required option keys
+    # @raise [ArgumentError] if any required keys are missing
+    # @return [void]
+    #
+    # @example Basic validation
+    #   def validate_configuration
+    #     require_options(:year, :total_weeks, :current_week_num)
+    #   end
+    #
+    # @example Validation with custom message
+    #   def validate_configuration
+    #     require_options(:content_start_col, :notes_start_row)
+    #   rescue ArgumentError => e
+    #     raise ArgumentError, "CornellNotes configuration error: #{e.message}"
+    #   end
+    def require_options(*keys)
+      missing_keys = keys - context.keys
+
+      unless missing_keys.empty?
+        raise ArgumentError, "#{self.class.name} requires: #{missing_keys.join(', ')}"
+      end
+    end
+
     # Convenience method to check if rendering a specific page.
     #
     # This method provides a safe way to check the current page even when

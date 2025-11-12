@@ -28,11 +28,6 @@ module BujoPdf
       TITLE_FONT_SIZE = 14
       NAV_COLOR = '888888'
 
-      def initialize(pdf, grid_system, **options)
-        super
-        validate_options
-      end
-
       def render
         content_start_col = context[:content_start_col] || 3
         content_width_boxes = context[:content_width_boxes] || 39
@@ -47,13 +42,8 @@ module BujoPdf
 
       private
 
-      def validate_options
-        required_keys = [:year, :week_num, :total_weeks, :week_start, :week_end]
-        missing_keys = required_keys - context.keys
-
-        unless missing_keys.empty?
-          raise ArgumentError, "TopNavigation requires: #{missing_keys.join(', ')}"
-        end
+      def validate_configuration
+        require_options(:year, :week_num, :total_weeks, :week_start, :week_end)
       end
 
       def show_prev?

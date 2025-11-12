@@ -33,11 +33,6 @@ module BujoPdf
       LABEL_FONT_SIZE = 8
       HEADER_PADDING = 5
 
-      def initialize(pdf, grid_system, **options)
-        super
-        validate_options
-      end
-
       def render
         draw_cues_section
         draw_notes_section
@@ -46,14 +41,9 @@ module BujoPdf
 
       private
 
-      def validate_options
-        required_keys = [:content_start_col, :notes_start_row, :cues_cols,
-                        :notes_cols, :notes_main_rows, :summary_rows]
-        missing_keys = required_keys - context.keys
-
-        unless missing_keys.empty?
-          raise ArgumentError, "CornellNotes requires: #{missing_keys.join(', ')}"
-        end
+      def validate_configuration
+        require_options(:content_start_col, :notes_start_row, :cues_cols,
+                       :notes_cols, :notes_main_rows, :summary_rows)
       end
 
       # Draw a labeled section with border and header.

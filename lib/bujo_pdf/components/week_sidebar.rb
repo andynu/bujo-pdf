@@ -35,11 +35,6 @@ module BujoPdf
       FONT_SIZE = 7
       NAV_COLOR = '888888'
 
-      def initialize(pdf, grid_system, **options)
-        super
-        validate_options
-      end
-
       def render
         # Build week-to-month abbreviation mapping once
         @week_months = Utilities::DateCalculator.week_to_month_abbrev_map(context[:year], char: 1)
@@ -55,13 +50,8 @@ module BujoPdf
 
       private
 
-      def validate_options
-        required_keys = [:year, :total_weeks]
-        missing_keys = required_keys - context.keys
-
-        unless missing_keys.empty?
-          raise ArgumentError, "WeekSidebar requires: #{missing_keys.join(', ')}"
-        end
+      def validate_configuration
+        require_options(:year, :total_weeks)
       end
 
       def draw_week_entry(week, row)

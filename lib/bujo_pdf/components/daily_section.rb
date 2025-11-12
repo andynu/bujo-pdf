@@ -33,11 +33,6 @@ module BujoPdf
     #   )
     #   section.render
     class DailySection < Component
-      def initialize(pdf, grid_system, **options)
-        super
-        validate_options
-      end
-
       def render
         day_col_width_boxes = context[:content_width_boxes] / 7.0  # ~5.57 boxes per day
 
@@ -48,14 +43,9 @@ module BujoPdf
 
       private
 
-      def validate_options
-        required_keys = [:week_start, :content_start_col, :content_start_row,
-                        :content_width_boxes, :daily_rows]
-        missing_keys = required_keys - context.keys
-
-        unless missing_keys.empty?
-          raise ArgumentError, "DailySection requires: #{missing_keys.join(', ')}"
-        end
+      def validate_configuration
+        require_options(:week_start, :content_start_col, :content_start_row,
+                       :content_width_boxes, :daily_rows)
       end
 
       def render_day_column(day_index, day_col_width_boxes)
