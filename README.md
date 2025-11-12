@@ -166,12 +166,34 @@ rake test_integration
 ```
 98 tests, 2428 assertions
 0 failures, 0 errors, 1 skip
-Completed in ~32 seconds
+Completed in ~38 seconds
+
+Code Coverage: 84.13% (1267 / 1506 lines)
 ```
+
+### Code Coverage
+
+Test coverage is tracked using SimpleCov. After running tests, open the coverage report:
+
+```bash
+open coverage/index.html
+```
+
+Coverage is organized by module:
+- **Utilities**: Core helper classes (GridSystem, DateCalculator, etc.)
+- **Components**: Reusable UI components (sidebars, fieldsets, etc.)
+- **Pages**: Page generation classes
+- **Layouts**: Layout management
+- **Core**: Top-level module and generator
+
+**Coverage Targets**:
+- Overall: 80% minimum
+- Per-file: 15% minimum (presentation layer files harder to test)
 
 ### Test Infrastructure
 
 - **Framework**: Minitest with minitest-reporters for better output
+- **Coverage**: SimpleCov with HTML reports
 - **Test Helper**: Custom assertions (assert_grid_position, assert_valid_link_bounds, assert_rect_equals)
 - **Mock Objects**: MockPDF class for testing without PDF generation
 - **Structure**: Organized into test/unit/ and test/integration/ directories

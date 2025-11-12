@@ -9,3 +9,7 @@ tags
 # Gem build artifacts
 *.gem
 pkg/
+
+# Test coverage reports
+coverage/
+.coverage
