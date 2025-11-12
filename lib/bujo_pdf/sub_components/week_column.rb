@@ -7,9 +7,9 @@ module SubComponent
   # WeekColumn renders a single day column in the weekly view
   #
   # This component displays:
-  # - Day header with day name and date
+  # - 1-box-high header with three-letter weekday (gray, top-left) and date (centered)
   # - Weekend background styling (optional)
-  # - Ruled lines for note-taking
+  # - Four ruled lines dividing the column into 2-box-high sections
   # - Time period labels (AM/PM/EVE) for Monday
   #
   # @example Basic usage
@@ -31,14 +31,12 @@ module SubComponent
     # Default configuration values
     DEFAULTS = {
       line_count: 4,
-      header_height: 30,
-      header_padding: 2,
-      lines_start: 35,
-      lines_padding: 40,
+      header_height_boxes: 1, # Header is 1 box high
       line_margin: 3,
-      day_header_font_size: 9,
+      day_header_font_size: 8,
       day_date_font_size: 8,
       time_label_font_size: 6,
+      header_color: Styling::Colors::SECTION_HEADERS,
       border_color: Styling::Colors::BORDERS,
       weekend_bg_color: Styling::Colors::WEEKEND_BG,
       show_time_labels: false,
@@ -84,48 +82,69 @@ module SubComponent
     end
 
     # Draw day header with day name and date
+    # Header is 1 box high with:
+    # - Three-letter weekday in gray on top left
+    # - Month/day centered
     def draw_header(date, day_name, width, height)
-      header_padding = option(:header_padding, DEFAULTS[:header_padding])
-      header_height = option(:header_height, DEFAULTS[:header_height])
-      date_font_size = option(:day_date_font_size, DEFAULTS[:day_date_font_size])
+      header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
+      header_height = @grid.height(header_height_boxes)
+      header_color = option(:header_color, DEFAULTS[:header_color])
+      font_size = option(:day_header_font_size, DEFAULTS[:day_header_font_size])
 
-      header_text = if date
-        "#{day_name}\n#{date.strftime('%-m/%-d')}"
-      else
-        day_name
+      # Three-letter weekday abbreviation in gray, top left
+      short_day = day_name[0..2] if day_name
+      if short_day
+        @pdf.fill_color header_color
+        @pdf.font "Helvetica", size: font_size
+        @pdf.text_box short_day,
+                     at: [2, height - 2],
+                     width: width / 2,
+                     height: header_height,
+                     align: :left,
+                     valign: :top
+        @pdf.fill_color '000000'
       end
 
-      @pdf.font "Helvetica-Bold", size: option(:day_header_font_size, DEFAULTS[:day_header_font_size])
-      @pdf.text_box header_text,
-                   at: [header_padding, height - header_padding],
-                   width: width - (header_padding * 2),
-                   height: header_height,
-                   align: :center,
-                   size: date_font_size
+      # Month/day centered
+      if date
+        date_str = date.strftime('%-m/%-d')
+        @pdf.font "Helvetica", size: font_size
+        @pdf.text_box date_str,
+                     at: [0, height - 2],
+                     width: width,
+                     height: header_height,
+                     align: :center,
+                     valign: :top
+      end
     end
 
-    # Draw evenly-spaced ruled lines for notes
+    # Draw ruled lines that divide content into 2-box-high rows
+    # Lines start at the bottom edge of the 1-box header
     def draw_ruled_lines(width, height)
       line_count = option(:line_count, DEFAULTS[:line_count])
-      lines_start = option(:lines_start, DEFAULTS[:lines_start])
-      lines_padding = option(:lines_padding, DEFAULTS[:lines_padding])
       line_margin = option(:line_margin, DEFAULTS[:line_margin])
       border_color = option(:border_color, DEFAULTS[:border_color])
+      header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
 
-      line_start_y = height - lines_start
-      available_space = height - lines_padding
-      line_spacing = available_space / line_count.to_f
+      # Calculate line spacing (2 boxes per section)
+      box_height = @grid.height(1)
+      section_height = box_height * 2 # Each section is 2 boxes high
+      header_height = @grid.height(header_height_boxes)
 
+      # Lines start at bottom of header
+      first_line_y = height - header_height
+
+      # Draw lines every 2 boxes, starting from bottom of header
       line_count.to_i.times do |line_num|
-        y_pos = line_start_y - (line_num * line_spacing)
+        y_pos = first_line_y - (line_num * section_height)
         @pdf.stroke_color border_color
         @pdf.stroke_horizontal_line line_margin, width - line_margin, at: y_pos
         @pdf.stroke_color '000000'
       end
 
-      # Store line_spacing and line_start_y for time labels
-      @line_spacing = line_spacing
-      @line_start_y = line_start_y
+      # Store spacing info for time labels
+      @line_spacing = section_height
+      @line_start_y = first_line_y
     end
 
     # Draw time period labels (AM/PM/EVE) for Monday column
