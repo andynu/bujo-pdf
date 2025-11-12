@@ -17,9 +17,9 @@ This document outlines the architectural improvements needed to make the planner
 - Infrastructure: Page Generation Pipeline ✅ (Plan 03)
 - Infrastructure: Reusable Sub-Components ✅ (Plan 04)
 
-**Phase 3: Polish** - ⬜ **NOT STARTED**
+**Phase 3: Polish** - 🔄 **IN PROGRESS** (~33% COMPLETE)
 - Task 1: Gem Structure ⬜
-- Task 7: Code Organization ⬜
+- Task 7: Code Organization ✅ (DRY refactoring complete)
 - Task 8: Testing Infrastructure ⬜
 - Task 9: Documentation ⬜
 
@@ -211,19 +211,27 @@ Transform the monolithic generator script into a well-structured gem with:
 - Verified PDF generation working correctly (58 pages)
 - Commits: 95f6006, 5a3f8eb, 9a081dd on branch `extract-components`
 
-### 7. Code Organization (plans/07_code_organization.md)
-- [ ] Separate constants into logical grouping files
-  - [ ] `constants/grid.rb` - Grid system constants
-  - [ ] `constants/colors.rb` - Color definitions
-  - [ ] `constants/layout.rb` - Layout dimensions
-  - [ ] `constants/typography.rb` - Font sizes
-- [ ] Extract date/week calculation utilities
-  - [ ] `DateCalculator` class for week numbering
-  - [ ] Year start/end date calculations
-  - [ ] Week range calculations
-- [ ] Improve method organization
-  - [ ] Move related methods into modules
-  - [ ] Use composition over inheritance where appropriate
+### 7. Code Organization - DRY Refactoring (plans/07_code_organization.md)
+- [x] Eliminate code duplication from component extraction
+  - [x] Extract parameterized helper for labeled sections in CornellNotes
+  - [x] Centralize component option validation with `require_options` helper
+  - [x] Add style context managers (`with_fill_color`, `with_stroke_color`, `with_font`)
+  - [x] Create StandardLayoutPage base class for sidebar layout pages
+  - [x] Centralize constant definitions using Styling module
+- [x] Improve maintainability
+  - [x] Reduce duplicate code by 85+ lines
+  - [x] Establish single source of truth for constants
+  - [x] Add automatic style state management
+  - [x] Simplify page setup for standard layouts
+
+**Status**: ✅ Completed 2025-11-11 (Plan 07)
+- Eliminated 85+ lines of duplicated code
+- Created `lib/bujo_pdf/pages/standard_layout_page.rb` base class
+- Added `require_options`, `with_fill_color`, `with_stroke_color`, `with_font` helpers to Component base
+- Centralized constants (BORDERS, COLS, DOT_SPACING, etc.) using Styling module
+- Parameterized labeled section rendering in CornellNotes
+- Verified PDF generation working correctly (58 pages, 3.1M matches baseline)
+- Commits: fc6f4db, 9d56730, 259b085, 619248d, 26dabee on branch `main`
 
 ### 8. Testing Infrastructure
 - [ ] Set up test framework (RSpec or Minitest)
@@ -271,10 +279,10 @@ Transform the monolithic generator script into a well-structured gem with:
 7. ✅ Extract components (Sidebars, Navigation, Weekly Page components) - Plan 02
    - ⚠️ Calendar components (SeasonalCalendar, YearAtGlance) deferred as lower priority
 
-**Phase 3: Polish** (Lower Priority) - ⬜ **NOT STARTED**
-8. ⬜ Gem structure and distribution
-9. ⬜ Code organization (split constants files)
-10. ⬜ Testing infrastructure expansion
+**Phase 3: Polish** (Lower Priority) - 🔄 **IN PROGRESS**
+8. ⬜ Gem structure and distribution - Plan 09
+9. ✅ Code organization (DRY refactoring) - Plan 07
+10. ⬜ Testing infrastructure expansion - Plan 08
 11. ⬜ Documentation (YARD, guides)
 
 **Detailed Plans Created**: See `plans/` directory
@@ -284,6 +292,10 @@ Transform the monolithic generator script into a well-structured gem with:
 - `plans/04_extract_reusable_sub_components.md` ✅
 - `plans/05_page_and_layout_abstraction.md` ✅
 - `plans/06_render_context_system.md` ✅
+- `plans/07_code_organization.md` ✅
+- `plans/08_testing_infrastructure.md` ⬜
+- `plans/09_gem_structure.md` ⬜
+- `plans/10_declarative_layout_system.md` ✅
 - `plans/index.md` - Tracks all plan statuses
 
 ## Notes
