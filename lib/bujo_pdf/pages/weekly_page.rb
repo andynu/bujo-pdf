@@ -3,6 +3,7 @@
 require_relative 'base'
 require_relative '../utilities/date_calculator'
 require_relative '../sub_components/week_column'
+require_relative '../components/top_navigation'
 
 module BujoPdf
   module Pages
@@ -72,72 +73,15 @@ module BujoPdf
       private
 
       def draw_navigation
-        # Content area dimensions
-        content_start_col = 3
-        content_width_boxes = 39
-
-        nav_box = @grid_system.rect(content_start_col, 0, content_width_boxes, 2)
-
-        # Year link on the left
-        @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
-        @pdf.fill_color '888888'
-        nav_year_width = @grid_system.width(4)
-        @pdf.text_box "< #{@year}",
-                      at: [nav_box[:x], nav_box[:y]],
-                      width: nav_year_width,
-                      height: nav_box[:height],
-                      valign: :center
-        @pdf.fill_color '000000'
-        @pdf.link_annotation([nav_box[:x], nav_box[:y] - nav_box[:height],
-                              nav_box[:x] + nav_year_width, nav_box[:y]],
-                            Dest: "seasonal",
-                            Border: [0, 0, 0])
-
-        # Previous week link (if not first week)
-        if @week_num > 1
-          @pdf.fill_color '888888'
-          nav_prev_x = nav_box[:x] + nav_year_width + @grid_system.width(1)
-          nav_prev_width = @grid_system.width(3)
-          @pdf.text_box "< w#{@week_num - 1}",
-                        at: [nav_prev_x, nav_box[:y]],
-                        width: nav_prev_width,
-                        height: nav_box[:height],
-                        valign: :center
-          @pdf.fill_color '000000'
-          @pdf.link_annotation([nav_prev_x, nav_box[:y] - nav_box[:height],
-                                nav_prev_x + nav_prev_width, nav_box[:y]],
-                              Dest: "week_#{@week_num - 1}",
-                              Border: [0, 0, 0])
-        end
-
-        # Next week link (if not last week)
-        if @week_num < @total_weeks
-          nav_next_width = @grid_system.width(3)
-          nav_next_x = nav_box[:x] + nav_box[:width] - nav_next_width
-          @pdf.fill_color '888888'
-          @pdf.text_box "w#{@week_num + 1} >",
-                        at: [nav_next_x, nav_box[:y]],
-                        width: nav_next_width,
-                        height: nav_box[:height],
-                        align: :right,
-                        valign: :center
-          @pdf.fill_color '000000'
-          @pdf.link_annotation([nav_next_x, nav_box[:y] - nav_box[:height],
-                                nav_next_x + nav_next_width, nav_box[:y]],
-                              Dest: "week_#{@week_num + 1}",
-                              Border: [0, 0, 0])
-        end
-
-        # Title (centered)
-        @pdf.font "Helvetica-Bold", size: WEEKLY_TITLE_FONT_SIZE
-        title_x = nav_box[:x] + @grid_system.width(8)
-        title_width = nav_box[:width] - @grid_system.width(16)
-        @pdf.text_box "Week #{@week_num}: #{@week_start.strftime('%b %-d')} - #{@week_end.strftime('%b %-d, %Y')}",
-                      at: [title_x, nav_box[:y]],
-                      width: title_width,
-                      height: nav_box[:height],
-                      align: :center,
-                      valign: :center
+        # Use TopNavigation component
+        nav = Components::TopNavigation.new(@pdf, @grid_system,
+          year: @year,
+          week_num: @week_num,
+          total_weeks: @total_weeks,
+          week_start: @week_start,
+          week_end: @week_end
+        )
+        nav.render
       end
 
       def draw_daily_section

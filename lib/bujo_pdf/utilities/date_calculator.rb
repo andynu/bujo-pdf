@@ -130,6 +130,44 @@ module BujoPdf
           Date.new(year, 9, 1)
         end
       end
+
+      # Get the week number for the first week of a given month.
+      #
+      # @param year [Integer] The year
+      # @param month [Integer] The month number (1-12)
+      # @return [Integer] The week number containing the 1st of the month
+      def self.first_week_of_month(year, month)
+        first_of_month = Date.new(year, month, 1)
+        week_number_for_date(year, first_of_month)
+      end
+
+      # Get month letter for a given week.
+      # Returns the first letter of the month if this week is the first week of that month.
+      #
+      # @param year [Integer] The year
+      # @param week_num [Integer] The week number (1-based)
+      # @return [String, nil] The month letter (e.g., "J" for January) or nil
+      def self.month_letter_for_week(year, week_num)
+        (1..12).each do |month|
+          return Date::MONTHNAMES[month][0] if first_week_of_month(year, month) == week_num
+        end
+        nil
+      end
+
+      # Build a hash mapping week numbers to month letters.
+      # Used for efficient lookup when rendering week sidebars.
+      #
+      # @param year [Integer] The year
+      # @return [Hash<Integer, String>] Mapping of week_num => month_letter
+      def self.week_to_month_letter_map(year)
+        map = {}
+        (1..12).each do |month|
+          week_num = first_week_of_month(year, month)
+          month_letter = Date::MONTHNAMES[month][0]
+          map[week_num] = month_letter
+        end
+        map
+      end
     end
   end
 end
