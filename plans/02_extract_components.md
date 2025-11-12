@@ -2,12 +2,39 @@
 
 **Status**: Not Started
 **Priority**: Phase 2 - High Priority (Building on Foundation)
-**Estimated Complexity**: High
-**Dependencies**: Plan 01 (Extract Low-Level Utilities) - COMPLETED
+**Estimated Complexity**: Medium (Reduced from High due to Plan 04)
+**Dependencies**:
+- Plan 01 (Extract Low-Level Utilities) - ✅ COMPLETED
+- Plan 03 (Page Generation Pipeline) - ✅ COMPLETED
+- Plan 04 (Extract Reusable Sub-Components) - ✅ COMPLETED ⭐ **KEY DEPENDENCY**
+
+## Quick Reference: Plan 02 Updated for Plan 04
+
+**What changed:** Plan 04 extracted low-level sub-components (WeekColumn, Fieldset, RuledLines, CalendarDays, DayHeader, etc.). Plan 02 now focuses on **page-level coordinators** that compose these sub-components.
+
+**Key concept:**
+- **Sub-Components (Plan 04)**: Low-level building blocks with `render_at(col, row, w, h)` interface
+- **Components (Plan 02)**: Page-level coordinators that compose sub-components
+
+**Work reduction:** ~40% (from 100-140 hours to 66-86 hours)
+
+**Components still needed:**
+1. Component base class (with sub-component factory methods)
+2. RenderContext
+3. DateCalculator
+4. TopNavigation, WeekSidebar, RightSidebar (navigation)
+5. SeasonalCalendar, YearAtGlance (calendars - use sub-components)
+6. DailySection, CornellNotes, WeeklyPage (weekly page - use sub-components)
+
+---
 
 ## Executive Summary
 
-This plan outlines the extraction of UI components from the monolithic `PlannerGenerator` class into a well-structured component architecture. Building on the foundation established in Plan 01 (grid system, styling, diagnostics), we will create reusable, composable components that can be independently tested, maintained, and extended.
+This plan outlines the extraction of page-level components from the monolithic `PlannerGenerator` class into a well-structured component architecture. Building on the foundation established in Plan 01 (grid system, styling, diagnostics), Plan 03 (page generation pipeline), and **Plan 04 (reusable sub-components)**, we will create page-level components that compose together the lower-level sub-components.
+
+**Key distinction from Plan 04:**
+- **Plan 04 Sub-Components**: Low-level, reusable building blocks (WeekColumn, Fieldset, RuledLines, DayHeader, etc.)
+- **Plan 02 Components**: Page-level coordinators that compose sub-components into complete pages or sections
 
 The component extraction will transform rendering logic from procedural methods into object-oriented components with clear interfaces, dependencies, and responsibilities. This will enable:
 - Independent testing of each component
@@ -15,31 +42,111 @@ The component extraction will transform rendering logic from procedural methods 
 - Easy customization and theming
 - Clear separation of concerns
 - Better code organization and maintainability
+- Composition of sub-components into higher-level structures
+
+## Relationship with Plan 04 Sub-Components
+
+**Plan 04 completed the extraction of reusable sub-components** that serve as building blocks for Plan 02. Understanding this relationship is critical:
+
+### Sub-Components (Plan 04) vs Components (Plan 02)
+
+| Aspect | Sub-Components (Plan 04) | Components (Plan 02) |
+|--------|--------------------------|----------------------|
+| **Level** | Low-level building blocks | Page-level coordinators |
+| **Base Class** | `SubComponent::Base` | `Component` |
+| **Positioning** | `render_at(col, row, w, h)` | `render()` - knows its own position |
+| **Responsibilities** | Single UI pattern (e.g., ruled lines, day header) | Compose sub-components into sections/pages |
+| **State** | Stateless - configured via options | May hold RenderContext, coordinate sub-components |
+| **Examples** | WeekColumn, Fieldset, RuledLines, DayHeader, CalendarDays | DailySection, CornellNotes, SeasonalCalendar, WeeklyPage |
+
+### Available Sub-Components from Plan 04
+
+These are **already implemented** and ready to use:
+
+1. **SubComponent::WeekColumn** - Single day column with header and ruled lines
+2. **SubComponent::Fieldset** - HTML-like fieldset with legend border
+3. **SubComponent::RuledLines** - Horizontal ruled lines for writing
+4. **SubComponent::DayHeader** - Single day header cell
+5. **SubComponent::CalendarDays** - Month calendar grid with day links
+6. **SubComponent::YearMonths** - Year-month grid (alternative layout)
+
+### How Components Use Sub-Components
+
+**Example: DailySection Component**
+
+```ruby
+class Components::DailySection < Component
+  def render
+    # Create 7 WeekColumn sub-components
+    7.times do |i|
+      week_column = create_week_column(  # Factory method from Component base
+        date: start_date + i,
+        day_name: day_names[i],
+        weekend: i >= 5
+      )
+
+      # Position and render the sub-component
+      week_column.render_at(col_for_day(i), row, day_width, height)
+    end
+  end
+end
+```
+
+**Key benefits:**
+- DailySection focuses on **layout coordination** (7-column positioning)
+- WeekColumn handles **rendering details** (header, lines, time labels)
+- Both can be tested independently
+- WeekColumn can be reused in other contexts
+
+### ComponentContext from Plan 04
+
+The `ComponentContext` helper (from Plan 04) is available for use in components:
+
+```ruby
+# Use ComponentContext for local coordinate system + hybrid grid/proportional layout
+with_context(col, row, width_boxes, height_boxes) do |ctx|
+  # Mix grid quantization and proportional divisions
+  day_width = ctx.divide_width(7)         # Proportional: 7 equal parts
+  header_height = ctx.grid_height(1.5)    # Grid: 1.5 boxes
+
+  # Local coordinates (0,0 = component origin)
+  ctx.text_box "Header", at: [0, ctx.height_pt], width: day_width
+end
+```
 
 ## Technical Approach
 
 ### 1. Architecture Overview
 
-We will create a component hierarchy based on the existing rendering structure:
+We will create a component hierarchy that **builds on top of** the sub-components from Plan 04:
 
 ```
-Component (Base Class)
-├── Navigation Components
+SubComponent::Base (from Plan 04)
+├── WeekColumn - Single day column with header and ruled lines
+├── Fieldset - HTML-like fieldset with legend border
+├── RuledLines - Horizontal ruled lines for writing
+├── DayHeader - Single day header cell
+├── CalendarDays - Month calendar grid
+└── YearMonths - Year-month grid
+
+Component (Base Class) - NEW in Plan 02
+├── Navigation Components (Page-level coordinators)
 │   ├── TopNavigation - Week page navigation (prev/next, year link, title)
 │   ├── WeekSidebar - Left sidebar with week list
 │   └── RightSidebar - Right sidebar with tabbed navigation
-├── Layout Components
-│   ├── Fieldset - HTML-like fieldset with legend border
-│   └── Footer - Page footer (currently unused)
-├── Calendar Components
-│   ├── SeasonalCalendar - Full seasonal calendar layout
-│   ├── MonthGrid - Single month mini-calendar
+├── Page Components (Complete page coordinators)
+│   ├── SeasonalCalendar - Full seasonal calendar layout (uses Fieldset, CalendarDays)
 │   ├── YearAtGlance - 12×31 grid for events/highlights
-│   └── WeeklyPage - Complete weekly page layout
-└── Content Components
-    ├── DailySection - 7-day horizontal view with lines
-    └── CornellNotes - Cues/Notes/Summary layout
+│   └── WeeklyPage - Complete weekly page layout (uses all components)
+└── Section Components (Page section coordinators)
+    ├── DailySection - 7-day horizontal view (uses WeekColumn sub-components)
+    └── CornellNotes - Cues/Notes/Summary layout (uses RuledLines sub-components)
 ```
+
+**Key relationships:**
+- **Sub-Components** (Plan 04): Stateless renderers, positioned via `render_at(col, row, width, height)`
+- **Components** (Plan 02): Page-level coordinators that use ComponentContext and compose sub-components
+- **Component → Sub-Component**: Components instantiate and position sub-components
 
 ### 2. Component Base Class Design
 
@@ -47,6 +154,7 @@ Every component will inherit from a base `Component` class that provides:
 - Access to PDF instance
 - Access to GridSystem instance
 - Access to RenderContext (current page, navigation state)
+- **Factory methods for creating sub-components** (NEW - from Plan 04)
 - Standard lifecycle: `initialize`, `render`, `validate`
 - Helper methods for common operations
 - Consistent error handling
@@ -84,8 +192,45 @@ class Component
   def grid_text_box(text, col, row, w, h, **opts)
     @grid_system.text_box(text, col, row, w, h, **opts)
   end
+
+  # Factory methods for creating sub-components (from Plan 04)
+  def create_sub_component(klass, **options)
+    klass.new(@pdf, @grid_system, **options)
+  end
+
+  def create_week_column(**options)
+    create_sub_component(SubComponent::WeekColumn, **options)
+  end
+
+  def create_fieldset(**options)
+    create_sub_component(SubComponent::Fieldset, **options)
+  end
+
+  def create_ruled_lines(**options)
+    create_sub_component(SubComponent::RuledLines, **options)
+  end
+
+  def create_day_header(**options)
+    create_sub_component(SubComponent::DayHeader, **options)
+  end
+
+  def create_calendar_days(**options)
+    create_sub_component(SubComponent::CalendarDays, **options)
+  end
+
+  # Helper: create ComponentContext for local coordinate system (from Plan 04)
+  def with_context(col, row, width_boxes, height_boxes, &block)
+    box = grid_rect(col, row, width_boxes, height_boxes)
+    ComponentContext.new(@pdf, box[:x], box[:y], box[:width], box[:height], &block)
+  end
 end
 ```
+
+**Integration with Plan 04:**
+- Components use `create_*` factory methods to instantiate sub-components
+- Components call `sub_component.render_at(col, row, width, height)` to position them
+- Components can use `with_context` for local coordinate systems
+- Sub-components handle their own rendering logic
 
 ### 3. Context Object Design
 
@@ -144,64 +289,27 @@ end
 
 ### 2. Extract Layout Components
 
-#### 2.1 Fieldset Component
+#### 2.1 Fieldset Component → **Extracted in Plan 04**
 
-**Current location:** `gen.rb:337-493` (draw_fieldset method)
+**Status:** ✅ **Completed in Plan 04 as SubComponent::Fieldset**
 
-**Complexity:** Medium
-- 4 positioning modes (top_left, top_right, bottom_left, bottom_right)
-- Complex border drawing with gaps for legend
-- Text rotation for vertical legends
-- Multiple styling parameters
+This component was extracted as a **sub-component** in Plan 04 (Extract Reusable Sub-Components). It is now available for use by page-level components in Plan 02.
 
-**Component interface:**
+**Location:** `lib/bujo_pdf/sub_components/fieldset.rb`
+
+**Usage in Plan 02 components:**
 ```ruby
-class Components::Fieldset < Component
-  def initialize(pdf, grid_system, context = {})
-    super
-    @col = context.fetch(:col)
-    @row = context.fetch(:row)
-    @width_boxes = context.fetch(:width_boxes)
-    @height_boxes = context.fetch(:height_boxes)
-    @legend = context.fetch(:legend)
-    @position = context.fetch(:position, :top_left)
-    @font_size = context.fetch(:font_size, 12)
-    @border_color = context.fetch(:border_color, Styling::Colors::BORDERS)
-    @text_color = context.fetch(:text_color, '000000')
-    @inset_boxes = context.fetch(:inset_boxes, 0.5)
-    @legend_padding = context.fetch(:legend_padding, 5)
-    @legend_offset_x = context.fetch(:legend_offset_x, 0)
-    @legend_offset_y = context.fetch(:legend_offset_y, 0)
-  end
-
-  def render
-    draw_border_with_gap
-    draw_legend_text
-  end
-
-  private
-
-  def draw_border_with_gap
-    # Implementation for each position mode
-  end
-
-  def draw_legend_text
-    # Implementation for text with optional rotation
-  end
-end
+# In SeasonalCalendar or other components
+fieldset = create_fieldset(
+  legend: "Winter",
+  legend_position: :top_left,
+  legend_rotation: 90,
+  inset_boxes: 0.5
+)
+fieldset.render_at(col, row, width_boxes, height_boxes)
 ```
 
-**Migration strategy:**
-- Extract to component first
-- Keep wrapper method in PlannerGenerator
-- Update call sites to use component
-- Remove wrapper once migration complete
-
-**Edge cases:**
-- Very long legend text (overflow handling)
-- Very small boxes (minimum size validation)
-- Non-standard inset values (fractional boxes)
-- Color validation
+**No additional work needed** - use the existing sub-component.
 
 #### 2.2 Footer Component
 
@@ -455,21 +563,21 @@ end
 
 **Current location:** `gen.rb:524-677` (draw_seasonal_calendar, draw_season_grid, draw_month_grid methods)
 
-**Complexity:** High
+**Complexity:** High → **Reduced by composing sub-components**
 - Multi-level layout (seasons → months → calendars)
-- Fieldset borders for season grouping
-- Month grid calculations
-- Clickable day links
-- Week number calculations
+- **Uses Fieldset sub-component** for season borders (from Plan 04)
+- **Uses CalendarDays sub-component** for month calendars (from Plan 04)
+- Coordinates positioning of 12 months across 2 columns
+- Handles season grouping logic
 
-**Component hierarchy:**
+**Component hierarchy (updated with sub-components):**
 ```
-SeasonalCalendar (parent)
-├── Uses Fieldset component for season borders
-└── Uses MonthGrid component for each month (×12)
+SeasonalCalendar (parent component)
+├── Uses Fieldset sub-component (Plan 04) for season borders
+└── Uses CalendarDays sub-component (Plan 04) for each month (×12)
 ```
 
-**Component interface:**
+**Component interface (using sub-components):**
 ```ruby
 class Components::SeasonalCalendar < Component
   def validate_context
@@ -485,24 +593,60 @@ class Components::SeasonalCalendar < Component
 
   def draw_header
     # Year title in rows 0-1
+    grid_text_box(context[:year].to_s, 0, 0, 43, 2,
+                  align: :center, valign: :center, size: 18, style: :bold)
   end
 
   def draw_seasons
     # Left column: Winter (Jan-Feb), Spring (Mar-Jun)
+    draw_season_grid("Winter", [1, 2], start_col: 2, start_row: 2, width: 20)
+    draw_season_grid("Spring", [3, 4, 5, 6], start_col: 2, start_row: 20, width: 20)
+
     # Right column: Summer (Jul-Aug), Fall (Sep-Nov), Winter (Dec)
+    draw_season_grid("Summer", [7, 8], start_col: 22, start_row: 2, width: 21)
+    draw_season_grid("Fall", [9, 10, 11], start_col: 22, start_row: 20, width: 21)
+    draw_season_grid("Winter", [12], start_col: 22, start_row: 47, width: 21)
   end
 
-  def draw_season_grid(season_info, start_col, start_row, width_boxes)
-    # Create fieldset border
-    # Render each month using MonthGrid component
+  def draw_season_grid(season_name, months, start_col:, start_row:, width:)
+    height = calculate_season_height(months.size)
+
+    # Use Fieldset sub-component (from Plan 04) for season border
+    fieldset = create_fieldset(
+      legend: season_name,
+      legend_position: :top_left,
+      legend_rotation: 90,
+      inset_boxes: 0.5
+    )
+    fieldset.render_at(start_col, start_row, width, height)
+
+    # Render each month using CalendarDays sub-component (from Plan 04)
+    months.each_with_index do |month, idx|
+      month_row = start_row + (idx * 9) + 1  # Offset for spacing
+
+      calendar = create_calendar_days(
+        year: context[:year],
+        month: month,
+        show_month_header: true,
+        link_to_weeks: true
+      )
+      calendar.render_at(start_col + 1, month_row, width - 2, 8)
+    end
   end
 
   def calculate_season_height(num_months)
-    # Each month: 1 title + 1 headers + 6 calendar rows + 1 gutter = 9 boxes
+    # Each month: 8 boxes + 1 gutter = 9 boxes per month
     (num_months * 9)
   end
 end
 ```
+
+**Benefits of using sub-components:**
+- Fieldset sub-component handles all border and legend logic
+- CalendarDays sub-component handles month calendar rendering, week links, etc.
+- SeasonalCalendar focuses on season grouping and positioning
+- Changes to calendar appearance isolated to CalendarDays sub-component
+- Can easily test Fieldset and CalendarDays independently
 
 **Season definitions:**
 ```ruby
@@ -535,71 +679,27 @@ SEASONS = {
 - Test years starting on different weekdays
 - Test week number calculations
 
-#### 4.2 MonthGrid Component
+#### 4.2 CalendarDays Component → **Extracted in Plan 04**
 
-**Current location:** `gen.rb:606-677` (draw_month_grid method)
+**Status:** ✅ **Completed in Plan 04 as SubComponent::CalendarDays**
 
-**Complexity:** Medium
-- Month title
-- Day headers (M T W T F S S)
-- 6 rows of days (some empty)
-- Clickable day links to weeks
-- Week number calculation
+This component was extracted as a **sub-component** in Plan 04 (Extract Reusable Sub-Components). It renders month calendar grids with clickable day links.
 
-**Component interface:**
+**Location:** `lib/bujo_pdf/sub_components/calendar_days.rb`
+
+**Usage in Plan 02 components:**
 ```ruby
-class Components::MonthGrid < Component
-  def validate_context
-    raise ArgumentError, "year required" unless context[:year]
-    raise ArgumentError, "month required" unless context[:month]
-    raise ArgumentError, "start_col required" unless context[:start_col]
-    raise ArgumentError, "start_row required" unless context[:start_row]
-    raise ArgumentError, "width_boxes required" unless context[:width_boxes]
-  end
-
-  def render
-    draw_title
-    draw_day_headers
-    draw_calendar_days
-  end
-
-  private
-
-  def draw_title
-    # Month name in 1 box height
-  end
-
-  def draw_day_headers
-    # M T W T F S S in 1 box height
-  end
-
-  def draw_calendar_days
-    # 6 rows of 7 columns
-    # Calculate week number for each day
-    # Add clickable links
-  end
-
-  def calculate_week_number(date)
-    # Week calculation logic
-    # Should be extracted to DateCalculator utility
-  end
-end
+# In SeasonalCalendar or YearAtGlance
+calendar = create_calendar_days(
+  year: 2025,
+  month: 1,
+  show_month_header: true,
+  link_to_weeks: true
+)
+calendar.render_at(col, row, width_boxes, height_boxes)
 ```
 
-**Grid layout:**
-- Title: 1 box tall
-- Headers: 1 box tall
-- Calendar: 6 boxes tall (6 rows × 1 box each)
-- Total: 8 boxes per month
-- Column width: width_boxes / 7.0 (fractional boxes)
-
-**Testing strategy:**
-- Test each month of the year
-- Test leap year February
-- Test months starting on different weekdays
-- Test week number accuracy
-- Test link destinations
-- Test rendering in different width constraints
+**No additional work needed** - use the existing sub-component.
 
 #### 4.3 YearAtGlance Component
 
@@ -814,14 +914,13 @@ end
 
 **Current location:** `gen.rb:1115-1179` (within draw_weekly_page)
 
-**Complexity:** Medium-High
+**Complexity:** Medium-High → **Reduced with Sub-Components**
 - 7 columns (Monday-Sunday)
-- Day headers with dates
-- Ruled lines for notes
-- Time period labels (AM/PM/EVE) on Monday only
-- Weekend background shading
+- **Uses WeekColumn sub-component** for each day (from Plan 04)
+- Coordinates positioning using ComponentContext
+- Handles weekend background shading configuration
 
-**Component interface:**
+**Component interface (using sub-components):**
 ```ruby
 class Components::DailySection < Component
   def validate_context
@@ -833,33 +932,54 @@ class Components::DailySection < Component
   end
 
   def render
-    7.times do |i|
-      draw_day_column(i)
+    # Use ComponentContext for proportional column division
+    with_context(context[:content_start_col],
+                 context[:content_start_row],
+                 context[:content_width_boxes],
+                 context[:daily_rows]) do |ctx|
+
+      day_width_boxes = context[:content_width_boxes] / 7.0
+
+      7.times do |i|
+        render_day_column(i, day_width_boxes)
+      end
     end
   end
 
   private
 
-  def draw_day_column(day_index)
+  def render_day_column(day_index, day_width_boxes)
     date = context[:start_date] + day_index
+    col = context[:content_start_col] + (day_index * day_width_boxes)
 
-    # Calculate column position
-    # Draw background (weekend shading if needed)
-    # Draw border
-    # Draw header
-    # Draw ruled lines
-    # Draw time labels if Monday
+    # Create WeekColumn sub-component (from Plan 04)
+    week_column = create_week_column(
+      date: date,
+      day_name: date.strftime("%A"),
+      rows: context[:daily_rows],
+      show_time_labels: day_index == 0,  # Monday only
+      line_spacing_boxes: 1.5,
+      header_size_boxes: 1.5,
+      weekend: weekend?(day_index)
+    )
+
+    # Position and render the sub-component
+    week_column.render_at(col, context[:content_start_row],
+                          day_width_boxes, context[:daily_rows])
   end
 
   def weekend?(day_index)
     day_index == 5 || day_index == 6  # Saturday or Sunday
   end
-
-  def draw_time_labels
-    # AM, PM, EVE labels
-  end
 end
 ```
+
+**Benefits of using WeekColumn sub-component:**
+- Daily column rendering logic encapsulated in WeekColumn
+- DailySection focuses on layout/positioning (7-column division)
+- WeekColumn handles headers, ruled lines, time labels internally
+- Reusable: WeekColumn can be used in other contexts (e.g., different layouts)
+- Testable: WeekColumn can be tested independently
 
 **Grid positioning:**
 - Rows 2-10 (9 boxes tall)
@@ -884,14 +1004,13 @@ end
 
 **Current location:** `gen.rb:1181-1233` (within draw_weekly_page)
 
-**Complexity:** Medium
+**Complexity:** Medium → **Simplified with Sub-Components**
 - Three sections: Cues, Notes, Summary
-- Cues: 25% width, left column
-- Notes: 75% width, right column
-- Summary: full width, bottom
-- Section headers
+- **Uses RuledLines sub-component** for each section (from Plan 04)
+- Handles proportional layout (25%/75% width split)
+- Section headers and borders
 
-**Component interface:**
+**Component interface (using sub-components):**
 ```ruby
 class Components::CornellNotes < Component
   def validate_context
@@ -912,18 +1031,67 @@ class Components::CornellNotes < Component
   private
 
   def draw_cues_section
-    # Left column with "Cues/Questions" header
+    # Draw section border and header
+    cues_box = grid_rect(context[:content_start_col],
+                         context[:notes_start_row],
+                         context[:cues_cols],
+                         context[:notes_main_rows])
+
+    @pdf.bounding_box([cues_box[:x], cues_box[:y]],
+                      width: cues_box[:width],
+                      height: cues_box[:height]) do
+      @pdf.text "Cues/Questions", size: 8, style: :bold
+      @pdf.stroke_bounds
+
+      # Use RuledLines sub-component (from Plan 04)
+      ruled_lines = create_ruled_lines(
+        line_spacing_boxes: 1.5,
+        margin_left_boxes: 0.5,
+        margin_right_boxes: 0.5,
+        skip_first: true  # Skip header area
+      )
+      ruled_lines.render_at(context[:content_start_col], context[:notes_start_row] + 1,
+                            context[:cues_cols], context[:notes_main_rows] - 1)
+    end
   end
 
   def draw_notes_section
-    # Right column with "Notes" header
+    # Similar pattern with RuledLines for notes area
+    notes_col = context[:content_start_col] + context[:cues_cols]
+
+    # Draw border and header, then use RuledLines sub-component
+    ruled_lines = create_ruled_lines(
+      line_spacing_boxes: 1.5,
+      margin_left_boxes: 0.5,
+      margin_right_boxes: 0.5,
+      skip_first: true
+    )
+    ruled_lines.render_at(notes_col, context[:notes_start_row] + 1,
+                          context[:notes_cols], context[:notes_main_rows] - 1)
   end
 
   def draw_summary_section
-    # Full-width bottom with "Summary" header
+    # Use RuledLines for summary area
+    summary_row = context[:notes_start_row] + context[:notes_main_rows]
+    total_width = context[:cues_cols] + context[:notes_cols]
+
+    ruled_lines = create_ruled_lines(
+      line_spacing_boxes: 1.5,
+      margin_left_boxes: 0.5,
+      margin_right_boxes: 0.5,
+      skip_first: true
+    )
+    ruled_lines.render_at(context[:content_start_col], summary_row + 1,
+                          total_width, context[:summary_rows] - 1)
   end
 end
 ```
+
+**Benefits of using RuledLines sub-component:**
+- Line rendering logic encapsulated and reusable
+- Consistent line spacing across all sections
+- Easy to adjust spacing, margins, and style
+- CornellNotes focuses on section layout, not line drawing
 
 **Grid positioning:**
 - Cues: columns 3-12 (10 boxes)
@@ -1154,20 +1322,22 @@ end
 ## Migration Strategy
 
 ### Phase 1: Foundation (Week 1-2)
-1. ✅ Create Component base class
-2. ✅ Create RenderContext class
-3. ✅ Create DateCalculator utility
-4. ✅ Set up test infrastructure
-5. ✅ Extract and test Fieldset component
-6. ✅ Extract and test MonthGrid component
+1. ✅ **COMPLETED IN PLAN 04:** Sub-components extracted (WeekColumn, Fieldset, RuledLines, etc.)
+2. ✅ **COMPLETED IN PLAN 04:** ComponentContext helper created
+3. ✅ **COMPLETED IN PLAN 01:** GridSystem, Styling utilities
+4. ✅ **COMPLETED IN PLAN 03:** Page generation pipeline
+5. Create Component base class (Plan 02 specific)
+6. Create RenderContext class
+7. Create DateCalculator utility
+8. Set up component test infrastructure
+9. Add factory methods to Component base class for sub-components
 
 **Deliverables:**
-- `lib/bujo_pdf/component.rb`
-- `lib/bujo_pdf/render_context.rb`
-- `lib/bujo_pdf/utilities/date_calculator.rb`
-- `lib/bujo_pdf/components/fieldset.rb`
-- `lib/bujo_pdf/components/month_grid.rb`
-- Tests for all above
+- `lib/bujo_pdf/component.rb` (NEW - with sub-component factory methods)
+- `lib/bujo_pdf/render_context.rb` (NEW)
+- `lib/bujo_pdf/utilities/date_calculator.rb` (NEW)
+- Test infrastructure for components
+- ✅ Sub-components already available from Plan 04
 
 ### Phase 2: Navigation Components (Week 2-3)
 1. ✅ Extract TopNavigation
@@ -1185,30 +1355,34 @@ end
 - Updated PlannerGenerator
 
 ### Phase 3: Calendar Components (Week 3-4)
-1. ✅ Extract SeasonalCalendar (uses Fieldset and MonthGrid)
-2. ✅ Extract YearAtGlance
-3. ✅ Test both components
-4. ✅ Update PlannerGenerator
+1. Extract SeasonalCalendar (composes Fieldset and CalendarDays sub-components)
+2. Extract YearAtGlance
+3. Test both components
+4. Update PlannerGenerator
 
 **Deliverables:**
-- `lib/bujo_pdf/components/seasonal_calendar.rb`
+- `lib/bujo_pdf/components/seasonal_calendar.rb` (uses sub-components)
 - `lib/bujo_pdf/components/year_at_glance.rb`
 - Tests for both
 - Updated PlannerGenerator
 
+**Note:** Fieldset and CalendarDays sub-components already exist from Plan 04
+
 ### Phase 4: Weekly Page Components (Week 4-5)
-1. ✅ Extract DailySection
-2. ✅ Extract CornellNotes
-3. ✅ Extract WeeklyPage coordinator
-4. ✅ Test all components
-5. ✅ Update PlannerGenerator
+1. Extract DailySection (composes WeekColumn sub-components)
+2. Extract CornellNotes (composes RuledLines sub-components)
+3. Extract WeeklyPage coordinator
+4. Test all components
+5. Update PlannerGenerator
 
 **Deliverables:**
-- `lib/bujo_pdf/components/daily_section.rb`
-- `lib/bujo_pdf/components/cornell_notes.rb`
+- `lib/bujo_pdf/components/daily_section.rb` (uses WeekColumn sub-components)
+- `lib/bujo_pdf/components/cornell_notes.rb` (uses RuledLines sub-components)
 - `lib/bujo_pdf/components/weekly_page.rb`
 - Tests for all
 - Updated PlannerGenerator
+
+**Note:** WeekColumn, RuledLines, and DayHeader sub-components already exist from Plan 04
 
 ### Phase 5: Integration and Cleanup (Week 5-6)
 1. ✅ Remove old methods from PlannerGenerator
@@ -1540,15 +1714,66 @@ PlannerGenerator
    - Lazy rendering
    - Parallel page generation
 
+## Summary of Changes from Original Plan
+
+This updated version of Plan 02 reflects the completion of Plan 04 (Extract Reusable Sub-Components). Key changes:
+
+### What's Different
+
+1. **Leverages existing sub-components** instead of building from scratch
+   - Fieldset → Use `SubComponent::Fieldset` from Plan 04
+   - MonthGrid → Use `SubComponent::CalendarDays` from Plan 04
+   - Individual day columns → Use `SubComponent::WeekColumn` from Plan 04
+   - Ruled lines → Use `SubComponent::RuledLines` from Plan 04
+
+2. **Component focus shifted** from rendering to coordination
+   - **Old approach:** Components render everything themselves
+   - **New approach:** Components compose sub-components and handle positioning
+
+3. **Added factory methods** to Component base class
+   - `create_week_column(**options)`
+   - `create_fieldset(**options)`
+   - `create_ruled_lines(**options)`
+   - `create_calendar_days(**options)`
+   - etc.
+
+4. **Can use ComponentContext** from Plan 04 for hybrid layouts
+   - Mix grid quantization (alignment) with proportional divisions (equal spacing)
+   - Local coordinate systems within components
+
+### Work Reduction
+
+**Original estimate:** 100-140 hours
+
+**Reduced estimate:** ~60-80 hours (40% reduction)
+
+**Reason:** Many low-level rendering components already extracted as sub-components in Plan 04. Components in Plan 02 now focus on coordination and composition rather than low-level rendering.
+
+### Components Still Needed
+
+Only page-level coordinators remain:
+1. ✅ Component base class (with sub-component factory methods)
+2. ✅ RenderContext
+3. ✅ DateCalculator utility
+4. TopNavigation (week page navigation)
+5. WeekSidebar (left sidebar)
+6. RightSidebar (right sidebar tabs)
+7. SeasonalCalendar (composes Fieldset + CalendarDays)
+8. YearAtGlance (12×31 grid)
+9. DailySection (composes WeekColumn × 7)
+10. CornellNotes (composes RuledLines for 3 sections)
+11. WeeklyPage (coordinator for all weekly components)
+
 ## Notes
 
 - All components should follow the single responsibility principle
-- Components should be stateless where possible (state in context)
+- Components focus on **coordination and composition**, not low-level rendering
+- Sub-components (Plan 04) handle **rendering details**
 - Use composition over inheritance
 - Document all context requirements
 - Validate context in initialize
 - Test edge cases thoroughly
-- Keep components focused and small
+- Keep components focused on their coordination role
 - Use descriptive variable names
 - Add comments for complex logic
 - Follow Ruby style guide
@@ -1557,57 +1782,73 @@ PlannerGenerator
 
 - **Original code:** `gen.rb` (full file)
 - **Plan 01:** Extract Low-Level Utilities (completed)
+- **Plan 03:** Page Generation Pipeline (completed)
+- **Plan 04:** Extract Reusable Sub-Components (completed) ← **Key dependency**
 - **REFACTORING_PLAN.md:** Overall refactoring strategy
 - **CLAUDE.md:** Project documentation
 - **CLAUDE.local.md:** Grid system documentation
 - **Prawn documentation:** https://prawnpdf.org/
 - **Ruby style guide:** https://rubystyle.guide/
 
-## Timeline Estimate
+### Plan 04 Documentation
 
-### Week 1-2: Foundation (24-32 hours)
+Refer to `PLANS/04_EXTRACT_REUSABLE_SUB_COMPONENTS.md` for:
+- SubComponent::Base class design
+- ComponentContext helper for local coordinates
+- Available sub-components (WeekColumn, Fieldset, RuledLines, etc.)
+- Sub-component configuration options
+- Examples of sub-component usage
+
+## Timeline Estimate (Updated for Plan 04 Completion)
+
+### Week 1: Foundation (12-16 hours) ← Reduced
 - Component base class: 4 hours
 - RenderContext class: 2 hours
 - DateCalculator utility: 6 hours (includes testing edge cases)
-- Test infrastructure: 4 hours
-- Fieldset component: 6 hours
-- MonthGrid component: 6 hours
+- Test infrastructure: 2 hours
+- ✅ ~~Fieldset component~~ Already done in Plan 04
+- ✅ ~~MonthGrid component~~ Already done in Plan 04
 
-### Week 2-3: Navigation (16-24 hours)
+### Week 2: Navigation (16-20 hours) ← Unchanged
 - TopNavigation: 5 hours
 - WeekSidebar: 6 hours
-- RightSidebar + RightNavTab: 6 hours
-- Integration and testing: 5 hours
+- RightSidebar + RightNavTab: 5 hours
+- Integration and testing: 4 hours
 
-### Week 3-4: Calendar (20-28 hours)
-- SeasonalCalendar: 8 hours (complex, uses sub-components)
-- YearAtGlance: 10 hours (fractional calculations, many cells)
-- Testing and debugging: 6 hours
+### Week 3: Calendar (12-16 hours) ← Reduced
+- SeasonalCalendar: 6 hours (simpler with sub-components)
+- YearAtGlance: 6 hours
+- Testing and debugging: 4 hours
 
-### Week 4-5: Weekly Page (24-32 hours)
-- DailySection: 8 hours
-- CornellNotes: 6 hours
-- WeeklyPage coordinator: 8 hours
-- Integration and testing: 8 hours
+### Week 4: Weekly Page (14-18 hours) ← Reduced
+- DailySection: 5 hours (uses WeekColumn sub-components)
+- CornellNotes: 4 hours (uses RuledLines sub-components)
+- WeeklyPage coordinator: 5 hours
+- Integration and testing: 4 hours
 
-### Week 5-6: Integration and Cleanup (16-24 hours)
-- Remove old methods: 4 hours
-- Full integration testing: 6 hours
-- Visual regression testing: 4 hours
-- Documentation: 6 hours
-- Code review and final refactoring: 6 hours
+### Week 5: Integration and Cleanup (12-16 hours) ← Reduced
+- Remove old methods: 3 hours
+- Full integration testing: 4 hours
+- Visual regression testing: 3 hours
+- Documentation: 4 hours
+- Code review and final refactoring: 4 hours
 
-**Total Estimate: 100-140 hours (2.5-3.5 months at 10 hours/week)**
+**Total Estimate: 66-86 hours (~40% reduction from original 100-140 hours)**
+
+**At 10 hours/week: 7-9 weeks (vs original 10-14 weeks)**
+
+**Reason for reduction:** Low-level rendering logic already extracted to sub-components in Plan 04. Components now focus on coordination, which is simpler and faster to implement.
 
 ## Completion Checklist
 
 ### Foundation
-- [ ] Component base class created
+- [ ] Component base class created (with sub-component factory methods)
 - [ ] RenderContext class created
 - [ ] DateCalculator utility created and tested
 - [ ] Test infrastructure set up
-- [ ] Fieldset component extracted and tested
-- [ ] MonthGrid component extracted and tested
+- [✅] ~~Fieldset component~~ Completed in Plan 04 as SubComponent::Fieldset
+- [✅] ~~MonthGrid component~~ Completed in Plan 04 as SubComponent::CalendarDays
+- [✅] Sub-components available from Plan 04 (WeekColumn, RuledLines, DayHeader, etc.)
 
 ### Navigation Components
 - [ ] TopNavigation component extracted and tested
