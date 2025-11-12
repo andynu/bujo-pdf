@@ -5,6 +5,7 @@ require 'date'
 require_relative 'utilities/date_calculator'
 require_relative 'utilities/dot_grid'
 require_relative 'page_factory'
+require_relative 'render_context'
 
 module BujoPdf
   # Main planner generator orchestrator.
@@ -26,6 +27,8 @@ module BujoPdf
     def initialize(year = Date.today.year)
       @year = year
       @pdf = nil
+      @current_page_number = 0
+      @total_pages = nil
     end
 
     # Generate the complete planner PDF.
@@ -33,6 +36,10 @@ module BujoPdf
     # @param filename [String] Output filename (default: planner_YEAR.pdf)
     # @return [void]
     def generate(filename = "planner_#{@year}.pdf")
+      # Calculate total pages upfront
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+      @total_pages = 3 + total_weeks + 2  # 3 overview + weeks + 2 template pages
+
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
 
@@ -55,14 +62,17 @@ module BujoPdf
 
     def generate_overview_pages
       # First page (no start_new_page needed)
+      @current_page_number = 1
       generate_page(:seasonal)
       @seasonal_page = @pdf.page_number
 
       @pdf.start_new_page
+      @current_page_number = 2
       generate_page(:year_events)
       @events_page = @pdf.page_number
 
       @pdf.start_new_page
+      @current_page_number = 3
       generate_page(:year_highlights)
       @highlights_page = @pdf.page_number
     end
@@ -74,29 +84,56 @@ module BujoPdf
       total_weeks.times do |i|
         week_num = i + 1
         @pdf.start_new_page
+        @current_page_number += 1
         generate_weekly_page(week_num)
       end
     end
 
     def generate_template_pages
       @pdf.start_new_page
+      @current_page_number += 1
       generate_page(:reference)
       @reference_page = @pdf.page_number
 
       @pdf.start_new_page
+      @current_page_number += 1
       generate_page(:dots)
       @dots_page = @pdf.page_number
     end
 
     def generate_page(page_key)
-      context = { year: @year }
+      context = RenderContext.new(
+        page_key: page_key,
+        page_number: @current_page_number,
+        year: @year,
+        total_pages: @total_pages
+      )
       page = PageFactory.create(page_key, @pdf, context)
       page.generate
     end
 
     def generate_weekly_page(week_num)
-      context = { year: @year }
-      page = PageFactory.create_weekly_page(week_num, @pdf, context)
+      # Calculate week dates
+      week_start = Utilities::DateCalculator.week_start(@year, week_num)
+      week_end = Utilities::DateCalculator.week_end(@year, week_num)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+
+      context = RenderContext.new(
+        page_key: "week_#{week_num}".to_sym,
+        page_number: @current_page_number,
+        year: @year,
+        week_num: week_num,
+        week_start: week_start,
+        week_end: week_end,
+        total_weeks: total_weeks,
+        total_pages: @total_pages
+      )
+
+      # Note: PageFactory.create_weekly_page expects a hash with :year
+      # and merges in week info, but since we're passing RenderContext,
+      # we need to use the page class directly
+      require_relative 'pages/weekly_page'
+      page = Pages::WeeklyPage.new(@pdf, context)
       page.generate
     end
 

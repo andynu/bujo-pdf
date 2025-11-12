@@ -97,6 +97,24 @@ module BujoPdf
       raise NotImplementedError, "#{self.class} must implement #render"
     end
 
+    # Get the rendering context.
+    #
+    # The context provides information about the current page being rendered,
+    # such as the page type, page number, year, week info, etc.
+    #
+    # For backward compatibility, this returns @options which may be either:
+    # - A RenderContext object (new system)
+    # - A Hash (legacy system)
+    #
+    # Components can access context data using either:
+    # - `context.year` (if RenderContext)
+    # - `context[:year]` (works with both)
+    #
+    # @return [RenderContext, Hash] The rendering context
+    def context
+      @options
+    end
+
     protected
 
     # Validate component configuration.
@@ -106,6 +124,23 @@ module BujoPdf
     # @return [void]
     def validate_configuration
       # Default: no validation, subclasses can override
+    end
+
+    # Convenience method to check if rendering a specific page.
+    #
+    # This method provides a safe way to check the current page even when
+    # using the legacy hash-based context system. It will work with both
+    # RenderContext objects and plain hashes.
+    #
+    # @param key [Symbol, String] Page key to check
+    # @return [Boolean] True if current page matches key
+    #
+    # @example
+    #   if current_page?(:year_events)
+    #     @pdf.font "Helvetica-Bold"  # Bold for current page
+    #   end
+    def current_page?(key)
+      context.respond_to?(:current_page?) ? context.current_page?(key) : false
     end
 
     # Content Area Positioning Helpers

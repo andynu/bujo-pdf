@@ -71,8 +71,15 @@ module BujoPdf
       end
 
       def render_tab(row, label, dest, align:)
-        @pdf.fill_color NAV_COLOR
-        @pdf.font "Helvetica", size: FONT_SIZE
+        # Check if this tab's destination matches current page
+        is_current = current_page?(dest)
+
+        # Use bold font and black color for current page, normal gray for others
+        font_style = is_current ? "Helvetica-Bold" : "Helvetica"
+        color = is_current ? '000000' : NAV_COLOR  # Black for current, gray for others
+
+        @pdf.fill_color color
+        @pdf.font font_style, size: FONT_SIZE
 
         # Calculate text area with padding
         # Top padding (becomes left after rotation): PADDING_BOXES at top
@@ -100,8 +107,10 @@ module BujoPdf
                         valign: :center
         end
 
-        # Add clickable link for the entire tab region
-        @grid_system.link(@sidebar_col, row, 1, @tab_height, dest)
+        # Add clickable link for the entire tab region (skip link for current page)
+        unless is_current
+          @grid_system.link(@sidebar_col, row, 1, @tab_height, dest)
+        end
 
         # Reset fill color
         @pdf.fill_color '000000'

@@ -78,7 +78,13 @@ module BujoPdf
       end
 
       def current_week?(week)
-        context[:current_week_num] && context[:current_week_num] == week
+        # Use RenderContext's current_page? method if available
+        # Falls back to legacy current_week_num check for backward compatibility
+        if context.respond_to?(:current_page?)
+          context.current_page?("week_#{week}".to_sym)
+        else
+          context[:current_week_num] && context[:current_week_num] == week
+        end
       end
 
       def draw_current_week(week_box, display_text)

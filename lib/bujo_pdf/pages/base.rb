@@ -5,6 +5,7 @@ require_relative '../utilities/grid_system'
 require_relative '../utilities/dot_grid'
 require_relative '../utilities/diagnostics'
 require_relative '../layout'
+require_relative '../render_context'
 
 module BujoPdf
   module Pages
@@ -63,11 +64,12 @@ module BujoPdf
       # Initialize a new page instance.
       #
       # @param pdf [Prawn::Document] The PDF document to render into
-      # @param context [Hash] Rendering context (year, week_num, etc.)
+      # @param context [RenderContext, Hash] Rendering context
       # @param layout [Layout, nil] Optional layout specification
       def initialize(pdf, context, layout: nil)
         @pdf = pdf
-        @context = context
+        # Accept both RenderContext objects and hashes for backward compatibility
+        @context = context.is_a?(RenderContext) ? context : wrap_context_hash(context)
         @grid_system = GridSystem.new(pdf)
         @layout = layout || default_layout
         @components = []
@@ -352,6 +354,31 @@ module BujoPdf
           content_row(row_offset),
           width_boxes,
           height_boxes
+        )
+      end
+
+      private
+
+      # Wrap a context hash in a RenderContext for backward compatibility.
+      #
+      # This method enables the new RenderContext system while maintaining
+      # compatibility with code that still passes plain hashes as context.
+      #
+      # @param hash [Hash] Context hash
+      # @return [RenderContext] Wrapped context
+      def wrap_context_hash(hash)
+        # Extract known keys and pass rest as **data
+        RenderContext.new(
+          page_key: hash[:page_key] || :unknown,
+          page_number: hash[:page_number] || 0,
+          year: hash[:year],
+          week_num: hash[:week_num],
+          week_start: hash[:week_start],
+          week_end: hash[:week_end],
+          total_weeks: hash[:total_weeks],
+          total_pages: hash[:total_pages],
+          **hash.except(:page_key, :page_number, :year, :week_num,
+                        :week_start, :week_end, :total_weeks, :total_pages)
         )
       end
     end
