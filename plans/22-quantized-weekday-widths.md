@@ -1,4 +1,4 @@
-# Plan #14: Quantized Weekday Column Width Component
+# Plan #22: Quantized Weekday Column Width Component
 
 ## Context Analysis
 

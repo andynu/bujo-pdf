@@ -7,7 +7,38 @@ This file tracks the status of all plans in the plans directory.
 
 ## Active Plans
 
-### Plan 21: Multi-Tap Navigation Cycling for Right Sidebar (Not Started 2025-11-11)
+### Plan 15: Three-Letter Month Indicators in Week Sidebar (Not Started)
+- **File**: `15-month-indicators-in-nav.md`
+- **Status**: Not Started
+- **Priority**: Feature Enhancement
+- **Goal**: Change from single-character month indicators to three-letter month abbreviations (JAN, FEB, MAR, etc.) in the week sidebar
+
+### Plan 17: Monthly Table of Contents Pages (Not Started)
+- **File**: `17-month-toc-pages.md`
+- **Status**: Not Started
+- **Priority**: Feature Enhancement
+- **Goal**: Add dedicated TOC pages for each month (12 total) providing navigation structure between year-at-a-glance and weekly pages
+
+### Plan 18: Flat Table of Contents (Not Started)
+- **File**: `18-flat-toc.md`
+- **Status**: Not Started
+- **Priority**: Feature Enhancement
+- **Goal**: Create comprehensive visual table of contents page listing all major sections and weeks in flat, non-hierarchical format
+
+### Plan 19: Flat-File Configuration for Highlighted Dates (Not Started)
+- **File**: `19-flat-file-date-config.md`
+- **Status**: Not Started
+- **Priority**: Feature Enhancement
+- **Goal**: Add YAML configuration file for highlighting special dates (holidays, events) throughout the planner
+
+### Plan 20: iCal URL Integration for Event Highlighting (Not Started)
+- **File**: `20-ical-url-integration.md`
+- **Status**: Not Started
+- **Priority**: Feature Enhancement
+- **Dependencies**: Plan 19 (Flat-File Date Config)
+- **Goal**: Support fetching events from iCal URLs to automatically highlight special dates in the planner
+
+### Plan 21: Multi-Tap Navigation Cycling for Right Sidebar (Not Started)
 - **File**: `21-multi-tap-navigation-cycling.md`
 - **Status**: Not Started
 - **Created**: 2025-11-11 23:45 EST
@@ -18,52 +49,21 @@ This file tracks the status of all plans in the plans directory.
 - **Dependencies**: Plan 06 (RenderContext System) - COMPLETED, Plan 10 (Declarative Layout System) - COMPLETED
 - **Goal**: Implement multi-tap navigation system for right sidebar tabs that cycles through multiple related pages with array-based destination syntax
 
-### Plan 08: Testing Infrastructure (Completed 2025-11-11)
-- **File**: `08_testing_infrastructure.md`
-- **Status**: Completed
-- **Created**: 2025-11-11 21:15 EST
-- **Last Modified**: 2025-11-11 21:15 EST
-- **Last Worked**: 2025-11-11 23:45 EST
-- **Changed Since Work**: No
-- **Priority**: Phase 3 - High Priority (Quality & Maintainability)
-- **Dependencies**: Plan 01, Plan 02, Plan 04, Plan 05, Plan 06 - ALL COMPLETED
-- **Commits**: 8ddbb6f, b91f005, 5919fe6, 28a4e1a
-- **Goal**: Establish comprehensive testing infrastructure with Minitest covering grid system, date calculations, component rendering, and page generation workflows
-- **Result**: Successfully established comprehensive testing infrastructure with 98 tests (88 unit + 10 integration), 2428 assertions, all passing. Includes test_helper with custom assertions, MockPDF for testing, and full documentation in README.
-
-### Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
-- **File**: `09_gem_structure.md`
-- **Status**: Completed
-- **Created**: 2025-11-11 21:15 EST
-- **Last Modified**: 2025-11-11 21:15 EST
-- **Last Worked**: 2025-11-11 23:19 EST
-- **Changed Since Work**: No
-- **Priority**: Phase 3 - High Priority (Distribution & Packaging)
-- **Dependencies**: Plans 01-06 - ALL COMPLETED
-- **Commits**: e620ab7
-- **Goal**: Convert project to distributable Ruby gem with proper gemspec, CLI executable, version management, and standard gem conventions
-- **Result**: Successfully converted to Ruby gem (v0.1.0) with gemspec, CLI executable, version management, documentation, and all tests passing
-
-### Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
-- **File**: `07_code_organization.md`
-- **Status**: Completed
-- **Created**: 2025-11-11 21:15 EST
-- **Last Modified**: 2025-11-11 23:10 EST
-- **Last Worked**: 2025-11-11 23:10 EST
-- **Changed Since Work**: No
-- **Priority**: Phase 3 - High Priority (Code Quality & DRY)
-- **Dependencies**: Plan 01, Plan 02, Plan 04, Plan 05, Plan 06, Plan 10 - ALL COMPLETED
-- **Commits**: fc6f4db, 9d56730, 259b085, 619248d, 26dabee
-- **Goal**: Eliminate 96+ lines of duplicated code introduced during component extraction by adding base class helpers, parameterized rendering methods, and standardizing patterns
-- **Result**: Successfully eliminated 85+ lines of duplicated code through:
-  - Parameterized helper for labeled sections in CornellNotes (37 lines)
-  - require_options helper in Component base (16 lines)
-  - Style context managers (with_fill_color, with_stroke_color, with_font) (16 lines)
-  - StandardLayoutPage base class (9 lines)
-  - Centralized constant definitions using Styling module (15 constants)
-  - Section 5 (Link API standardization) skipped as components already using @grid.link where appropriate
+### Plan 22: Quantized Weekday Column Width Component (Not Started)
+- **File**: `22-quantized-weekday-widths.md`
+- **Status**: Not Started
+- **Priority**: Code Quality
+- **Goal**: Create WeekGrid component with quantized column widths for consistent visual rhythm across 7-day grids in different contexts
 
 ## Recently Completed Plans
+
+### Plan 16: Automatic Tab Bolding in Right Navigation Sidebar (Already Implemented)
+- **File**: `16-bold-current-tab-in-nav.md`
+- **Status**: Already Implemented
+- **Priority**: Feature Enhancement
+- **Dependencies**: Plan 06 (RenderContext System) - COMPLETED
+- **Goal**: Automatic tab highlighting in right sidebar navigation
+- **Result**: Feature already fully implemented through RenderContext-based system. Right sidebar tabs automatically bold and highlight current page.
 
 ### Plan 11: Multi-Year Layout Implementation (Completed 2025-11-12)
 - **File**: `11-multi-year-layout.md`
@@ -198,7 +198,7 @@ This file tracks the status of all plans in the plans directory.
    - **Dependencies**: Plan 09 (Gem Structure and Distribution) - COMPLETED
    - **Result**: Successfully removed gen.rb and updated all documentation to use bin/bujo-pdf. All 98 tests pass.
 
-2. Plan 13: Ultra-Light Weekend Background Shading for Year-at-a-Glance Pages (Completed 2025-11-11)
+1. Plan 13: Ultra-Light Weekend Background Shading for Year-at-a-Glance Pages (Completed 2025-11-11)
    - **File**: `13-weekend-backgrounds.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 23:03 EST
@@ -208,7 +208,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 640b2f4, 57bda26
    - **Result**: Weekend background shading added to all calendar views (year-at-a-glance and seasonal calendar) using 10% opacity WEEKEND_BG color
 
-3. Plan 12: Inline Weekday Indicators with Day Numbers (Completed 2025-11-11)
+1. Plan 12: Inline Weekday Indicators with Day Numbers (Completed 2025-11-11)
    - **File**: `12-weekday-indicators-inline.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 22:22 EST
@@ -218,7 +218,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 4e2e312
    - **Result**: Inline weekday abbreviations with day numbers in muted gray, applied to both Events and Highlights pages
 
-4. Plan 08: Testing Infrastructure (Completed 2025-11-11)
+1. Plan 08: Testing Infrastructure (Completed 2025-11-11)
    - **File**: `08_testing_infrastructure.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:15 EST
@@ -228,7 +228,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 8ddbb6f, b91f005, 5919fe6, 28a4e1a
    - **Result**: Comprehensive testing infrastructure with 98 tests, 2428 assertions
 
-5. Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
+1. Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
    - **File**: `09_gem_structure.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:15 EST
@@ -238,7 +238,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: e620ab7
    - **Result**: Ruby gem v0.1.0 with full distribution infrastructure
 
-6. Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
+1. Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
    - **File**: `07_code_organization.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 23:10 EST
@@ -248,7 +248,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: fc6f4db, 9d56730, 259b085, 619248d, 26dabee
    - **Result**: Eliminated 85+ lines of code duplication
 
-7. Plan 10: Declarative Layout System (Completed 2025-11-11)
+1. Plan 10: Declarative Layout System (Completed 2025-11-11)
    - **File**: `10_declarative_layout_system.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:33 EST
@@ -258,7 +258,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 47003c9
    - **Result**: Removed ~80 lines of duplicated sidebar code
 
-8. Plan 06: RenderContext System (Completed 2025-11-11)
+1. Plan 06: RenderContext System (Completed 2025-11-11)
    - **File**: `06_render_context_system.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:52 EST
@@ -269,7 +269,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 95f6006, 5a3f8eb, 9a081dd
    - **Bonus**: Automatic page numbering from Prawn
 
-9. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
+1. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
    - **File**: `02_extract_components.md`
    - **Status**: Completed (Core Components)
    - **Last Modified**: 2025-11-11 20:50 EST
@@ -279,7 +279,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: extract-components
    - **Commits**: 961d331, 6721c64, 6d11767
 
-10. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
+1. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
    - **File**: `05_page_and_layout_abstraction.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:40 EST
@@ -289,7 +289,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: page-and-layout-abstraction
    - **Commits**: b1a40dc, 86f12bc
 
-11. Plan 04: Extract Reusable Sub-Components (Completed 2025-11-11)
+1. Plan 04: Extract Reusable Sub-Components (Completed 2025-11-11)
    - **File**: `04_extract_reusable_sub_components.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 19:29 EST
@@ -299,7 +299,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: extract-reusable-sub-components
    - **Commits**: dc53d6c, c9b3774, bef41e5, deb98e5
 
-12. Plan 03: Page Generation Pipeline Refactoring (Completed 2025-11-11)
+1. Plan 03: Page Generation Pipeline Refactoring (Completed 2025-11-11)
    - **File**: `03_page_generation_pipeline.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 19:25 EST
@@ -309,7 +309,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: page-generation-pipeline
    - **Commits**: f857b1f, fcefc03, f0625ec, 383bf8f
 
-13. Plan 01: Extract Low-Level Utilities (Completed 2025-11-11)
+1. Plan 01: Extract Low-Level Utilities (Completed 2025-11-11)
    - **File**: `01_extract_low_level_utilities.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 18:20 PST
