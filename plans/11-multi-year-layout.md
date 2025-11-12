@@ -446,7 +446,7 @@ pdf.render_file('test_multi_year.pdf')
 
 ### Command-Line Arguments
 ```ruby
-# gen.rb modifications
+# CLI executable modifications (bin/bujo-pdf)
 year = (ARGV[0] || Date.today.year).to_i
 year_count = (ARGV[1] || 4).to_i  # NEW: optional year count
 

@@ -331,7 +331,7 @@ end
 ## Examples from the Codebase
 
 ### Calibration Page Demo Box
-Located at `gen.rb:979-993`:
+Example from the reference page implementation (`lib/bujo_pdf/pages/reference_page.rb`):
 ```ruby
 # Full-width header, 2 boxes tall
 header_box = grid_rect(0, 0, GRID_COLS, 2)

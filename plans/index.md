@@ -3,20 +3,9 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-11 23:53 EST
+2025-11-12
 
 ## Active Plans
-
-### Plan 14: Remove gen.rb and Standardize on bin/bujo-pdf (Not Started 2025-11-11)
-- **File**: `14-remove-gen-rb.md`
-- **Status**: Not Started
-- **Created**: 2025-11-11 23:54 EST
-- **Last Modified**: 2025-11-11 23:54 EST
-- **Last Worked**: Never
-- **Changed Since Work**: N/A
-- **Priority**: Code Cleanup
-- **Dependencies**: Plan 09 (Gem Structure and Distribution) - COMPLETED
-- **Goal**: Remove legacy gen.rb script and standardize all documentation to use bin/bujo-pdf
 
 ### Plan 21: Multi-Tap Navigation Cycling for Right Sidebar (Not Started 2025-11-11)
 - **File**: `21-multi-tap-navigation-cycling.md`
@@ -75,6 +64,17 @@ This file tracks the status of all plans in the plans directory.
   - Section 5 (Link API standardization) skipped as components already using @grid.link where appropriate
 
 ## Recently Completed Plans
+
+### Plan 14: Remove gen.rb and Standardize on bin/bujo-pdf (Completed 2025-11-12)
+- **File**: `14-remove-gen-rb.md`
+- **Status**: Completed
+- **Created**: 2025-11-11 23:54 EST
+- **Last Modified**: 2025-11-12
+- **Last Worked**: 2025-11-12
+- **Changed Since Work**: No
+- **Priority**: Code Cleanup
+- **Dependencies**: Plan 09 (Gem Structure and Distribution) - COMPLETED
+- **Result**: Successfully removed gen.rb and updated all documentation (CLAUDE.md, CLAUDE.local.md, plans/*.md, REFACTORING_PLAN.md) to use bin/bujo-pdf. All 98 tests pass.
 
 ### Plan 13: Ultra-Light Weekend Background Shading for Year-at-a-Glance Pages (Completed 2025-11-11)
 - **File**: `13-weekend-backgrounds.md`
@@ -164,7 +164,16 @@ This file tracks the status of all plans in the plans directory.
 
 ## Completed Plans
 
-1. Plan 13: Ultra-Light Weekend Background Shading for Year-at-a-Glance Pages (Completed 2025-11-11)
+1. Plan 14: Remove gen.rb and Standardize on bin/bujo-pdf (Completed 2025-11-12)
+   - **File**: `14-remove-gen-rb.md`
+   - **Status**: Completed
+   - **Last Modified**: 2025-11-12
+   - **Last Worked**: 2025-11-12
+   - **Priority**: Code Cleanup
+   - **Dependencies**: Plan 09 (Gem Structure and Distribution) - COMPLETED
+   - **Result**: Successfully removed gen.rb and updated all documentation to use bin/bujo-pdf. All 98 tests pass.
+
+2. Plan 13: Ultra-Light Weekend Background Shading for Year-at-a-Glance Pages (Completed 2025-11-11)
    - **File**: `13-weekend-backgrounds.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 23:03 EST
@@ -174,7 +183,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 640b2f4, 57bda26
    - **Result**: Weekend background shading added to all calendar views (year-at-a-glance and seasonal calendar) using 10% opacity WEEKEND_BG color
 
-2. Plan 08: Testing Infrastructure (Completed 2025-11-11)
+3. Plan 08: Testing Infrastructure (Completed 2025-11-11)
    - **File**: `08_testing_infrastructure.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:15 EST
@@ -184,7 +193,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 8ddbb6f, b91f005, 5919fe6, 28a4e1a
    - **Result**: Comprehensive testing infrastructure with 98 tests, 2428 assertions
 
-3. Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
+4. Plan 09: Gem Structure and Distribution (Completed 2025-11-11)
    - **File**: `09_gem_structure.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:15 EST
@@ -194,7 +203,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: e620ab7
    - **Result**: Ruby gem v0.1.0 with full distribution infrastructure
 
-4. Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
+5. Plan 07: Eliminate Code Duplication from Component Extraction (Completed 2025-11-11)
    - **File**: `07_code_organization.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 23:10 EST
@@ -204,7 +213,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: fc6f4db, 9d56730, 259b085, 619248d, 26dabee
    - **Result**: Eliminated 85+ lines of code duplication
 
-5. Plan 10: Declarative Layout System (Completed 2025-11-11)
+6. Plan 10: Declarative Layout System (Completed 2025-11-11)
    - **File**: `10_declarative_layout_system.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 21:33 EST
@@ -214,7 +223,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 47003c9
    - **Result**: Removed ~80 lines of duplicated sidebar code
 
-6. Plan 06: RenderContext System (Completed 2025-11-11)
+7. Plan 06: RenderContext System (Completed 2025-11-11)
    - **File**: `06_render_context_system.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:52 EST
@@ -225,7 +234,7 @@ This file tracks the status of all plans in the plans directory.
    - **Commits**: 95f6006, 5a3f8eb, 9a081dd
    - **Bonus**: Automatic page numbering from Prawn
 
-7. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
+8. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
    - **File**: `02_extract_components.md`
    - **Status**: Completed (Core Components)
    - **Last Modified**: 2025-11-11 20:50 EST
@@ -235,7 +244,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: extract-components
    - **Commits**: 961d331, 6721c64, 6d11767
 
-8. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
+9. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
    - **File**: `05_page_and_layout_abstraction.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:40 EST
@@ -245,7 +254,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: page-and-layout-abstraction
    - **Commits**: b1a40dc, 86f12bc
 
-9. Plan 04: Extract Reusable Sub-Components (Completed 2025-11-11)
+10. Plan 04: Extract Reusable Sub-Components (Completed 2025-11-11)
    - **File**: `04_extract_reusable_sub_components.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 19:29 EST
@@ -255,7 +264,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: extract-reusable-sub-components
    - **Commits**: dc53d6c, c9b3774, bef41e5, deb98e5
 
-10. Plan 03: Page Generation Pipeline Refactoring (Completed 2025-11-11)
+11. Plan 03: Page Generation Pipeline Refactoring (Completed 2025-11-11)
    - **File**: `03_page_generation_pipeline.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 19:25 EST
@@ -265,7 +274,7 @@ This file tracks the status of all plans in the plans directory.
    - **Branch**: page-generation-pipeline
    - **Commits**: f857b1f, fcefc03, f0625ec, 383bf8f
 
-11. Plan 01: Extract Low-Level Utilities (Completed 2025-11-11)
+12. Plan 01: Extract Low-Level Utilities (Completed 2025-11-11)
    - **File**: `01_extract_low_level_utilities.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 18:20 PST

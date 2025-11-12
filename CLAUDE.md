@@ -18,14 +18,12 @@ This is a Ruby-based PDF planner generator that creates programmable bullet jour
 ### Generate Planner
 ```bash
 # Generate for current year
-ruby gen.rb
+bin/bujo-pdf generate
 
 # Generate for specific year
-ruby gen.rb 2025
+bin/bujo-pdf generate 2025
 
 # Install dependencies first if needed
-gem install prawn
-# Or with bundler
 bundle install
 ```
 
@@ -285,7 +283,7 @@ end
 
 ## Key Files
 
-- **gen.rb** - Main generator entry point (uses component-based architecture)
+- **bin/bujo-pdf** - CLI executable for generating planners
 - **lib/bujo_pdf/** - Component-based generator library
   - **pages/** - Page classes (seasonal calendar, year-at-a-glance, weekly pages)
   - **layouts/** - Layout classes (full page, standard with sidebars)

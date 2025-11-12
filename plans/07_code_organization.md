@@ -528,7 +528,7 @@ end
 
 **7.1 Generate baseline PDF**
 ```bash
-ruby gen.rb 2025
+bin/bujo-pdf generate 2025
 mv planner_2025.pdf planner_before_refactor.pdf
 ```
 
@@ -544,7 +544,7 @@ Generate PDF after each section, verify it still works.
 
 **7.3 Final comparison**
 ```bash
-ruby gen.rb 2025
+bin/bujo-pdf generate 2025
 # Visual comparison:
 open planner_before_refactor.pdf planner_2025.pdf
 # Or use diff tool if available
@@ -552,7 +552,7 @@ open planner_before_refactor.pdf planner_2025.pdf
 
 **7.4 Verify no errors or warnings**
 ```bash
-ruby gen.rb 2025 2>&1 | grep -i "error\|warning"
+bin/bujo-pdf generate 2025 2>&1 | grep -i "error\|warning"
 # Should produce no output
 ```
 
@@ -587,7 +587,7 @@ After testing infrastructure is in place, add tests for:
 - [x] All components use GridSystem.link() instead of manual links (SKIPPED - already using grid.link where appropriate)
 - [x] All constant duplications removed
 - [x] Generated PDF identical to baseline (file size: 3.1M matches)
-- [x] No errors or warnings when running `ruby gen.rb 2025`
+- [x] No errors or warnings when running `bin/bujo-pdf generate 2025`
 
 ### Should Have
 - [x] Clear documentation for new helpers in Component base class

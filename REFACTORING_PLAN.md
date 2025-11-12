@@ -56,7 +56,7 @@ Transform the monolithic generator script into a well-structured gem with:
 - Created `LICENSE` (MIT License)
 - Created `README.md` with gem-focused documentation
 - Updated `Gemfile` to use gemspec for dependency management
-- Updated `gen.rb` to thin wrapper using gem infrastructure
+- Replaced `gen.rb` with `bin/bujo-pdf` CLI executable using gem infrastructure
 - Updated `.gitignore` for gem build artifacts
 - All 20 tests pass with 86 assertions
 - Gem builds successfully: `bujo-pdf-0.1.0.gem`
@@ -287,15 +287,15 @@ Transform the monolithic generator script into a well-structured gem with:
 - [x] Migrate one page type at a time
 - [x] Update tests as we migrate
 - [x] Switch to gem-based generation when complete
-- [x] Update `gen.rb` to use gem infrastructure (no archival needed)
+- [x] Replace `gen.rb` with `bin/bujo-pdf` CLI executable
 
-**Status**: ✅ Completed 2025-11-11
+**Status**: ✅ Completed 2025-11-12
 - Incremental migration approach was successful throughout all phases
-- `gen.rb` remained functional during entire refactoring process
+- `gen.rb` remained functional during refactoring process as development convenience
 - All page types migrated to component-based architecture
-- Tests updated and passing throughout migration (20 tests, 86 assertions)
-- `gen.rb` now uses gem infrastructure as thin wrapper (backward compatible)
-- No archival necessary - gen.rb continues to serve as convenient local entry point
+- Tests updated and passing throughout migration (98 tests, 2428 assertions)
+- Replaced `gen.rb` with proper gem CLI executable `bin/bujo-pdf`
+- All documentation updated to use `bin/bujo-pdf` or `bujo-pdf` (when installed)
 - All refactoring completed without breaking changes
 
 ## Benefits of Refactoring

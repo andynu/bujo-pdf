@@ -139,8 +139,20 @@ bujo-pdf generate 2025
 
 ## Completion Criteria
 
-- [ ] All documentation updated to use `bin/bujo-pdf`
-- [ ] No references to `gen.rb` remain in codebase (excluding git history)
-- [ ] Tests pass without gen.rb present
-- [ ] README provides clear usage examples with `bin/bujo-pdf`
-- [ ] `gen.rb` deleted and removal committed
+- [x] All documentation updated to use `bin/bujo-pdf`
+- [x] No references to `gen.rb` remain in codebase (excluding git history)
+- [x] Tests pass without gen.rb present (98 tests, 2428 assertions, 0 failures)
+- [x] README provides clear usage examples with `bin/bujo-pdf`
+- [x] `gen.rb` deleted and removal committed
+
+## Results
+
+All criteria met successfully:
+
+1. **Documentation updated**: CLAUDE.md, CLAUDE.local.md, plans/*.md, REFACTORING_PLAN.md all updated
+2. **README already correct**: README.md already using `bujo-pdf` command exclusively
+3. **No code dependencies**: Grep search confirmed no references in test/ or lib/
+4. **Tests pass**: Full test suite passes (98 tests, 2428 assertions, 0 failures, 0 errors)
+5. **gen.rb removed**: `git rm gen.rb` executed successfully
+
+The codebase now has a single, clear entry point via `bin/bujo-pdf` (or `bujo-pdf` when installed as gem).
