@@ -4,4 +4,5 @@
 module BujoPdf
 end
 
+require_relative 'bujo_pdf/layouts/layout_factory'
 require_relative 'bujo_pdf/planner_generator'

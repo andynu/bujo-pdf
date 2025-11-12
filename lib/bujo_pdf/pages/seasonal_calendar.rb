@@ -3,8 +3,6 @@
 require_relative 'base'
 require_relative '../utilities/date_calculator'
 require_relative '../sub_components/fieldset'
-require_relative '../components/week_sidebar'
-require_relative '../components/right_sidebar'
 
 module BujoPdf
   module Pages
@@ -36,13 +34,18 @@ module BujoPdf
         set_destination('seasonal')
         @year = context[:year]
         @total_weeks = Utilities::DateCalculator.total_weeks(@year)
+
+        use_layout :standard_with_sidebars,
+          current_week: nil,              # No week highlighting
+          highlight_tab: :seasonal,       # Highlight "Year" tab
+          year: @year,
+          total_weeks: @total_weeks
       end
 
       def render
         draw_dot_grid
         draw_diagnostic_grid(label_every: 5)
-        draw_week_sidebar
-        draw_right_sidebar
+        # Sidebars rendered automatically by layout!
         draw_header
         draw_seasons
       end
@@ -193,30 +196,6 @@ module BujoPdf
         end
       end
 
-      def draw_week_sidebar
-        # Use WeekSidebar component
-        # No current week for seasonal calendar
-        sidebar = Components::WeekSidebar.new(@pdf, @grid_system,
-          year: @year,
-          total_weeks: @total_weeks
-        )
-        sidebar.render
-      end
-
-      def draw_right_sidebar
-        # Use RightSidebar component
-        sidebar = Components::RightSidebar.new(@pdf, @grid_system,
-          top_tabs: [
-            { label: "Year", dest: "seasonal", current: true },
-            { label: "Events", dest: "year_events" },
-            { label: "Highlights", dest: "year_highlights" }
-          ],
-          bottom_tabs: [
-            { label: "Dots", dest: "dots" }
-          ]
-        )
-        sidebar.render
-      end
     end
   end
 end

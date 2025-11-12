@@ -17,6 +17,7 @@ module BujoPdf
       # Set up the named destination for this page.
       def setup
         set_destination('dots')
+        use_layout :full_page  # Explicit: no sidebars for blank dot grid
       end
 
       # Render the dot grid across the entire page.

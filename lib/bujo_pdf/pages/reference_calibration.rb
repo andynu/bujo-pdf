@@ -32,6 +32,7 @@ module BujoPdf
 
       def setup
         set_destination('reference')
+        use_layout :full_page  # Explicit: no sidebars for reference page
       end
 
       def render

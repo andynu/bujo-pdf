@@ -59,19 +59,20 @@ module BujoPdf
     #     end
     #   end
     class Base
-      attr_reader :pdf, :context, :grid_system, :layout, :content_area
+      attr_reader :pdf, :context, :grid_system, :layout, :content_area, :new_layout
 
       # Initialize a new page instance.
       #
       # @param pdf [Prawn::Document] The PDF document to render into
       # @param context [RenderContext, Hash] Rendering context
-      # @param layout [Layout, nil] Optional layout specification
+      # @param layout [Layout, nil] Optional legacy layout specification (deprecated)
       def initialize(pdf, context, layout: nil)
         @pdf = pdf
         # Accept both RenderContext objects and hashes for backward compatibility
         @context = context.is_a?(RenderContext) ? context : wrap_context_hash(context)
         @grid_system = GridSystem.new(pdf)
-        @layout = layout || default_layout
+        @layout = layout || default_layout  # Legacy layout system
+        @new_layout = nil  # New declarative layout system (set via use_layout)
         @components = []
 
         # Calculate content area from layout
@@ -87,10 +88,27 @@ module BujoPdf
       # @return [void]
       def generate
         setup              # Page-specific state setup
+
+        # If new layout system is used, default to full_page if not specified
+        if @new_layout.nil?
+          require_relative '../layouts/layout_factory'
+          @new_layout = Layouts::LayoutFactory.create(:full_page, @pdf, @grid_system)
+          # Update content area from new layout
+          @content_area = calculate_content_area_from_new_layout
+        end
+
         setup_page         # Background, grid (NEW)
-        render_chrome      # Sidebars, navigation (NEW)
+
+        # Render layout chrome (sidebars) using new system
+        @new_layout.render_before(self)
+
+        render_chrome      # Legacy chrome rendering hook
         render             # Main content
         finalize_page      # Post-render tasks (NEW)
+
+        # Render layout overlays using new system
+        @new_layout.render_after(self)
+
         finalize           # Legacy hook
       end
 
@@ -171,7 +189,47 @@ module BujoPdf
         # Default: no-op, subclasses can override
       end
 
-      # Get the default layout for this page type.
+      # Declare which layout to use for this page (new declarative layout system).
+      #
+      # Should be called in setup() method of subclasses. This is the new preferred
+      # way to specify layouts that automatically handle sidebar rendering.
+      #
+      # If not called, defaults to FullPageLayout.
+      #
+      # @param layout_name [Symbol] Layout name (:full_page, :standard_with_sidebars)
+      # @param options [Hash] Layout-specific options (current_week, highlight_tab, etc.)
+      # @return [void]
+      #
+      # @example Weekly page with current week highlighting
+      #   def setup
+      #     use_layout :standard_with_sidebars, current_week: @week_num
+      #   end
+      #
+      # @example Year overview page with tab highlighting
+      #   def setup
+      #     use_layout :standard_with_sidebars,
+      #       current_week: nil,
+      #       highlight_tab: :year_events
+      #   end
+      def use_layout(layout_name, **options)
+        require_relative '../layouts/layout_factory'
+
+        # Merge context values only if they exist (not nil)
+        merged_options = options.dup
+        merged_options[:year] ||= context[:year] if context[:year]
+        merged_options[:total_weeks] ||= context[:total_weeks] if context[:total_weeks]
+
+        @new_layout = Layouts::LayoutFactory.create(
+          layout_name,
+          @pdf,
+          @grid_system,
+          **merged_options
+        )
+        # Update content area from new layout
+        @content_area = calculate_content_area_from_new_layout
+      end
+
+      # Get the default layout for this page type (legacy system).
       #
       # Override in subclasses to provide a specific default layout.
       # The default is a full-page layout with no sidebars.
@@ -181,7 +239,7 @@ module BujoPdf
         Layout.full_page
       end
 
-      # Calculate content area from layout specification.
+      # Calculate content area from layout specification (legacy system).
       #
       # Converts layout's grid-based content area spec to a hash with both
       # grid coordinates (col, row, width_boxes, height_boxes) and point
@@ -200,6 +258,27 @@ module BujoPdf
           y: @grid_system.y(area[:row]),
           width_pt: @grid_system.width(area[:width]),
           height_pt: @grid_system.height(area[:height])
+        }
+      end
+
+      # Calculate content area from new layout system.
+      #
+      # Converts new layout's content area to the same format as legacy system
+      # for backward compatibility.
+      #
+      # @return [Hash] Content area with grid and point coordinates
+      def calculate_content_area_from_new_layout
+        area = @new_layout.content_area
+        {
+          col: area[:col],
+          row: area[:row],
+          width_boxes: area[:width_boxes],
+          height_boxes: area[:height_boxes],
+          # Computed point values
+          x: @grid_system.x(area[:col]),
+          y: @grid_system.y(area[:row]),
+          width_pt: @grid_system.width(area[:width_boxes]),
+          height_pt: @grid_system.height(area[:height_boxes])
         }
       end
 
