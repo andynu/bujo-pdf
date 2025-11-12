@@ -27,7 +27,6 @@ module BujoPdf
     def initialize(year = Date.today.year)
       @year = year
       @pdf = nil
-      @current_page_number = 0
       @total_pages = nil
     end
 
@@ -62,17 +61,14 @@ module BujoPdf
 
     def generate_overview_pages
       # First page (no start_new_page needed)
-      @current_page_number = 1
       generate_page(:seasonal)
       @seasonal_page = @pdf.page_number
 
       @pdf.start_new_page
-      @current_page_number = 2
       generate_page(:year_events)
       @events_page = @pdf.page_number
 
       @pdf.start_new_page
-      @current_page_number = 3
       generate_page(:year_highlights)
       @highlights_page = @pdf.page_number
     end
@@ -84,19 +80,16 @@ module BujoPdf
       total_weeks.times do |i|
         week_num = i + 1
         @pdf.start_new_page
-        @current_page_number += 1
         generate_weekly_page(week_num)
       end
     end
 
     def generate_template_pages
       @pdf.start_new_page
-      @current_page_number += 1
       generate_page(:reference)
       @reference_page = @pdf.page_number
 
       @pdf.start_new_page
-      @current_page_number += 1
       generate_page(:dots)
       @dots_page = @pdf.page_number
     end
@@ -104,7 +97,7 @@ module BujoPdf
     def generate_page(page_key)
       context = RenderContext.new(
         page_key: page_key,
-        page_number: @current_page_number,
+        page_number: @pdf.page_number,
         year: @year,
         total_pages: @total_pages
       )
@@ -120,7 +113,7 @@ module BujoPdf
 
       context = RenderContext.new(
         page_key: "week_#{week_num}".to_sym,
-        page_number: @current_page_number,
+        page_number: @pdf.page_number,
         year: @year,
         week_num: week_num,
         week_start: week_start,
