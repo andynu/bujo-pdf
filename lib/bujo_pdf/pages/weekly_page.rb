@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'base'
+require_relative 'standard_layout_page'
 require_relative '../utilities/date_calculator'
 require_relative '../components/top_navigation'
 require_relative '../components/daily_section'
@@ -30,7 +30,7 @@ module BujoPdf
     #   }
     #   page = WeeklyPage.new(pdf, context)
     #   page.generate
-    class WeeklyPage < Base
+    class WeeklyPage < StandardLayoutPage
       # Constants
       GRID_COLS = 43
       DOT_SPACING = 14.17
@@ -60,13 +60,10 @@ module BujoPdf
         @year = context[:year]
         @total_weeks = context[:total_weeks] || Utilities::DateCalculator.total_weeks(@year)
 
-        use_layout :standard_with_sidebars,
-          current_week: @week_num,
-          highlight_tab: nil,  # No tab highlighting on weekly pages
-          year: @year,
-          total_weeks: @total_weeks
-
         set_destination("week_#{@week_num}")
+
+        # Use StandardLayoutPage setup
+        super
       end
 
       def render
@@ -76,6 +73,18 @@ module BujoPdf
         draw_navigation
         draw_daily_section
         draw_cornell_notes
+      end
+
+      protected
+
+      # Highlight this week in sidebar
+      def current_week
+        @week_num
+      end
+
+      # Weekly pages don't highlight tabs
+      def highlight_tab
+        nil
       end
 
       private

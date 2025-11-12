@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'base'
+require_relative 'standard_layout_page'
 require_relative '../utilities/date_calculator'
 
 module BujoPdf
@@ -19,7 +19,7 @@ module BujoPdf
     # Subclasses must override:
     #   - page_title: The title to display in the header
     #   - destination_name: The named destination for this page
-    class YearAtGlanceBase < Base
+    class YearAtGlanceBase < StandardLayoutPage
       # Constants
       GRID_COLS = 43
       DOT_SPACING = 14.17
@@ -43,11 +43,8 @@ module BujoPdf
         @year = context[:year]
         @total_weeks = Utilities::DateCalculator.total_weeks(@year)
 
-        use_layout :standard_with_sidebars,
-          current_week: nil,                  # No week highlighting
-          highlight_tab: destination_name,    # Dynamic: :year_events or :year_highlights
-          year: @year,
-          total_weeks: @total_weeks
+        # Use StandardLayoutPage setup but with dynamic highlight_tab
+        super
       end
 
       def render
@@ -60,6 +57,16 @@ module BujoPdf
       end
 
       protected
+
+      # Year overview pages don't highlight weeks
+      def current_week
+        nil
+      end
+
+      # Highlight the current tab (overridden by subclasses)
+      def highlight_tab
+        destination_name
+      end
 
       # Subclasses must override these methods
       def page_title
