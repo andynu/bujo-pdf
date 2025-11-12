@@ -168,6 +168,32 @@ module BujoPdf
         row = 0
         col = start_col_offset
 
+        # First pass: Draw weekend backgrounds
+        1.upto(days_in_month) do |day|
+          date = Date.new(@year, month, day)
+
+          # Calculate position
+          temp_row = (start_col_offset + day - 1) / 7
+          temp_col = (start_col_offset + day - 1) % 7
+
+          # Only draw background for weekends (columns 5 and 6 = Saturday and Sunday)
+          if date.saturday? || date.sunday?
+            cal_row = headers_row + 1 + temp_row
+            cell_x = @grid_system.x(start_col) + (temp_col * @grid_system.width(col_width_boxes))
+            cell_y = @grid_system.y(cal_row)
+            cell_width = @grid_system.width(col_width_boxes)
+            cell_height = @grid_system.height(1)
+
+            # Draw weekend background with 10% opacity (matching WeekColumn pattern)
+            @pdf.fill_color WEEKEND_BG
+            @pdf.transparent(0.1) do
+              @pdf.fill_rectangle [cell_x, cell_y], cell_width, cell_height
+            end
+            @pdf.fill_color '000000'
+          end
+        end
+
+        # Second pass: Draw day numbers and links
         1.upto(days_in_month) do |day|
           date = Date.new(@year, month, day)
           week_num = Utilities::DateCalculator.week_number_for_date(@year, date)
