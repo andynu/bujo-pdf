@@ -62,14 +62,16 @@ module BujoPdf
         #
         # @return [void]
         def render_flat_top_hexagons
-          # For flat-top hexagons:
-          # hex_width = spacing * 2 (distance from left vertex to right vertex)
-          # hex_height = spacing * sqrt(3) (distance from top edge to bottom edge)
+          # For flat-top hexagons where @spacing is the edge length (side):
+          # - hex_width (vertex to vertex) = spacing * 2
+          # - hex_height (edge to edge) = spacing * sqrt(3)
+          # - horizontal_spacing (center to center) = spacing * 1.5
+          # - vertical_spacing (center to center) = spacing * sqrt(3)
           hex_width = @spacing * 2
           hex_height = @spacing * Math.sqrt(3)
 
-          # Center-to-center spacing
-          horizontal_spacing = hex_width * 0.75
+          # Center-to-center spacing for proper edge-to-edge tessellation
+          horizontal_spacing = @spacing * 1.5
           vertical_spacing = hex_height
 
           # Calculate grid dimensions (with extra rows/cols for coverage)
@@ -96,15 +98,17 @@ module BujoPdf
         #
         # @return [void]
         def render_pointy_top_hexagons
-          # For pointy-top hexagons:
-          # hex_width = spacing * sqrt(3)
-          # hex_height = spacing * 2
+          # For pointy-top hexagons where @spacing is the edge length (side):
+          # - hex_width (edge to edge) = spacing * sqrt(3)
+          # - hex_height (vertex to vertex) = spacing * 2
+          # - horizontal_spacing (center to center) = spacing * sqrt(3)
+          # - vertical_spacing (center to center) = spacing * 1.5
           hex_width = @spacing * Math.sqrt(3)
           hex_height = @spacing * 2
 
-          # Center-to-center spacing
+          # Center-to-center spacing for proper edge-to-edge tessellation
           horizontal_spacing = hex_width
-          vertical_spacing = hex_height * 0.75
+          vertical_spacing = @spacing * 1.5
 
           # Calculate grid dimensions (with extra rows/cols for coverage)
           cols = (@width / horizontal_spacing).ceil + 2

@@ -146,11 +146,16 @@ module BujoPdf
         @pdf.bounding_box([grid_box[:x], grid_box[:y]],
                           width: grid_box[:width],
                           height: grid_box[:height]) do
+          # Use slightly heavier lines for hexagon and perspective grids for better visibility
+          options = {}
+          options[:line_width] = 0.5 if [:hexagon, :perspective].include?(type)
+
           renderer = Utilities::GridFactory.create(
             type,
             @pdf,
             grid_box[:width],
-            grid_box[:height]
+            grid_box[:height],
+            **options
           )
           renderer.render
         end

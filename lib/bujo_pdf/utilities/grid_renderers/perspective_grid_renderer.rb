@@ -89,8 +89,8 @@ module BujoPdf
             # Center vanishing point
             [[@width / 2.0, @horizon_y]]
           when 2
-            # Left and right vanishing points (off page for natural perspective)
-            [[-@width * 2, @horizon_y], [@width * 3, @horizon_y]]
+            # Left and right vanishing points (closer for more visible perspective)
+            [[-@width * 0.5, @horizon_y], [@width * 1.5, @horizon_y]]
           when 3
             # Left, right, and vertical vanishing points
             [
