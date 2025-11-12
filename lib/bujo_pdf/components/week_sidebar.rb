@@ -28,7 +28,7 @@ module BujoPdf
     #   )
     #   sidebar.render
     class WeekSidebar < Component
-      SIDEBAR_WIDTH_BOXES = 2
+      SIDEBAR_WIDTH_BOXES = 3
       SIDEBAR_START_ROW = 2
       PADDING_BOXES = 0.5
       FONT_SIZE = 8
@@ -40,8 +40,8 @@ module BujoPdf
       end
 
       def render
-        # Build week-to-month letter mapping once
-        @week_months = Utilities::DateCalculator.week_to_month_letter_map(context[:year])
+        # Build week-to-month abbreviation mapping once
+        @week_months = Utilities::DateCalculator.week_to_month_abbrev_map(context[:year], char: 1)
 
         @pdf.font "Helvetica", size: FONT_SIZE
 
@@ -66,14 +66,15 @@ module BujoPdf
       def draw_week_entry(week, row)
         week_box = @grid.rect(0, row, SIDEBAR_WIDTH_BOXES, 1)
 
-        # Build display text with optional month letter
-        month_letter = @week_months[week]
-        display_text = month_letter ? "#{month_letter} w#{week}" : "w#{week}"
+        # Get month abbreviation if this is the first week of a month
+        month_abbrev = @week_months[week]
+        # Zero-padded week number
+        week_text = format("w%02d", week)
 
         if current_week?(week)
-          draw_current_week(week_box, display_text)
+          draw_current_week(week_box, month_abbrev, week_text)
         else
-          draw_linked_week(week_box, display_text, week)
+          draw_linked_week(week_box, month_abbrev, week_text, week)
         end
       end
 
@@ -87,28 +88,76 @@ module BujoPdf
         end
       end
 
-      def draw_current_week(week_box, display_text)
+      def draw_current_week(week_box, month_abbrev, week_text)
         # Current week: bold, no link
-        @pdf.font "Helvetica-Bold", size: FONT_SIZE
         @pdf.fill_color '000000'
-        @pdf.text_box display_text,
-                      at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
-                      width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
-                      height: week_box[:height],
-                      align: :right,
-                      valign: :center
+
+        if month_abbrev
+          # Render month abbreviation and week number as a combined text
+          # Both are bold and black for current week
+          @pdf.font "Helvetica-Bold", size: FONT_SIZE
+          display_text = "#{month_abbrev} #{week_text}"
+          @pdf.text_box display_text,
+                        at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
+                        width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center
+        else
+          # Just week number, bold and black
+          @pdf.font "Helvetica-Bold", size: FONT_SIZE
+          @pdf.text_box week_text,
+                        at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
+                        width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center
+        end
+
         @pdf.font "Helvetica", size: FONT_SIZE
       end
 
-      def draw_linked_week(week_box, display_text, week)
+      def draw_linked_week(week_box, month_abbrev, week_text, week)
         # Other weeks: gray, with link
         @pdf.fill_color NAV_COLOR
-        @pdf.text_box display_text,
-                      at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
-                      width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
-                      height: week_box[:height],
-                      align: :right,
-                      valign: :center
+
+        if month_abbrev
+          # Month abbreviation is bold, week number is regular weight
+          # Calculate approximate width needed for week text to position month abbreviation
+          week_width = @pdf.width_of(week_text, size: FONT_SIZE)
+
+          # Right-align the week text
+          week_x = week_box[:x] + week_box[:width] - @grid.width(PADDING_BOXES) - week_width
+
+          # Position month abbreviation to the left of week text
+          @pdf.font "Helvetica-Bold", size: FONT_SIZE
+          month_width = @pdf.width_of("#{month_abbrev} ", size: FONT_SIZE)
+          month_x = week_x - month_width
+
+          @pdf.text_box "#{month_abbrev} ",
+                        at: [month_x, week_box[:y]],
+                        width: month_width,
+                        height: week_box[:height],
+                        align: :left,
+                        valign: :center
+
+          # Week number in regular weight
+          @pdf.font "Helvetica", size: FONT_SIZE
+          @pdf.text_box week_text,
+                        at: [week_x, week_box[:y]],
+                        width: week_width,
+                        height: week_box[:height],
+                        align: :left,
+                        valign: :center
+        else
+          # Just week number, regular weight
+          @pdf.text_box week_text,
+                        at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
+                        width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
+                        height: week_box[:height],
+                        align: :right,
+                        valign: :center
+        end
 
         # Link annotation rect: [left, bottom, right, top]
         link_left = week_box[:x]
