@@ -37,7 +37,7 @@ module BujoPdf
         content_start_col = context[:content_start_col] || 3
         content_width_boxes = context[:content_width_boxes] || 39
 
-        nav_box = @grid_system.rect(content_start_col, 0, content_width_boxes, 2)
+        nav_box = @grid.rect(content_start_col, 0, content_width_boxes, 2)
 
         draw_year_link(nav_box)
         draw_prev_week_link(nav_box) if show_prev?
@@ -68,7 +68,7 @@ module BujoPdf
         @pdf.font "Helvetica", size: FOOTER_FONT_SIZE
         @pdf.fill_color NAV_COLOR
 
-        nav_year_width = @grid_system.width(4)
+        nav_year_width = @grid.width(4)
         @pdf.text_box "< #{context[:year]}",
                       at: [nav_box[:x], nav_box[:y]],
                       width: nav_year_width,
@@ -85,9 +85,9 @@ module BujoPdf
       def draw_prev_week_link(nav_box)
         @pdf.fill_color NAV_COLOR
 
-        nav_year_width = @grid_system.width(4)
-        nav_prev_x = nav_box[:x] + nav_year_width + @grid_system.width(1)
-        nav_prev_width = @grid_system.width(3)
+        nav_year_width = @grid.width(4)
+        nav_prev_x = nav_box[:x] + nav_year_width + @grid.width(1)
+        nav_prev_width = @grid.width(3)
 
         @pdf.text_box "< w#{context[:week_num] - 1}",
                       at: [nav_prev_x, nav_box[:y]],
@@ -103,7 +103,7 @@ module BujoPdf
       end
 
       def draw_next_week_link(nav_box)
-        nav_next_width = @grid_system.width(3)
+        nav_next_width = @grid.width(3)
         nav_next_x = nav_box[:x] + nav_box[:width] - nav_next_width
 
         @pdf.fill_color NAV_COLOR
@@ -124,8 +124,8 @@ module BujoPdf
       def draw_title(nav_box)
         @pdf.font "Helvetica-Bold", size: TITLE_FONT_SIZE
 
-        title_x = nav_box[:x] + @grid_system.width(8)
-        title_width = nav_box[:width] - @grid_system.width(16)
+        title_x = nav_box[:x] + @grid.width(8)
+        title_width = nav_box[:width] - @grid.width(16)
         title_text = "Week #{context[:week_num]}: #{context[:week_start].strftime('%b %-d')} - #{context[:week_end].strftime('%b %-d, %Y')}"
 
         @pdf.text_box title_text,

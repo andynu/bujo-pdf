@@ -2,6 +2,8 @@
 
 require_relative 'base'
 require_relative '../utilities/date_calculator'
+require_relative '../components/week_sidebar'
+require_relative '../components/right_sidebar'
 
 module BujoPdf
   module Pages
@@ -41,11 +43,14 @@ module BujoPdf
       def setup
         set_destination(destination_name)
         @year = context[:year]
+        @total_weeks = Utilities::DateCalculator.total_weeks(@year)
       end
 
       def render
         draw_dot_grid
         draw_diagnostic_grid(label_every: 5)
+        draw_week_sidebar
+        draw_right_sidebar
         draw_header
         draw_month_headers
         draw_days_grid
@@ -200,6 +205,35 @@ module BujoPdf
           @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
           @pdf.fill_color '000000'
         end
+      end
+
+      def draw_week_sidebar
+        # Use WeekSidebar component
+        # No current week for year-at-glance pages
+        sidebar = Components::WeekSidebar.new(@pdf, @grid_system,
+          year: @year,
+          total_weeks: @total_weeks
+        )
+        sidebar.render
+      end
+
+      def draw_right_sidebar
+        # Use RightSidebar component
+        # Determine which tab is current based on destination_name
+        current = destination_name
+
+        top_tabs = []
+        top_tabs << { label: "Year", dest: "seasonal", current: (current == "seasonal") }
+        top_tabs << { label: "Events", dest: "year_events", current: (current == "year_events") }
+        top_tabs << { label: "Highlights", dest: "year_highlights", current: (current == "year_highlights") }
+
+        sidebar = Components::RightSidebar.new(@pdf, @grid_system,
+          top_tabs: top_tabs,
+          bottom_tabs: [
+            { label: "Dots", dest: "dots" }
+          ]
+        )
+        sidebar.render
       end
     end
   end

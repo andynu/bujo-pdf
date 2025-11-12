@@ -5,6 +5,8 @@ require_relative '../utilities/date_calculator'
 require_relative '../components/top_navigation'
 require_relative '../components/daily_section'
 require_relative '../components/cornell_notes'
+require_relative '../components/week_sidebar'
+require_relative '../components/right_sidebar'
 
 module BujoPdf
   module Pages
@@ -66,6 +68,8 @@ module BujoPdf
       def render
         draw_dot_grid
         draw_diagnostic_grid(label_every: 5)
+        draw_week_sidebar
+        draw_right_sidebar
         draw_navigation
         draw_daily_section
         draw_cornell_notes
@@ -116,6 +120,31 @@ module BujoPdf
           summary_rows: 9
         )
         notes.render
+      end
+
+      def draw_week_sidebar
+        # Use WeekSidebar component
+        sidebar = Components::WeekSidebar.new(@pdf, @grid_system,
+          year: @year,
+          total_weeks: @total_weeks,
+          current_week_num: @week_num
+        )
+        sidebar.render
+      end
+
+      def draw_right_sidebar
+        # Use RightSidebar component
+        sidebar = Components::RightSidebar.new(@pdf, @grid_system,
+          top_tabs: [
+            { label: "Year", dest: "seasonal" },
+            { label: "Events", dest: "year_events" },
+            { label: "Highlights", dest: "year_highlights" }
+          ],
+          bottom_tabs: [
+            { label: "Dots", dest: "dots" }
+          ]
+        )
+        sidebar.render
       end
     end
   end

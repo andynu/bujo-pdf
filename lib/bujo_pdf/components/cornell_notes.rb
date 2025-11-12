@@ -57,7 +57,7 @@ module BujoPdf
       end
 
       def draw_cues_section
-        cues_box = @grid_system.rect(
+        cues_box = @grid.rect(
           context[:content_start_col],
           context[:notes_start_row],
           context[:cues_cols],
@@ -79,7 +79,7 @@ module BujoPdf
       end
 
       def draw_notes_section
-        notes_box = @grid_system.rect(
+        notes_box = @grid.rect(
           context[:content_start_col] + context[:cues_cols],
           context[:notes_start_row],
           context[:notes_cols],
@@ -101,7 +101,7 @@ module BujoPdf
       end
 
       def draw_summary_section
-        summary_box = @grid_system.rect(
+        summary_box = @grid.rect(
           context[:content_start_col],
           context[:notes_start_row] + context[:notes_main_rows],
           context[:cues_cols] + context[:notes_cols],

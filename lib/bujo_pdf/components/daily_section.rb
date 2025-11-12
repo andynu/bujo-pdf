@@ -64,7 +64,7 @@ module BujoPdf
         is_weekend = (day_index == 5 || day_index == 6)  # Saturday and Sunday
 
         # Create WeekColumn sub-component (from Plan 04)
-        column = SubComponent::WeekColumn.new(@pdf, @grid_system,
+        column = SubComponent::WeekColumn.new(@pdf, @grid,
           date: date,
           day_name: day_name,
           weekend: is_weekend,

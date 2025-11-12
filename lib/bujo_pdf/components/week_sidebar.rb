@@ -64,7 +64,7 @@ module BujoPdf
       end
 
       def draw_week_entry(week, row)
-        week_box = @grid_system.rect(0, row, SIDEBAR_WIDTH_BOXES, 1)
+        week_box = @grid.rect(0, row, SIDEBAR_WIDTH_BOXES, 1)
 
         # Build display text with optional month letter
         month_letter = @week_months[week]
@@ -92,8 +92,8 @@ module BujoPdf
         @pdf.font "Helvetica-Bold", size: FONT_SIZE
         @pdf.fill_color '000000'
         @pdf.text_box display_text,
-                      at: [week_box[:x] + @grid_system.width(PADDING_BOXES), week_box[:y]],
-                      width: week_box[:width] - @grid_system.width(PADDING_BOXES * 2),
+                      at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
+                      width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
                       height: week_box[:height],
                       align: :right,
                       valign: :center
@@ -104,8 +104,8 @@ module BujoPdf
         # Other weeks: gray, with link
         @pdf.fill_color NAV_COLOR
         @pdf.text_box display_text,
-                      at: [week_box[:x] + @grid_system.width(PADDING_BOXES), week_box[:y]],
-                      width: week_box[:width] - @grid_system.width(PADDING_BOXES * 2),
+                      at: [week_box[:x] + @grid.width(PADDING_BOXES), week_box[:y]],
+                      width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
                       height: week_box[:height],
                       align: :right,
                       valign: :center
