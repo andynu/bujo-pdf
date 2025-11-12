@@ -17,15 +17,15 @@ This document outlines the architectural improvements needed to make the planner
 - Infrastructure: Page Generation Pipeline ✅ (Plan 03)
 - Infrastructure: Reusable Sub-Components ✅ (Plan 04)
 
-**Phase 3: Polish** - 🔄 **IN PROGRESS** (~66% COMPLETE)
+**Phase 3: Polish** - 🔄 **IN PROGRESS** (~75% COMPLETE)
 - Task 1: Gem Structure ✅ (Completed - v0.1.0)
 - Task 7: Code Organization ✅ (DRY refactoring complete)
-- Task 8: Testing Infrastructure ⬜
-- Task 9: Documentation ⬜
+- Task 8: Testing Infrastructure 🔄 (Basic tests complete, expansion pending)
+- Task 9: Documentation 🔄 (README complete, YARD/guides pending)
 
-**Task 10: Migration Strategy** - ✅ **ONGOING** (iterative approach working well)
+**Task 10: Migration Strategy** - ✅ **COMPLETED** (incremental migration successful)
 
-**Summary**: The architectural refactoring is essentially complete! All core functionality has been extracted and the system is now maintainable, extensible, and well-organized. Remaining work is packaging, organization, and polish.
+**Summary**: The architectural refactoring is complete! All core functionality has been extracted and the system is now maintainable, extensible, well-organized, and distributed as a Ruby gem. Remaining work is expanded testing infrastructure and additional documentation.
 
 ## Goals
 
@@ -253,26 +253,50 @@ Transform the monolithic generator script into a well-structured gem with:
 - Commits: fc6f4db, 9d56730, 259b085, 619248d, 26dabee on branch `main`
 
 ### 8. Testing Infrastructure
-- [ ] Set up test framework (RSpec or Minitest)
-- [ ] Unit tests for grid system
+- [x] Set up test framework (Minitest)
+- [x] Unit tests for grid system
 - [ ] Unit tests for date calculations
 - [ ] Integration tests for page generation
 - [ ] Visual regression tests (optional)
 
+**Partial Status**: Basic testing infrastructure in place (Plan 01)
+- Minitest framework configured with 20 passing tests (86 assertions)
+- Comprehensive grid system tests covering coordinate conversion, boundary calculations
+- Dot grid rendering tests
+- Test suite runs via `rake test` and `ruby test/test_all.rb`
+- All tests passing throughout refactoring
+- Remaining: Expand test coverage for date calculations, page generation, and visual regression
+
 ### 9. Documentation
-- [ ] Update README with gem usage
+- [x] Update README with gem usage
 - [ ] Add API documentation (YARD)
 - [ ] Component usage examples
 - [ ] Custom page creation guide
 - [ ] Layout customization guide
 
+**Partial Status**: README.md completed 2025-11-11 (Plan 09)
+- Created comprehensive README.md with installation, usage, features, and architecture overview
+- Includes both CLI and Ruby API examples
+- Documents output structure and development workflow
+- References CLAUDE.md for detailed technical documentation
+- Remaining: YARD API docs, usage guides for customization
+
 ### 10. Migration Strategy
-- [ ] Keep current `gen.rb` working during refactoring
-- [ ] Create new gem structure alongside current code
-- [ ] Migrate one page type at a time
-- [ ] Update tests as we migrate
-- [ ] Switch to gem-based generation when complete
-- [ ] Archive old `gen.rb` as reference
+- [x] Keep current `gen.rb` working during refactoring
+- [x] Create new gem structure alongside current code
+- [x] Migrate one page type at a time
+- [x] Update tests as we migrate
+- [x] Switch to gem-based generation when complete
+- [x] Update `gen.rb` to use gem infrastructure (no archival needed)
+
+**Status**: ✅ Completed 2025-11-11
+- Incremental migration approach was successful throughout all phases
+- `gen.rb` remained functional during entire refactoring process
+- All page types migrated to component-based architecture
+- Tests updated and passing throughout migration (20 tests, 86 assertions)
+- `gen.rb` now uses gem infrastructure as thin wrapper (backward compatible)
+- No archival necessary - gen.rb continues to serve as convenient local entry point
+- All refactoring completed without breaking changes
 
 ## Benefits of Refactoring
 
@@ -298,11 +322,11 @@ Transform the monolithic generator script into a well-structured gem with:
 7. ✅ Extract components (Sidebars, Navigation, Weekly Page components) - Plan 02
    - ⚠️ Calendar components (SeasonalCalendar, YearAtGlance) deferred as lower priority
 
-**Phase 3: Polish** (Lower Priority) - 🔄 **IN PROGRESS**
+**Phase 3: Polish** (Lower Priority) - 🔄 **IN PROGRESS** (~75% COMPLETE)
 8. ✅ Gem structure and distribution - Plan 09
 9. ✅ Code organization (DRY refactoring) - Plan 07
-10. ⬜ Testing infrastructure expansion - Plan 08
-11. ⬜ Documentation (YARD, guides)
+10. 🔄 Testing infrastructure expansion - Plan 08 (basic tests complete)
+11. 🔄 Documentation (YARD, guides) - (README complete)
 
 **Detailed Plans Created**: See `plans/` directory
 - `plans/01_extract_low_level_utilities.md` ✅
