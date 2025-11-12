@@ -135,8 +135,8 @@ module BujoPdf
         content_width_boxes = 40
         col_width_boxes = content_width_boxes / 12.0
 
-        # Days grid - rows 3-52 (50 rows for 31 days)
-        day_height_rows = 50.0 / 31.0
+        # Days grid - rows 3-49.5 (46.5 rows for 31 days)
+        day_height_rows = 1.5
 
         @pdf.font "Helvetica", size: YEAR_DAY_SIZE
 
@@ -172,22 +172,15 @@ module BujoPdf
 
           # Add day number and abbreviation
           date = Date.new(@year, month, day_num)
-          day_abbrev = date.strftime('%a')[0..1]  # Mo, Tu, We, etc.
+          day_abbrev = date.strftime('%a')  # Mon, Tue, Wed, etc.
 
-          @pdf.text_box day_num.to_s,
+          @pdf.formatted_text_box [
+            { text: "#{day_num} ", size: YEAR_DAY_SIZE },
+            { text: day_abbrev, size: YEAR_DAY_ABBREV_SIZE, color: 'AAAAAA' }
+          ],
                        at: [YEAR_DAY_NUMBER_OFFSET, cell_height - YEAR_DAY_NUMBER_OFFSET],
                        width: cell_width - (YEAR_DAY_NUMBER_OFFSET * 2),
                        height: cell_height - (YEAR_DAY_NUMBER_OFFSET * 2),
-                       size: YEAR_DAY_SIZE,
-                       overflow: :shrink_to_fit
-
-          # Add day of week abbreviation
-          @pdf.text_box day_abbrev,
-                       at: [YEAR_DAY_NUMBER_OFFSET, YEAR_DAY_ABBREV_HEIGHT],
-                       width: cell_width - (YEAR_DAY_NUMBER_OFFSET * 2),
-                       height: YEAR_DAY_ABBREV_HEIGHT,
-                       size: YEAR_DAY_ABBREV_SIZE,
-                       style: :italic,
                        overflow: :shrink_to_fit
 
           # Add clickable link to the week containing this date
