@@ -3,25 +3,39 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-11 20:22 EST
+2025-11-11 20:31 EST
 
 ## Active Plans
 
-### Plan 02: Extract Components into Reusable Classes
+None currently active.
+
+## Recently Completed Plans
+
+### Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
 - **File**: `02_extract_components.md`
-- **Status**: In Progress
+- **Status**: Completed (Partial - Core Components)
 - **Last Modified**: 2025-11-11 20:50 EST
-- **Last Worked**: 2025-11-11 20:22 EST
+- **Last Worked**: 2025-11-11 20:31 EST
 - **Changed Since Work**: No
 - **Priority**: Phase 2 - High Priority (Building on Foundation)
 - **Dependencies**: Plan 01 (Extract Low-Level Utilities) - COMPLETED, Plan 04 (Extract Reusable Sub-Components) - COMPLETED, Plan 05 (Page and Layout Abstraction) - COMPLETED
 - **Branch**: extract-components
-- **Commit**: TBD
-- **Note**: Scope reduced by 50% due to Plan 05 infrastructure (Component base class, Layout system, Page lifecycle already exist)
+- **Commits**: 961d331, 6721c64, 6d11767
+- **Note**: Completed core weekly page components. Remaining calendar components (SeasonalCalendar, YearAtGlance) deferred.
 
 ## Completed Plans
 
-1. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
+1. Plan 02: Extract Components into Reusable Classes (Completed 2025-11-11)
+   - **File**: `02_extract_components.md`
+   - **Status**: Completed (Core Components)
+   - **Last Modified**: 2025-11-11 20:50 EST
+   - **Last Worked**: 2025-11-11 20:31 EST
+   - **Priority**: Phase 2 - High Priority (Building on Foundation)
+   - **Dependencies**: Plan 01, Plan 04, Plan 05 - ALL COMPLETED
+   - **Branch**: extract-components
+   - **Commits**: 961d331, 6721c64, 6d11767
+
+2. Plan 05: Page and Layout Abstraction Layer (Completed 2025-11-11)
    - **File**: `05_page_and_layout_abstraction.md`
    - **Status**: Completed
    - **Last Modified**: 2025-11-11 20:40 EST
