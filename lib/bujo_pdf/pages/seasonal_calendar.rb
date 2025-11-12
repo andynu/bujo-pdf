@@ -119,11 +119,10 @@ module BujoPdf
         # Use Fieldset sub-component
         fieldset = SubComponent::Fieldset.new(@pdf, @grid_system,
           legend: legend,
-          position: :top_center,
+          position: :top_left,  # Top border, left-aligned
           font_size: 10,
           legend_padding: 5,
           inset_boxes: 0,  # No inset for seasonal calendar
-          legend_offset_x: @grid_system.width(0.5),  # Match original offset
           border_color: BORDERS,
           text_color: BORDERS
         )
