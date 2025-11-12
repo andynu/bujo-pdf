@@ -7,4 +7,5 @@
 - right nav, add automatically bold if the current page in the context is the page you're on. This could be a passed in option too. I don't feel strongly.
 - TOC pages for each month.
 - a flat toc, not nested.
-
+- flat-file configuration of highlighted dates. Causes highlights on the year overview, and a label annotated on the day in the weekview.
+- ical url configuration for highlighted dates.

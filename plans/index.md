@@ -3,9 +3,21 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-11 19:25 EST
+2025-11-11 19:30 EST
 
 ## Active Plans
+
+### Plan 04: Extract Reusable Sub-Components
+- **File**: `04_extract_reusable_sub_components.md`
+- **Status**: In Progress
+- **Last Modified**: 2025-11-11 19:29 EST
+- **Last Worked**: 2025-11-11 19:30 EST
+- **Changed Since Work**: No
+- **Priority**: Phase 2 - High Priority (Foundation for Component Extraction)
+- **Dependencies**: Plan 01 (Extract Low-Level Utilities) - COMPLETED, Plan 03 (Page Generation Pipeline) - COMPLETED
+- **Precedes**: Plan 02 (Extract Components)
+- **Branch**: extract-reusable-sub-components
+- **Commit**: TBD
 
 ### Plan 02: Extract Components into Reusable Classes
 - **File**: `02_extract_components.md`
