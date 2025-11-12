@@ -47,6 +47,7 @@ module BujoPdf
       end
 
       def render
+        draw_weekend_backgrounds
         draw_dot_grid
         # draw_diagnostic_grid(label_every: 5)
         # Sidebars rendered automatically by layout!
@@ -206,6 +207,50 @@ module BujoPdf
           @pdf.fill_color 'EEEEEE'
           @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
           @pdf.fill_color '000000'
+        end
+      end
+
+      # Draw subtle weekend background shading for Saturday and Sunday cells
+      # Uses the same pattern as WeekColumn: WEEKEND_BG color at 10% opacity
+      # Must be called BEFORE draw_dot_grid to ensure dots appear on top
+      def draw_weekend_backgrounds
+        content_start_col = 2
+        content_width_boxes = 40
+        col_width_boxes = content_width_boxes / 12.0
+
+        # Days grid - rows 3-49.5 (46.5 rows for 31 days)
+        day_height_rows = 1.5
+
+        # Iterate through all days (31) and months (12)
+        31.times do |day_index|
+          day_num = day_index + 1
+          day_row_start = 3 + (day_index * day_height_rows)
+
+          12.times do |month_index|
+            month = month_index + 1
+            days_in_month = Date.new(@year, month, -1).day
+
+            # Skip if this day doesn't exist in this month
+            next unless day_num <= days_in_month
+
+            # Check if this date is a weekend
+            date = Date.new(@year, month, day_num)
+            next unless date.saturday? || date.sunday?
+
+            # Calculate cell position (same logic as draw_days_grid)
+            col_start = content_start_col + (month_index * col_width_boxes)
+            cell_x = @grid_system.x(0) + (col_start * DOT_SPACING)
+            cell_y = @grid_system.y(0) - (day_row_start * DOT_SPACING)
+            cell_width = col_width_boxes * DOT_SPACING
+            cell_height = day_height_rows * DOT_SPACING
+
+            # Draw weekend background with 10% opacity
+            @pdf.fill_color WEEKEND_BG
+            @pdf.transparent(0.1) do
+              @pdf.fill_rectangle [cell_x, cell_y], cell_width, cell_height
+            end
+            @pdf.fill_color '000000'
+          end
         end
       end
 
