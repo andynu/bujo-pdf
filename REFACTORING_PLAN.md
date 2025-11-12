@@ -211,7 +211,7 @@ Transform the monolithic generator script into a well-structured gem with:
 - Verified PDF generation working correctly (58 pages)
 - Commits: 95f6006, 5a3f8eb, 9a081dd on branch `extract-components`
 
-### 7. Code Organization
+### 7. Code Organization (plans/07_code_organization.md)
 - [ ] Separate constants into logical grouping files
   - [ ] `constants/grid.rb` - Grid system constants
   - [ ] `constants/colors.rb` - Color definitions

@@ -3,11 +3,42 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-11 20:52 EST
+2025-11-11 21:15 EST
 
 ## Active Plans
 
-No active plans.
+### Plan 09: Gem Structure and Distribution (Not Started)
+- **File**: `09_gem_structure.md`
+- **Status**: Not Started
+- **Created**: 2025-11-11 21:15 EST
+- **Last Modified**: 2025-11-11 21:15 EST
+- **Last Worked**: Never
+- **Changed Since Work**: No
+- **Priority**: Phase 3 - High Priority (Distribution & Packaging)
+- **Dependencies**: Plans 01-06 - ALL COMPLETED
+- **Goal**: Convert project to distributable Ruby gem with proper gemspec, CLI executable, version management, and standard gem conventions
+
+### Plan 08: Testing Infrastructure (Not Started)
+- **File**: `08_testing_infrastructure.md`
+- **Status**: Not Started
+- **Created**: 2025-11-11 21:15 EST
+- **Last Modified**: 2025-11-11 21:15 EST
+- **Last Worked**: Never
+- **Changed Since Work**: No
+- **Priority**: Phase 3 - High Priority (Quality & Maintainability)
+- **Dependencies**: Plan 01, Plan 02, Plan 04, Plan 05, Plan 06 - ALL COMPLETED
+- **Goal**: Establish comprehensive testing infrastructure with Minitest covering grid system, date calculations, component rendering, and page generation workflows
+
+### Plan 07: Code Organization and Constant Separation (Not Started)
+- **File**: `07_code_organization.md`
+- **Status**: Not Started
+- **Created**: 2025-11-11 21:15 EST
+- **Last Modified**: 2025-11-11 21:15 EST
+- **Last Worked**: Never
+- **Changed Since Work**: No
+- **Priority**: Phase 3 - Medium Priority (Code Quality)
+- **Dependencies**: Plan 01, Plan 02, Plan 05, Plan 06 - ALL COMPLETED
+- **Goal**: Refactor monolithic gen.rb by separating constants into logical files, extracting DateCalculator class, and organizing methods into modules
 
 ## Recently Completed Plans
 
@@ -102,10 +133,11 @@ No active plans.
 ## Upcoming Plans
 
 The following plans are referenced in REFACTORING_PLAN.md but not yet created:
-- Gem Structure and Distribution (Phase 3)
-- Code Organization - Split Constants (Phase 3)
-- Testing Infrastructure Enhancement (Phase 3)
 - Documentation - YARD and Guides (Phase 3)
+
+Note: "Code Organization - Split Constants" is now covered by Plan 07.
+Note: "Testing Infrastructure Enhancement" is now covered by Plan 08.
+Note: "Gem Structure and Distribution" is now covered by Plan 09.
 
 ## Notes
 
