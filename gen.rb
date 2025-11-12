@@ -60,7 +60,7 @@ class PlannerGenerator
   WEEKLY_SIDEBAR_X = 5  # Distance from left edge of page
   WEEKLY_SIDEBAR_WIDTH = 25  # Width of sidebar (narrowed to save space)
   WEEKLY_SIDEBAR_GAP = 5  # Gap between sidebar and main content
-  WEEKLY_SIDEBAR_FONT_SIZE = 7
+  WEEKLY_SIDEBAR_FONT_SIZE = 6
   WEEKLY_SIDEBAR_MONTH_SPACING = 2  # Space between month letter and week number
 
   # Weekly Page - Right Sidebar (tabs to year pages)
@@ -1289,7 +1289,8 @@ class PlannerGenerator
                       width: week_box[:width] - grid_width(padding_boxes * 2),
                       height: week_box[:height],
                       align: :right,
-                      valign: :center
+                      valign: :center,
+                      overflow: :shrink_to_fit
         @pdf.font "Helvetica", size: WEEKLY_SIDEBAR_FONT_SIZE
       else
         # Other weeks: gray, with link
@@ -1299,7 +1300,8 @@ class PlannerGenerator
                       width: week_box[:width] - grid_width(padding_boxes * 2),
                       height: week_box[:height],
                       align: :right,
-                      valign: :center
+                      valign: :center,
+                      overflow: :shrink_to_fit
 
         # Link annotation rect: [left, bottom, right, top]
         link_left = week_box[:x]

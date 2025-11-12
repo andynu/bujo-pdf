@@ -32,7 +32,7 @@ module BujoPdf
       SIDEBAR_WIDTH_BOXES = 2
       SIDEBAR_START_ROW = 2
       PADDING_BOXES = 0.3
-      FONT_SIZE = 8
+      FONT_SIZE = 7
       NAV_COLOR = '888888'
 
       def initialize(pdf, grid_system, **options)
@@ -102,7 +102,8 @@ module BujoPdf
                         width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
                         height: week_box[:height],
                         align: :right,
-                        valign: :center
+                        valign: :center,
+                        overflow: :shrink_to_fit
         else
           # Just week number, bold and black
           @pdf.text_box week_text,
@@ -110,7 +111,8 @@ module BujoPdf
                         width: week_box[:width] - @grid.width(PADDING_BOXES * 2),
                         height: week_box[:height],
                         align: :right,
-                        valign: :center
+                        valign: :center,
+                        overflow: :shrink_to_fit
         end
 
         @pdf.font "Helvetica", size: FONT_SIZE
