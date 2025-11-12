@@ -62,7 +62,7 @@ PAGES.each do |name, page_num|
   # ImageMagick uses 0-indexed pages
   page_arg = "#{PDF_FILE}[#{actual_page - 1}]"
 
-  cmd = "convert -density #{DPI} #{page_arg} -quality 90 #{output_file}"
+  cmd = "convert -density #{DPI} #{page_arg} -background white -alpha remove -quality 90 #{output_file}"
 
   print "   Extracting page #{actual_page} (#{name})... "
   system(cmd, err: File::NULL) || abort("\n   ✗ Failed to convert #{name}")
