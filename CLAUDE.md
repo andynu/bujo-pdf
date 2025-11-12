@@ -74,6 +74,41 @@ The planner uses a **grid coordinate system** where all positioning is based on 
 - Grid system: Row 0 is top, increases downward
 - `grid_y(row)` converts from grid coordinates to Prawn coordinates
 
+### Declarative Layout System
+
+The planner uses a **declarative layout system** where pages declare their layout intent rather than implementing layout details. Layouts automatically handle sidebar rendering and content area management.
+
+**Available Layouts:**
+- `:full_page` - No sidebars, full 43×55 content area (reference page, blank dots)
+- `:standard_with_sidebars` - Left week sidebar (3 cols) + right nav tabs (1 col), content area 39 cols (weekly pages, year overviews)
+
+**Usage in pages:**
+```ruby
+class MyPage < Pages::Base
+  def setup
+    use_layout :standard_with_sidebars,
+      current_week: @week_num,      # Highlight this week (or nil)
+      highlight_tab: :year_events,  # Highlight this tab (or nil)
+      year: @year,
+      total_weeks: @total_weeks
+  end
+end
+```
+
+**What layouts do automatically:**
+- Render navigation sidebars (left week list, right year tabs)
+- Calculate content area boundaries
+- Provide `content_area` hash to page render methods
+- Handle sidebar highlighting (current week, current tab)
+
+**Layout classes** (lib/bujo_pdf/layouts/):
+- `BaseLayout` - Abstract base with lifecycle hooks (render_before, render_after)
+- `FullPageLayout` - Full page, no chrome
+- `StandardWithSidebarsLayout` - Week sidebar + navigation tabs
+- `LayoutFactory` - Creates layouts by symbol name
+
+**Key benefit**: Single source of truth for sidebar rendering. Changing sidebar behavior requires editing only the layout class, not every page that uses it.
+
 ### Fieldset Component
 
 `draw_fieldset` (lines 214-370) creates HTML-like `<fieldset>` boxes with legend labels. Used extensively for seasonal calendar sections.
