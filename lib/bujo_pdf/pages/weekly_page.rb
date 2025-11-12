@@ -2,6 +2,7 @@
 
 require_relative 'base'
 require_relative '../utilities/date_calculator'
+require_relative '../sub_components/week_column'
 
 module BujoPdf
   module Pages
@@ -144,69 +145,32 @@ module BujoPdf
         content_start_row = 2
         content_width_boxes = 39
         daily_rows = 9
-
-        daily_box = @grid_system.rect(content_start_col, content_start_row, content_width_boxes, daily_rows)
         day_col_width_boxes = content_width_boxes / 7.0  # ~5.57 boxes per day
-
-        @pdf.font "Helvetica-Bold", size: WEEKLY_DAY_HEADER_FONT_SIZE
 
         7.times do |i|
           date = @week_start + i
           day_name = date.strftime('%A')
+          is_weekend = (i == 5 || i == 6)  # Saturday and Sunday
 
-          day_x = daily_box[:x] + (i * day_col_width_boxes * DOT_SPACING)
-          day_width = day_col_width_boxes * DOT_SPACING
+          # Create and render week column component
+          column = SubComponent::WeekColumn.new(@pdf, @grid_system,
+            date: date,
+            day_name: day_name,
+            weekend: is_weekend,
+            show_time_labels: (i == 0),  # Show time labels on Monday only
+            line_count: WEEKLY_DAY_LINES_COUNT.to_i,
+            header_height: WEEKLY_DAY_HEADER_HEIGHT,
+            header_padding: WEEKLY_DAY_HEADER_PADDING,
+            lines_start: WEEKLY_DAY_LINES_START,
+            lines_padding: WEEKLY_DAY_LINES_PADDING,
+            line_margin: WEEKLY_DAY_LINE_MARGIN,
+            day_header_font_size: WEEKLY_DAY_HEADER_FONT_SIZE,
+            day_date_font_size: WEEKLY_DAY_DATE_FONT_SIZE
+          )
 
-          @pdf.bounding_box([day_x, daily_box[:y]], width: day_width, height: daily_box[:height]) do
-            # Subtle background for weekends
-            if i == 5 || i == 6  # Saturday and Sunday
-              @pdf.fill_color COLOR_WEEKEND_BG
-              @pdf.fill_rectangle [0, daily_box[:height]], day_width, daily_box[:height]
-              @pdf.fill_color '000000'
-            end
-
-            @pdf.stroke_color COLOR_BORDERS
-            @pdf.stroke_bounds
-            @pdf.stroke_color '000000'
-
-            # Day header
-            @pdf.text_box "#{day_name}\n#{date.strftime('%-m/%-d')}",
-                         at: [WEEKLY_DAY_HEADER_PADDING, daily_box[:height] - WEEKLY_DAY_HEADER_PADDING],
-                         width: day_width - (WEEKLY_DAY_HEADER_PADDING * 2),
-                         height: WEEKLY_DAY_HEADER_HEIGHT,
-                         align: :center,
-                         size: WEEKLY_DAY_DATE_FONT_SIZE
-
-            # Draw evenly-spaced lines for notes
-            @pdf.font "Helvetica", size: 6
-            line_start_y = daily_box[:height] - WEEKLY_DAY_LINES_START
-            available_space = daily_box[:height] - WEEKLY_DAY_LINES_PADDING
-            line_spacing = available_space / WEEKLY_DAY_LINES_COUNT
-
-            WEEKLY_DAY_LINES_COUNT.to_i.times do |line_num|
-              y_pos = line_start_y - (line_num * line_spacing)
-              @pdf.stroke_color COLOR_BORDERS
-              @pdf.stroke_horizontal_line WEEKLY_DAY_LINE_MARGIN, day_width - WEEKLY_DAY_LINE_MARGIN, at: y_pos
-              @pdf.stroke_color '000000'
-            end
-
-            # Add time period labels to Monday only
-            if i == 0
-              labels = ['AM', 'PM', 'EVE']
-              @pdf.fill_color COLOR_BORDERS
-              @pdf.font "Helvetica", size: 6
-
-              labels.each_with_index do |label, idx|
-                region_y = line_start_y - (idx * line_spacing) - 2
-                @pdf.text_box label,
-                             at: [3, region_y],
-                             width: 20,
-                             height: 10,
-                             size: 6
-              end
-              @pdf.fill_color '000000'
-            end
-          end
+          # Render at column position
+          col = content_start_col + (i * day_col_width_boxes)
+          column.render_at(col, content_start_row, day_col_width_boxes, daily_rows)
         end
       end
 
