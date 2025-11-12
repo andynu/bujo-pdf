@@ -62,12 +62,12 @@ The planner uses a **grid coordinate system** where all positioning is based on 
 - **Box size**: 14.17pt (≈5mm) matching `DOT_SPACING`
 - **Page size**: 612pt × 792pt (US Letter)
 
-**Key helper methods** (lines 179-212 in gen.rb):
-- `grid_x(col)` - Convert column to x-coordinate
-- `grid_y(row)` - Convert row to y-coordinate (row 0 = top)
-- `grid_width(boxes)` - Convert box count to width
-- `grid_height(boxes)` - Convert box count to height
-- `grid_rect(col, row, w, h)` - Get bounding box coordinates
+**Key helper methods** (in `lib/bujo_pdf/utilities/grid_system.rb`):
+- `x(col)` - Convert column to x-coordinate
+- `y(row)` - Convert row to y-coordinate (row 0 = top)
+- `width(boxes)` - Convert box count to width
+- `height(boxes)` - Convert box count to height
+- `rect(col, row, w, h)` - Get bounding box coordinates
 
 **Coordinate system notes**:
 - Prawn's origin is bottom-left (0,0), Y increases upward
@@ -111,7 +111,7 @@ end
 
 ### Fieldset Component
 
-`draw_fieldset` (lines 214-370) creates HTML-like `<fieldset>` boxes with legend labels. Used extensively for seasonal calendar sections.
+The `Fieldset` component (`lib/bujo_pdf/components/fieldset.rb`) creates HTML-like `<fieldset>` boxes with legend labels. Used extensively for seasonal calendar sections.
 
 **Parameters**:
 - Position: `:top_left`, `:top_right`, `:bottom_left`, `:bottom_right`
@@ -125,7 +125,7 @@ end
 
 ### Debug Mode
 
-Toggle `DEBUG_GRID` constant (line 112) to overlay diagnostic grid:
+Toggle `DEBUG_GRID` constant in `lib/bujo_pdf/planner_generator.rb` to overlay diagnostic grid:
 - Red dots at grid intersections
 - Dashed red lines every N boxes
 - Coordinate labels showing `(col, row)`
@@ -135,7 +135,7 @@ DEBUG_GRID = true   # Enable for development
 DEBUG_GRID = false  # Disable for production
 ```
 
-Call `draw_diagnostic_grid(label_every: 5)` after drawing page content.
+Call `draw_diagnostic_grid(label_every: 5)` in page rendering methods to visualize the grid.
 
 ### Date Calculations
 
@@ -144,7 +144,7 @@ Call `draw_diagnostic_grid(label_every: 5)` after drawing page content.
 - Weeks increment sequentially through the year
 - Total weeks: typically 52-53 depending on year
 
-**Key calculation** (see lines 856-875, 877-909):
+**Key calculation** (see `lib/bujo_pdf/utilities/date_calculator.rb`):
 ```ruby
 first_day = Date.new(@year, 1, 1)
 days_back = (first_day.wday + 6) % 7  # Convert to Monday-based
@@ -172,12 +172,12 @@ week_num = (days_from_start / 7) + 1
 ```
 
 **Sidebar navigation**:
-- Left sidebar (lines 1126-1202): Vertical week list with month indicators
-- Right sidebar (lines 1204-1262): Rotated tabs for year pages
+- Left sidebar: `lib/bujo_pdf/components/week_sidebar.rb` - Vertical week list with month indicators
+- Right sidebar: `lib/bujo_pdf/components/navigation_tabs.rb` - Rotated tabs for year pages
 
 ## Layout Constants
 
-The codebase uses extensive layout constants (lines 6-125) organized by section:
+The codebase uses extensive layout constants in `lib/bujo_pdf/constants.rb` organized by section:
 - Page dimensions and global layout
 - Seasonal calendar layout
 - Year at a glance layout
@@ -193,25 +193,25 @@ The codebase uses extensive layout constants (lines 6-125) organized by section:
 
 ## Page Generation Methods
 
-Each page type has its own generation method:
+Each page type has its own class in `lib/bujo_pdf/pages/`:
 
-1. **Seasonal Calendar** (`generate_seasonal_calendar`, lines 444-457)
+1. **Seasonal Calendar** (`seasonal_calendar.rb`)
    - Grid-based layout with four seasons
    - Fieldset borders with season labels
    - Mini month calendars with clickable dates
 
-2. **Year at a Glance** (`generate_year_at_glance_events/highlights`, lines 712-734)
+2. **Year at a Glance** (`year_events.rb`, `year_highlights.rb`)
    - 12 columns (months) × 31 rows (days)
    - Day numbers with day-of-week abbreviations
    - Each cell links to corresponding week
 
-3. **Weekly Pages** (`generate_weekly_pages`, lines 877-909)
+3. **Weekly Pages** (`weekly_page.rb`)
    - Daily section (17.5% of usable height): 7 columns with headers and ruled lines
    - Cornell notes section (82.5%): Cues column (25%), Notes column (75%), Summary (20% of section)
    - Navigation links: previous/next week, back to year overview
    - Time period labels (AM/PM/EVE) on Monday column
 
-4. **Reference Page** (`generate_reference_page`, lines 1264-1276)
+4. **Reference Page** (`reference_page.rb`)
    - Calibration grid with measurements
    - Centimeter markings along edges
    - Grid system documentation
@@ -285,7 +285,12 @@ end
 
 ## Key Files
 
-- **gen.rb** - Main generator script (single file, ~1480 lines)
+- **gen.rb** - Main generator entry point (uses component-based architecture)
+- **lib/bujo_pdf/** - Component-based generator library
+  - **pages/** - Page classes (seasonal calendar, year-at-a-glance, weekly pages)
+  - **layouts/** - Layout classes (full page, standard with sidebars)
+  - **components/** - Reusable components (week sidebar, navigation tabs, fieldsets)
+  - **utilities/** - Helper classes (grid system, date calculator)
 - **Gemfile** - Dependencies specification
 - **idea.md** - Original design specification
 - **CLAUDE.local.md** - Detailed grid system documentation
