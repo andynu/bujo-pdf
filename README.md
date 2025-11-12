@@ -128,17 +128,53 @@ See `CLAUDE.md` for detailed technical documentation.
 
 ## Testing
 
-Run the test suite:
+The project includes a comprehensive test suite with 98 tests covering unit and integration testing.
+
+### Running Tests
+
+Run all tests (unit + integration):
 
 ```bash
 rake test
 ```
 
-The test suite includes:
-- Grid system tests (coordinate conversion, boundary calculations)
-- Date calculation tests (week numbering, edge cases)
-- Component rendering tests
-- Integration tests
+Run only unit tests (fast, <1 second):
+
+```bash
+rake test_unit
+```
+
+Run only integration tests (slower, ~30 seconds):
+
+```bash
+rake test_integration
+```
+
+### Test Coverage
+
+**Unit Tests** (88 tests, 2408 assertions)
+- **GridSystem**: Coordinate conversion (grid_x, grid_y), dimension calculations (grid_width, grid_height), helpers (grid_rect, grid_inset, grid_bottom), text/link positioning
+- **DotGrid**: Dot drawing at intersections, radius and color customization, position calculations
+- **DateCalculator**: Week numbering system, year_start_monday calculations for all weekdays, total_weeks across multiple years, week_start/week_end boundaries, week_number_for_date including leap days, season calculations and month abbreviations, edge cases (leap years, year boundaries, week gaps)
+- **RenderContext**: Initialization, current_page? and weekly_page? methods, destination string conversion, bracket accessor, immutability and serialization
+
+**Integration Tests** (10 tests, 20 assertions)
+- **PlannerGeneration**: Successful generation without errors, PDF file size validation (100KB-10MB), generation performance (<10 seconds), multi-year generation (2024-2026), leap year handling, custom output paths, independent multi-year generation, generation idempotency, nested directory creation
+
+### Test Results
+
+```
+98 tests, 2428 assertions
+0 failures, 0 errors, 1 skip
+Completed in ~32 seconds
+```
+
+### Test Infrastructure
+
+- **Framework**: Minitest with minitest-reporters for better output
+- **Test Helper**: Custom assertions (assert_grid_position, assert_valid_link_bounds, assert_rect_equals)
+- **Mock Objects**: MockPDF class for testing without PDF generation
+- **Structure**: Organized into test/unit/ and test/integration/ directories
 
 ## Contributing
 
