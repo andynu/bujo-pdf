@@ -70,7 +70,9 @@ module SubComponent
     # Draw subtle weekend background
     def draw_weekend_background(width, height)
       @pdf.fill_color option(:weekend_bg_color, DEFAULTS[:weekend_bg_color])
-      @pdf.fill_rectangle [0, height], width, height
+      @pdf.transparent(0.1) do
+        @pdf.fill_rectangle [0, height], width, height
+      end
       @pdf.fill_color '000000'
     end
 

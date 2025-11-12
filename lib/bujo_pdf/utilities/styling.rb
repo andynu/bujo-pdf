@@ -10,7 +10,7 @@ module Styling
     DOT_GRID = 'CCCCCC'           # Light gray for background dots
     BORDERS = 'E5E5E5'            # Very light gray for borders
     SECTION_HEADERS = 'AAAAAA'    # Muted gray for section headers
-    WEEKEND_BG = 'FAFAFA'         # Extremely subtle gray for weekend backgrounds
+    WEEKEND_BG = 'CCCCCC'         # Darker gray for weekend backgrounds (used at 10% opacity)
 
     # Diagnostic/debug colors
     DIAGNOSTIC_RED = 'FF0000'     # Red for diagnostic grid overlay

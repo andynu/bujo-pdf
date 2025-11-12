@@ -44,7 +44,7 @@ module BujoPdf
 
       def render
         draw_dot_grid
-        draw_diagnostic_grid(label_every: 5)
+        # draw_diagnostic_grid(label_every: 5)
         # Sidebars rendered automatically by layout!
         draw_header
         draw_seasons
