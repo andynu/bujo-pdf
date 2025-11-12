@@ -1,7 +1,7 @@
 # Plan #13: Ultra-Light Weekend Background Shading for Year-at-a-Glance Pages
 
 ## Overview
-Add subtle weekend background shading (`COLOR_WEEKEND_BG = 'FAFAFA'`) to weekend cells in the year-at-a-glance grid layouts (Events and Highlights pages), matching the treatment already applied to weekly pages.
+Add subtle weekend background shading (CCCCCC at 0.1 transparency) to weekend cells in the year-at-a-glance grid layouts (Events and Highlights pages), matching the treatment already applied to weekly pages.
 
 ## Files Requiring Modification
 

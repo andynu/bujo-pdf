@@ -2,6 +2,7 @@
 
 require_relative 'standard_layout_page'
 require_relative '../utilities/date_calculator'
+require_relative '../utilities/styling'
 require_relative '../components/top_navigation'
 require_relative '../components/daily_section'
 require_relative '../components/cornell_notes'
@@ -31,12 +32,8 @@ module BujoPdf
     #   page = WeeklyPage.new(pdf, context)
     #   page.generate
     class WeeklyPage < StandardLayoutPage
-      # Constants
-      GRID_COLS = 43
-      DOT_SPACING = 14.17
-      COLOR_BORDERS = 'E5E5E5'
-      COLOR_SECTION_HEADERS = 'AAAAAA'
-      COLOR_WEEKEND_BG = 'FAFAFA'
+      include Styling::Colors
+      include Styling::Grid
 
       # Weekly page layout constants
       WEEKLY_TITLE_FONT_SIZE = 14

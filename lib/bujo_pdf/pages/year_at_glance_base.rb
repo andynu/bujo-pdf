@@ -2,6 +2,7 @@
 
 require_relative 'standard_layout_page'
 require_relative '../utilities/date_calculator'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Pages
@@ -20,10 +21,8 @@ module BujoPdf
     #   - page_title: The title to display in the header
     #   - destination_name: The named destination for this page
     class YearAtGlanceBase < StandardLayoutPage
-      # Constants
-      GRID_COLS = 43
-      DOT_SPACING = 14.17
-      COLOR_BORDERS = 'E5E5E5'
+      include Styling::Colors
+      include Styling::Grid
 
       # Layout constants
       YEAR_TITLE_FONT_SIZE = 16
@@ -118,7 +117,7 @@ module BujoPdf
 
           # Draw month header cell
           @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-            @pdf.stroke_color COLOR_BORDERS
+            @pdf.stroke_color BORDERS
             @pdf.stroke_bounds
             @pdf.stroke_color '000000'
             @pdf.text_box month_name[0..2],
@@ -173,7 +172,7 @@ module BujoPdf
 
       def draw_day_cell(cell_x, cell_y, cell_width, cell_height, month, day_num)
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-          @pdf.stroke_color COLOR_BORDERS
+          @pdf.stroke_color BORDERS
           @pdf.stroke_bounds
           @pdf.stroke_color '000000'
 
@@ -201,7 +200,7 @@ module BujoPdf
 
       def draw_empty_cell(cell_x, cell_y, cell_width, cell_height)
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-          @pdf.stroke_color COLOR_BORDERS
+          @pdf.stroke_color BORDERS
           @pdf.stroke_bounds
           @pdf.stroke_color '000000'
           @pdf.fill_color 'EEEEEE'

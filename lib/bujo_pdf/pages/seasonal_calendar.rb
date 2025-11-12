@@ -2,6 +2,7 @@
 
 require_relative 'base'
 require_relative '../utilities/date_calculator'
+require_relative '../utilities/styling'
 require_relative '../sub_components/fieldset'
 
 module BujoPdf
@@ -22,8 +23,8 @@ module BujoPdf
     #   page = SeasonalCalendar.new(pdf, { year: 2025 })
     #   page.generate
     class SeasonalCalendar < Base
-      GRID_COLS = 43
-      COLOR_BORDERS = 'E5E5E5'
+      include Styling::Colors
+      include Styling::Grid
 
       MONTH_NAMES = %w[
         January February March April May June
@@ -54,7 +55,7 @@ module BujoPdf
 
       def draw_header
         # Header: rows 0-1 (2 boxes), full width
-        header = @grid_system.rect(0, 0, GRID_COLS, 2)
+        header = @grid_system.rect(0, 0, COLS, 2)
         @pdf.font "Helvetica-Bold", size: 18
         @pdf.text_box "Year #{@year}",
                       at: [header[:x], header[:y]],
@@ -67,7 +68,7 @@ module BujoPdf
       def draw_seasons
         # Season layout: 2-column layout with label space on left
         label_offset = 2  # Reserve 2 boxes on left for seasonal labels
-        half_width = (GRID_COLS - label_offset) / 2
+        half_width = (COLS - label_offset) / 2
 
         # Left column (6 months total)
         # Winter (Jan, Feb): top-left
@@ -123,8 +124,8 @@ module BujoPdf
           legend_padding: 5,
           inset_boxes: 0,  # No inset for seasonal calendar
           legend_offset_x: @grid_system.width(0.5),  # Match original offset
-          border_color: COLOR_BORDERS,
-          text_color: COLOR_BORDERS
+          border_color: BORDERS,
+          text_color: BORDERS
         )
         fieldset.render_at(start_col, start_row, width_boxes, height_boxes)
       end

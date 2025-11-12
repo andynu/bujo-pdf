@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'base'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Pages
@@ -23,12 +24,7 @@ module BujoPdf
     #   page = ReferenceCalibration.new(pdf, { year: 2025 })
     #   page.generate
     class ReferenceCalibration < Base
-      # Page dimensions (copied from PlannerGenerator)
-      PAGE_WIDTH = 612    # 8.5 inches
-      PAGE_HEIGHT = 792   # 11 inches
-
-      # Dot grid spacing
-      DOT_SPACING = 14.17  # ≈5mm
+      include Styling::Grid
 
       def setup
         set_destination('reference')
