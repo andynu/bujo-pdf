@@ -2,6 +2,10 @@
 
 require_relative 'pages/base'
 require_relative 'pages/blank_dot_grid'
+require_relative 'pages/reference_calibration'
+require_relative 'pages/seasonal_calendar'
+require_relative 'pages/year_at_glance_events'
+require_relative 'pages/year_at_glance_highlights'
 
 module BujoPdf
   # Factory for creating page instances.
@@ -18,7 +22,11 @@ module BujoPdf
   class PageFactory
     # Registry mapping page keys to page classes
     @registry = {
-      dots: Pages::BlankDotGrid
+      dots: Pages::BlankDotGrid,
+      reference: Pages::ReferenceCalibration,
+      seasonal: Pages::SeasonalCalendar,
+      year_events: Pages::YearAtGlanceEvents,
+      year_highlights: Pages::YearAtGlanceHighlights
     }
 
     class << self
