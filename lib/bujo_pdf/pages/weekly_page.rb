@@ -2,8 +2,9 @@
 
 require_relative 'base'
 require_relative '../utilities/date_calculator'
-require_relative '../sub_components/week_column'
 require_relative '../components/top_navigation'
+require_relative '../components/daily_section'
+require_relative '../components/cornell_notes'
 
 module BujoPdf
   module Pages
@@ -85,95 +86,36 @@ module BujoPdf
       end
 
       def draw_daily_section
-        content_start_col = 3
-        content_start_row = 2
-        content_width_boxes = 39
-        daily_rows = 9
-        day_col_width_boxes = content_width_boxes / 7.0  # ~5.57 boxes per day
-
-        7.times do |i|
-          date = @week_start + i
-          day_name = date.strftime('%A')
-          is_weekend = (i == 5 || i == 6)  # Saturday and Sunday
-
-          # Create and render week column component
-          column = SubComponent::WeekColumn.new(@pdf, @grid_system,
-            date: date,
-            day_name: day_name,
-            weekend: is_weekend,
-            show_time_labels: (i == 0),  # Show time labels on Monday only
-            line_count: WEEKLY_DAY_LINES_COUNT.to_i,
-            header_height: WEEKLY_DAY_HEADER_HEIGHT,
-            header_padding: WEEKLY_DAY_HEADER_PADDING,
-            lines_start: WEEKLY_DAY_LINES_START,
-            lines_padding: WEEKLY_DAY_LINES_PADDING,
-            line_margin: WEEKLY_DAY_LINE_MARGIN,
-            day_header_font_size: WEEKLY_DAY_HEADER_FONT_SIZE,
-            day_date_font_size: WEEKLY_DAY_DATE_FONT_SIZE
-          )
-
-          # Render at column position
-          col = content_start_col + (i * day_col_width_boxes)
-          column.render_at(col, content_start_row, day_col_width_boxes, daily_rows)
-        end
+        # Use DailySection component
+        section = Components::DailySection.new(@pdf, @grid_system,
+          week_start: @week_start,
+          content_start_col: 3,
+          content_start_row: 2,
+          content_width_boxes: 39,
+          daily_rows: 9,
+          line_count: WEEKLY_DAY_LINES_COUNT.to_i,
+          header_height: WEEKLY_DAY_HEADER_HEIGHT,
+          header_padding: WEEKLY_DAY_HEADER_PADDING,
+          lines_start: WEEKLY_DAY_LINES_START,
+          lines_padding: WEEKLY_DAY_LINES_PADDING,
+          line_margin: WEEKLY_DAY_LINE_MARGIN,
+          day_header_font_size: WEEKLY_DAY_HEADER_FONT_SIZE,
+          day_date_font_size: WEEKLY_DAY_DATE_FONT_SIZE
+        )
+        section.render
       end
 
       def draw_cornell_notes
-        content_start_col = 3
-        content_start_row = 2
-        content_width_boxes = 39
-        daily_rows = 9
-        notes_main_rows = 35
-        summary_rows = 9
-        cues_cols = 10
-        notes_cols = 29
-
-        notes_start_row = content_start_row + daily_rows
-        cues_box = @grid_system.rect(content_start_col, notes_start_row, cues_cols, notes_main_rows)
-        notes_box = @grid_system.rect(content_start_col + cues_cols, notes_start_row, notes_cols, notes_main_rows)
-        summary_box = @grid_system.rect(content_start_col, notes_start_row + notes_main_rows, content_width_boxes, summary_rows)
-
-        @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_HEADER_FONT_SIZE
-
-        # Cues column
-        @pdf.bounding_box([cues_box[:x], cues_box[:y]],
-                         width: cues_box[:width],
-                         height: cues_box[:height]) do
-          @pdf.stroke_color COLOR_BORDERS
-          @pdf.stroke_bounds
-          @pdf.stroke_color '000000'
-          @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
-          @pdf.fill_color COLOR_SECTION_HEADERS
-          @pdf.text "Cues/Questions", align: :center, size: WEEKLY_NOTES_LABEL_FONT_SIZE
-          @pdf.fill_color '000000'
-        end
-
-        # Notes column
-        @pdf.bounding_box([notes_box[:x], notes_box[:y]],
-                         width: notes_box[:width],
-                         height: notes_box[:height]) do
-          @pdf.stroke_color COLOR_BORDERS
-          @pdf.stroke_bounds
-          @pdf.stroke_color '000000'
-          @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
-          @pdf.fill_color COLOR_SECTION_HEADERS
-          @pdf.text "Notes", align: :center, size: WEEKLY_NOTES_LABEL_FONT_SIZE
-          @pdf.fill_color '000000'
-        end
-
-        # Summary section
-        @pdf.bounding_box([summary_box[:x], summary_box[:y]],
-                         width: summary_box[:width],
-                         height: summary_box[:height]) do
-          @pdf.stroke_color COLOR_BORDERS
-          @pdf.stroke_bounds
-          @pdf.stroke_color '000000'
-          @pdf.font "Helvetica-Bold", size: WEEKLY_NOTES_LABEL_FONT_SIZE
-          @pdf.move_down WEEKLY_NOTES_HEADER_PADDING
-          @pdf.fill_color COLOR_SECTION_HEADERS
-          @pdf.text "Summary", align: :center
-          @pdf.fill_color '000000'
-        end
+        # Use CornellNotes component
+        notes = Components::CornellNotes.new(@pdf, @grid_system,
+          content_start_col: 3,
+          notes_start_row: 11,  # After daily section (rows 2-10)
+          cues_cols: 10,
+          notes_cols: 29,
+          notes_main_rows: 35,
+          summary_rows: 9
+        )
+        notes.render
       end
     end
   end
