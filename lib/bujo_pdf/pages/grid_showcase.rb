@@ -150,6 +150,13 @@ module BujoPdf
           options = {}
           options[:line_width] = 0.5 if [:hexagon, :perspective].include?(type)
 
+          # Configure 1-point perspective with guide rectangles
+          if type == :perspective
+            options[:num_points] = 1
+            options[:draw_guide_rectangles] = true
+            options[:num_converging] = 8  # Fewer lines for cleaner showcase display
+          end
+
           renderer = Utilities::GridFactory.create(
             type,
             @pdf,
