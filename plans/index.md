@@ -3,16 +3,9 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-12 22:58 EST (Archived completed and discarded plans)
+2025-11-13 09:06 EST (Completed Plan #20: iCal URL Integration)
 
 ## Active Plans
-
-### Plan 20: iCal URL Integration for Event Highlighting (Not Started)
-- **File**: `20-ical-url-integration.md`
-- **Status**: Not Started
-- **Priority**: Feature Enhancement
-- **Dependencies**: Plan 19 (Flat-File Date Config)
-- **Goal**: Support fetching events from iCal URLs to automatically highlight special dates in the planner
 
 ### Plan 21: Multi-Tap Navigation Cycling for Right Sidebar (Not Started)
 - **File**: `21-multi-tap-navigation-cycling.md`
@@ -35,7 +28,8 @@ This file tracks the status of all plans in the plans directory.
 
 See `archived_plans/index.md` for detailed information about completed and discarded plans.
 
-### Completed Plans (23 total)
+### Completed Plans (24 total)
+- Plan 20: iCal URL Integration - Calendar event highlighting from iCal URLs (2025-11-13)
 - Plan 23: Additional Grid Types - Isometric, perspective, hexagon grids (2025-11-12)
 - Plan 19: Flat-File Date Configuration - YAML-based date highlighting (2025-11-12)
 - Plan 18: Flat PDF Outline - Single-level bookmark structure (2025-11-12)
