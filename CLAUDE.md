@@ -158,8 +158,14 @@ week_num = (days_from_start / 7) + 1
 - `seasonal` - Seasonal calendar page
 - `year_events` - Year at a Glance - Events
 - `year_highlights` - Year at a Glance - Highlights
+- `multi_year` - Multi-year overview page
 - `week_N` - Weekly page N (e.g., `week_1`, `week_42`)
-- `reference` - Grid reference/calibration page
+- `grids_overview` - Grid reference overview page
+- `grid_dot` - Full-page dot grid (5mm)
+- `grid_graph` - Full-page graph grid (5mm)
+- `grid_lined` - Full-page ruled lines (10mm)
+- `grid_showcase` - Advanced grid types showcase
+- `reference` - Grid calibration page
 - `dots` - Blank dot grid page
 
 **Link annotations** use `[left, bottom, right, top]` format (all from page bottom):
@@ -171,7 +177,30 @@ week_num = (days_from_start / 7) + 1
 
 **Sidebar navigation**:
 - Left sidebar: `lib/bujo_pdf/components/week_sidebar.rb` - Vertical week list with month indicators
-- Right sidebar: `lib/bujo_pdf/components/navigation_tabs.rb` - Rotated tabs for year pages
+- Right sidebar: `lib/bujo_pdf/components/right_sidebar.rb` - Rotated tabs for year and grid pages
+
+**Multi-tap navigation cycling** (Plan 21):
+Right sidebar tabs can cycle through multiple related pages using destination arrays:
+
+```ruby
+# In StandardWithSidebarsLayout#build_top_tabs
+{ label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
+```
+
+**Behavior**:
+- When not on any page in the cycle → clicking goes to first page (entry point)
+- When on a page in the cycle → clicking advances to next page in sequence
+- After last page → wraps back to first page
+- Tab is highlighted (bold) when on any page in the cycle
+
+**Example: Grids tab cycling**:
+1. Click "Grids" from weekly page → `grids_overview` (overview with samples)
+2. Click "Grids" again → `grid_dot` (full-page dot grid)
+3. Click "Grids" again → `grid_graph` (full-page graph grid)
+4. Click "Grids" again → `grid_lined` (full-page ruled lines)
+5. Click "Grids" again → cycles back to `grids_overview`
+
+**Implementation**: `lib/bujo_pdf/layouts/standard_with_sidebars_layout.rb:137-256`
 
 ## Layout Constants
 
@@ -209,11 +238,23 @@ Each page type has its own class in `lib/bujo_pdf/pages/`:
    - Navigation links: previous/next week, back to year overview
    - Time period labels (AM/PM/EVE) on Monday column
 
-4. **Reference Page** (`reference_page.rb`)
+4. **Grid Reference Pages** (`grids_overview.rb`, `grids/` directory)
+   - **Grids Overview**: Entry point with clickable samples of all basic grids
+   - **Dot Grid Page**: Full-page 5mm dot grid template
+   - **Graph Grid Page**: Full-page 5mm square grid (lines at every dot position)
+   - **Lined Grid Page**: Full-page 10mm ruled lines with left margin
+   - Accessed via multi-tap Grids navigation tab
+
+5. **Reference Page** (`reference_calibration.rb`)
    - Calibration grid with measurements
    - Centimeter markings along edges
    - Grid system documentation
    - Prawn coordinate system reference
+
+6. **Grid Showcase** (`grid_showcase.rb`)
+   - Advanced grid types (isometric, perspective, hexagon)
+   - Quadrant-based layout with labels
+   - Visual reference for specialized grids
 
 ## Common Patterns
 
@@ -268,6 +309,7 @@ end
 3. **Link annotations** - Use absolute page coordinates even inside bounding boxes
 4. **Rotation origin** - Specify the point around which to rotate
 5. **Color values** - 6-digit hex strings (e.g., `'CCCCCC'`)
+6. **Character encoding** - Built-in fonts use Windows-1252, avoid fancy Unicode characters (arrows, em dashes, etc.). Use simple ASCII equivalents (->  instead of →, -- instead of —)
 
 ## Dependencies
 
@@ -277,8 +319,8 @@ end
 ## Output
 
 - **Filename**: `planner_{year}.pdf`
-- **Page count**: 57-58 pages typical (4 overview + 52-53 weekly + 2 templates)
-- **File size**: Should be under 2MB
+- **Page count**: 61-62 pages typical (4 overview + 52-53 weekly + 4 grids + 3 templates)
+- **File size**: Under 4MB
 - **Generation time**: Under 5 seconds
 
 ## Key Files
@@ -293,3 +335,7 @@ end
 - **idea.md** - Original design specification
 - **CLAUDE.local.md** - Detailed grid system documentation
 - **test_*.rb** - Test scripts for PDF link coordinate debugging
+
+## Utilitides
+For managing planning use the `bd` command.
+Run `bd quickstart` to learn more about its use.
