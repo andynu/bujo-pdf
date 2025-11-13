@@ -175,9 +175,10 @@ module BujoPdf
       def draw_day_cell(cell_x, cell_y, cell_width, cell_height, month, day_num)
         date = Date.new(@year, month, day_num)
         highlighted_date = context.date_config&.date_for_day(date)
+        calendar_events = context.event_store&.events_for_date(date, limit: 1) || []
 
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-          # Draw background highlight if date is highlighted
+          # Draw background highlight if date is highlighted from date_config
           if highlighted_date
             category_style = context.date_config.category_style(highlighted_date.category)
             bg_color = highlighted_date.color || category_style['color']
@@ -185,6 +186,14 @@ module BujoPdf
             @pdf.fill_color bg_color
             @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
             @pdf.fill_color '000000'
+          # Or draw background for calendar events if no date_config highlight
+          elsif !calendar_events.empty?
+            event = calendar_events.first
+            if event.color
+              @pdf.fill_color event.color
+              @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
+              @pdf.fill_color '000000'
+            end
           end
 
           # Draw border (highlighted dates with high priority get thicker border)
@@ -214,6 +223,7 @@ module BujoPdf
                        overflow: :shrink_to_fit
 
           # Add category icon if highlighted (top-right corner)
+          # Priority: date_config icon > calendar event icon
           if highlighted_date
             category_style = context.date_config.category_style(highlighted_date.category)
             icon = category_style['icon']
@@ -227,6 +237,20 @@ module BujoPdf
                           align: :right,
                           valign: :top
             @pdf.fill_color '000000'  # Reset
+          elsif !calendar_events.empty?
+            # Show calendar event icon
+            event = calendar_events.first
+            if event.icon
+              @pdf.fill_color '666666'  # Default gray for event icons
+              @pdf.text_box event.icon,
+                            at: [cell_width - 10, cell_height - 2],
+                            width: 8,
+                            height: 8,
+                            size: 6,
+                            align: :right,
+                            valign: :top
+              @pdf.fill_color '000000'  # Reset
+            end
           end
 
           # Add clickable link to the week containing this date
