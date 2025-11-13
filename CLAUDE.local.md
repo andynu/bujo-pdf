@@ -384,6 +384,34 @@ The calibration page (`generate_reference_page`) shows:
 - Centimeter markings along edges
 - Division lines for halves and thirds
 
+## Prawn Rectangle Positioning - Critical Gotcha
+
+**IMPORTANT**: Prawn's `pdf.rectangle([x, y], width, height)` uses the **TOP-LEFT corner** as the anchor point, NOT the bottom-left.
+
+The `y` parameter specifies the Y coordinate of the **top edge** of the rectangle (even though Prawn's coordinate system has Y increasing upward from the bottom).
+
+### Centering a Rectangle
+
+To center a rectangle at point `(center_x, center_y)`:
+
+```ruby
+# WRONG - this positions the rectangle incorrectly
+rect_x = center_x - (width / 2.0)
+rect_y = center_y - (height / 2.0)  # This gives you the BOTTOM, not top!
+pdf.rectangle([rect_x, rect_y], width, height)
+
+# CORRECT - use TOP-LEFT corner
+top_left_x = center_x - (width / 2.0)
+top_left_y = center_y + (height / 2.0)  # ADD half height to go UP to top edge
+pdf.rectangle([top_left_x, top_left_y], width, height)
+```
+
+### Why This Matters
+
+Since Prawn's Y-axis increases upward (origin at bottom), you might expect `rectangle([x, y], w, h)` to take the bottom-left corner. But it actually takes the top-left corner, which means you need to ADD height/2 when centering, not subtract.
+
+This is especially tricky when working with vanishing points or other center-based coordinates.
+
 ## Future Enhancements
 
 Potential additions to the grid system:
