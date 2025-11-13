@@ -7,6 +7,7 @@ require_relative 'utilities/dot_grid'
 require_relative 'page_factory'
 require_relative 'render_context'
 require_relative 'date_configuration'
+require_relative 'calendar_integration'
 
 module BujoPdf
   # Main planner generator orchestrator.
@@ -23,13 +24,14 @@ module BujoPdf
     PAGE_WIDTH = 612    # 8.5 inches (letter size)
     PAGE_HEIGHT = 792   # 11 inches
 
-    attr_reader :year, :pdf, :date_config
+    attr_reader :year, :pdf, :date_config, :event_store
 
-    def initialize(year = Date.today.year, config_path: 'config/dates.yml')
+    def initialize(year = Date.today.year, config_path: 'config/dates.yml', calendars_config_path: 'config/calendars.yml')
       @year = year
       @pdf = nil
       @total_pages = nil
       @date_config = DateConfiguration.new(config_path, year: year)
+      @event_store = load_calendar_events(calendars_config_path)
     end
 
     # Generate the complete planner PDF.
@@ -112,7 +114,8 @@ module BujoPdf
         page_number: @pdf.page_number,
         year: @year,
         total_pages: @total_pages,
-        date_config: @date_config
+        date_config: @date_config,
+        event_store: @event_store
       )
       page = PageFactory.create(page_key, @pdf, context)
       page.generate
@@ -127,7 +130,8 @@ module BujoPdf
         year_count: 4,  # Show 4 years
         total_weeks: total_weeks,
         total_pages: @total_pages,
-        date_config: @date_config
+        date_config: @date_config,
+        event_store: @event_store
       )
       page = PageFactory.create(:multi_year, @pdf, context)
       page.generate
@@ -148,7 +152,8 @@ module BujoPdf
         week_end: week_end,
         total_weeks: total_weeks,
         total_pages: @total_pages,
-        date_config: @date_config
+        date_config: @date_config,
+        event_store: @event_store
       )
 
       # Note: PageFactory.create_weekly_page expects a hash with :year
@@ -195,6 +200,12 @@ module BujoPdf
         page destination: reference_page, title: 'Grid Reference & Calibration'
         page destination: dots_page, title: 'Dot Grid'
       end
+    end
+
+    def load_calendar_events(config_path)
+      return nil unless File.exist?(config_path)
+
+      CalendarIntegration.load_events(config_path: config_path, year: @year)
     end
   end
 end
