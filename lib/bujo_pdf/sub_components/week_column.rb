@@ -186,26 +186,35 @@ module SubComponent
       category_style = date_config.category_style(highlighted_date.category)
       priority_style = date_config.priority_style(highlighted_date.priority)
 
-      # Label box below header (0.85 boxes high as specified in plan)
+      # Label box positioned 1 box below header (grid-aligned)
+      # Label is 0.85 boxes high
       header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
-      header_height = @grid.height(header_height_boxes)
-      label_height = @grid.height(0.85)
-      label_y = height - header_height - 2
+      label_height_boxes = 0.85
+      label_start_row = header_height_boxes + 1  # Skip 1 box after header
+
+      label_height = @grid.height(label_height_boxes)
+      label_y = height - @grid.height(label_start_row)
+
+      # Horizontal padding (2pt on each side)
+      h_padding = 2
 
       # Background
       @pdf.fill_color category_style['color']
-      @pdf.fill_rectangle [2, label_y + label_height], width - 4, label_height
+      @pdf.fill_rectangle [h_padding, label_y + label_height], width - (h_padding * 2), label_height
       @pdf.fill_color '000000'
 
-      # Text
+      # Text (with small vertical and horizontal padding)
+      v_padding = 1
+      text_h_padding = 2
+
       font_weight = priority_style['bold'] ? :bold : :normal
       @pdf.font('Helvetica-Bold') if font_weight == :bold
 
       @pdf.fill_color category_style['text_color']
       @pdf.text_box highlighted_date.label,
-                    at: [4, label_y + label_height - 1],
-                    width: width - 8,
-                    height: label_height - 2,
+                    at: [h_padding + text_h_padding, label_y + label_height - v_padding],
+                    width: width - (h_padding * 2) - (text_h_padding * 2),
+                    height: label_height - (v_padding * 2),
                     size: 7,
                     align: :center,
                     valign: :center,
