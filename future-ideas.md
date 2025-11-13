@@ -9,3 +9,8 @@
 - a flat toc, not nested.
 - flat-file configuration of highlighted dates. Causes highlights on the year overview, and a label annotated on the day in the weekview.
 - ical url configuration for highlighted dates.
+- isometric grid template
+- perspective grid template
+
+
+
