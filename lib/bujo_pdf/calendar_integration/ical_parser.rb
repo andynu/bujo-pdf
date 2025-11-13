@@ -91,8 +91,9 @@ module BujoPdf
         dtstart = ical_event.dtstart
         return false unless dtstart
 
-        # Check if dtstart is a Date (not DateTime)
-        dtstart.is_a?(Date) && !dtstart.is_a?(DateTime)
+        # Check if dtstart is a Date value (Icalendar::Values::Date)
+        # or a plain Date (not DateTime)
+        dtstart.class.name.include?('Date') && !dtstart.class.name.include?('DateTime')
       end
 
       # Extract event dates from iCal event
@@ -129,9 +130,17 @@ module BujoPdf
       end
 
       # Convert various date/time types to Date
-      # @param dt [Date, DateTime, Time] Date/time value
+      # @param dt [Date, DateTime, Time, Icalendar::Values::Date] Date/time value
       # @return [Date, nil] Date or nil
       def convert_to_date(dt)
+        return nil unless dt
+
+        # Handle Icalendar value types
+        if dt.respond_to?(:to_date)
+          return dt.to_date
+        end
+
+        # Handle standard Ruby types
         case dt
         when Date
           dt

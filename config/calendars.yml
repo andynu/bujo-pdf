@@ -7,7 +7,7 @@ calendars:
     url: "https://www.thunderbird.net/media/caldata/autogen/USHolidays.ics"
     enabled: true
     color: "FFE5E5"  # Light red for holidays
-    icon: "🎉"
+    icon: "*"
 
 # Cache settings
 cache:

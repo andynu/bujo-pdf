@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'icalendar'
-require 'icalendar/recurrence'
 require 'date'
 require_relative 'event'
 

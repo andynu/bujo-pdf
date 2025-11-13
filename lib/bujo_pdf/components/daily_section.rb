@@ -67,7 +67,8 @@ module BujoPdf
           line_margin: context.fetch(:line_margin, 3),
           day_header_font_size: context.fetch(:day_header_font_size, 9),
           day_date_font_size: context.fetch(:day_date_font_size, 8),
-          date_config: context[:date_config]
+          date_config: context[:date_config],
+          event_store: context[:event_store]
         )
 
         # Render at column position
