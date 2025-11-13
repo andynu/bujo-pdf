@@ -3,15 +3,9 @@
 This file tracks the status of all plans in the plans directory.
 
 ## Last Updated
-2025-11-12 22:23 EST (Completed Plan 23)
+2025-11-12 22:29 EST (Completed Plan 18)
 
 ## Active Plans
-
-### Plan 18: Flat Table of Contents (Not Started)
-- **File**: `18-flat-toc.md`
-- **Status**: Not Started
-- **Priority**: Feature Enhancement
-- **Goal**: Create comprehensive visual table of contents page listing all major sections and weeks in flat, non-hierarchical format
 
 ### Plan 19: Flat-File Configuration for Highlighted Dates (Not Started)
 - **File**: `19-flat-file-date-config.md`
@@ -66,6 +60,19 @@ This file tracks the status of all plans in the plans directory.
 - **Reason**: Insufficient space on iPad. The 2-box sidebar width cannot accommodate three-letter abbreviations plus week numbers without compromising readability or layout integrity.
 
 ## Recently Completed Plans
+
+### Plan 18: Flat PDF Outline (Bookmarks) (Completed 2025-11-12)
+- **File**: `18-flat-toc.md`
+- **Status**: Completed
+- **Created**: 2025-11-11 23:08 EST
+- **Last Modified**: 2025-11-12 22:29 EST
+- **Last Worked**: 2025-11-12 22:29 EST
+- **Changed Since Work**: No
+- **Priority**: Feature Enhancement
+- **Dependencies**: None
+- **Commits**: (pending commit)
+- **Goal**: Flatten PDF outline/bookmarks to remove deeply nested structure
+- **Result**: Successfully flattened PDF outline from 3-level nested structure (Overview > Months > Weeks) to single-level flat structure with 19 entries: 4 year pages + 12 month pages (linking to first week) + 3 reference pages. Simplifies navigation and reduces visual clutter in PDF bookmark sidebar.
 
 ### Plan 17: Monthly Bookmarks in PDF Outline (Completed 2025-11-12)
 - **File**: `17-month-toc-pages.md`

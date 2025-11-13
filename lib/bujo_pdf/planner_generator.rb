@@ -161,44 +161,34 @@ module BujoPdf
       events_page = @events_page
       highlights_page = @highlights_page
       multi_year_page = @multi_year_page
-      weekly_start_page = @weekly_start_page
       week_pages = @week_pages
       grid_showcase_page = @grid_showcase_page
       reference_page = @reference_page
       dots_page = @dots_page
 
       @pdf.outline.define do
-        section "#{year} Overview", destination: seasonal_page do
-          page destination: seasonal_page, title: 'Seasonal Calendar'
-          page destination: events_page, title: 'Year at a Glance - Events'
-          page destination: highlights_page, title: 'Year at a Glance - Highlights'
-          page destination: multi_year_page, title: 'Multi-Year Overview'
-        end
+        # Year overview pages (flat, no nesting)
+        page destination: seasonal_page, title: 'Seasonal Calendar'
+        page destination: events_page, title: 'Year at a Glance - Events'
+        page destination: highlights_page, title: 'Year at a Glance - Highlights'
+        page destination: multi_year_page, title: 'Multi-Year Overview'
 
-        # Monthly groupings of weekly pages
-        section 'Monthly Pages', destination: weekly_start_page do
-          (1..12).each do |month|
-            month_name = Date::MONTHNAMES[month]
-            weeks_in_month = Utilities::DateCalculator.weeks_for_month(year, month)
+        # Month pages (flat, linking to first week of each month)
+        (1..12).each do |month|
+          month_name = Date::MONTHNAMES[month]
+          weeks_in_month = Utilities::DateCalculator.weeks_for_month(year, month)
 
-            # Only create section if there are weeks for this month
-            if weeks_in_month.any?
-              first_week = weeks_in_month.first
-              section "#{month_name} #{year}", destination: week_pages[first_week] do
-                weeks_in_month.each do |week_num|
-                  page_num = week_pages[week_num]
-                  page destination: page_num, title: "Week #{week_num}" if page_num
-                end
-              end
-            end
+          # Only create entry if there are weeks for this month
+          if weeks_in_month.any?
+            first_week = weeks_in_month.first
+            page destination: week_pages[first_week], title: "#{month_name} #{year}"
           end
         end
 
-        section 'Templates', destination: grid_showcase_page do
-          page destination: grid_showcase_page, title: 'Grid Types Showcase'
-          page destination: reference_page, title: 'Grid Reference & Calibration'
-          page destination: dots_page, title: 'Dot Grid'
-        end
+        # Reference/template pages (flat, no nesting)
+        page destination: grid_showcase_page, title: 'Grid Types Showcase'
+        page destination: reference_page, title: 'Grid Reference & Calibration'
+        page destination: dots_page, title: 'Dot Grid'
       end
     end
   end
