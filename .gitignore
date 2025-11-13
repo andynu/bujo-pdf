@@ -16,3 +16,7 @@ coverage/
 
 # Personal date configuration (keep private)
 config/dates.yml
+
+# Personal calendar configuration and cache (keep private)
+config/calendars.yml
+.cache/

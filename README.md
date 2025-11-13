@@ -110,6 +110,62 @@ BujoPdf.generate(2025)
 BujoPdf.generate(2025, output_path: 'my_planner.pdf')
 ```
 
+### Calendar Integration
+
+BujoPdf can automatically highlight events from iCal calendars (Google Calendar, Apple Calendar, Outlook, holiday calendars, etc.) on your planner pages.
+
+#### Quick Start
+
+1. Get your calendar's public iCal URL:
+   - **Google Calendar**: Settings → Integrate calendar → Secret address in iCal format
+   - **Apple Calendar**: Share calendar → Public calendar
+   - **Outlook**: Calendar → Share → Publish calendar
+
+2. Create `config/calendars.yml`:
+
+```yaml
+calendars:
+  - name: "US Holidays"
+    url: "https://www.thunderbird.net/media/caldata/autogen/USHolidays.ics"
+    enabled: true
+    color: "FFE5E5"  # Light red background
+    icon: "*"        # Displayed with event
+
+  - name: "Personal"
+    url: "https://calendar.google.com/calendar/ical/YOUR_ID/public/basic.ics"
+    enabled: true
+    color: "E5F0FF"  # Light blue
+    icon: "+"
+```
+
+3. Generate your planner - events automatically appear!
+
+```bash
+bujo-pdf 2025
+```
+
+#### How It Works
+
+- **Year-at-a-glance pages**: Events shown with background colors and icons
+- **Weekly pages**: Event labels appear below day headers
+- **Priority system**: Flat-file highlights (dates.yml) take precedence over calendar events
+- **Caching**: Events cached for 24 hours to speed up regeneration
+- **Multiple calendars**: Combine work, personal, and holiday calendars
+
+#### Configuration Options
+
+See `config/calendars.yml.example` for full configuration options including:
+- Cache TTL and directory
+- Network timeout and retry settings
+- Event filtering (exclude patterns, max events per day)
+- Skip all-day events option
+
+#### Public Holiday Calendars
+
+Free holiday calendar URLs available from:
+- [Thunderbird Holidays](https://www.thunderbird.net/en-US/calendar/holidays/)
+- Includes US, UK, Canada, and many other countries
+
 ### Output
 
 The generated PDF includes:
