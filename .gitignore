@@ -13,3 +13,6 @@ pkg/
 # Test coverage reports
 coverage/
 .coverage
+
+# Personal date configuration (keep private)
+config/dates.yml

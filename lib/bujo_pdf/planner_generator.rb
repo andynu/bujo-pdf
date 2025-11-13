@@ -6,6 +6,7 @@ require_relative 'utilities/date_calculator'
 require_relative 'utilities/dot_grid'
 require_relative 'page_factory'
 require_relative 'render_context'
+require_relative 'date_configuration'
 
 module BujoPdf
   # Main planner generator orchestrator.
@@ -22,12 +23,13 @@ module BujoPdf
     PAGE_WIDTH = 612    # 8.5 inches (letter size)
     PAGE_HEIGHT = 792   # 11 inches
 
-    attr_reader :year, :pdf
+    attr_reader :year, :pdf, :date_config
 
-    def initialize(year = Date.today.year)
+    def initialize(year = Date.today.year, config_path: 'config/dates.yml')
       @year = year
       @pdf = nil
       @total_pages = nil
+      @date_config = DateConfiguration.new(config_path, year: year)
     end
 
     # Generate the complete planner PDF.
@@ -109,7 +111,8 @@ module BujoPdf
         page_key: page_key,
         page_number: @pdf.page_number,
         year: @year,
-        total_pages: @total_pages
+        total_pages: @total_pages,
+        date_config: @date_config
       )
       page = PageFactory.create(page_key, @pdf, context)
       page.generate
@@ -123,7 +126,8 @@ module BujoPdf
         year: @year,
         year_count: 4,  # Show 4 years
         total_weeks: total_weeks,
-        total_pages: @total_pages
+        total_pages: @total_pages,
+        date_config: @date_config
       )
       page = PageFactory.create(:multi_year, @pdf, context)
       page.generate
@@ -143,7 +147,8 @@ module BujoPdf
         week_start: week_start,
         week_end: week_end,
         total_weeks: total_weeks,
-        total_pages: @total_pages
+        total_pages: @total_pages,
+        date_config: @date_config
       )
 
       # Note: PageFactory.create_weekly_page expects a hash with :year

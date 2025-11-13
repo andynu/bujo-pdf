@@ -1,0 +1,77 @@
+# Example configuration file for highlighted dates
+# Copy this to config/dates.yml and customize for your needs
+
+year: 2025
+
+dates:
+  # US Federal Holidays (examples)
+  - date: 2025-01-01
+    label: "New Year's Day"
+    category: holiday
+
+  - date: 2025-07-04
+    label: "Independence Day"
+    category: holiday
+
+  - date: 2025-12-25
+    label: "Christmas Day"
+    category: holiday
+
+  # Personal dates (examples)
+  - date: 2025-06-15
+    label: "Anniversary"
+    category: personal
+    priority: high
+
+  - date: 2025-09-23
+    label: "Birthday"
+    category: personal
+    priority: high
+
+  # Work deadlines (examples)
+  - date: 2025-03-31
+    label: "Q1 Review"
+    category: work
+    priority: high
+
+  - date: 2025-12-15
+    label: "Annual Report"
+    category: work
+    priority: high
+
+  # Custom colored date (example)
+  - date: 2025-02-14
+    label: "Valentine's Day"
+    category: holiday
+    color: "FF69B4"  # Pink - overrides category default
+
+# Category definitions with default colors
+categories:
+  holiday:
+    color: "FFE5E5"      # Light red
+    text_color: "CC0000" # Dark red
+    icon: "*"
+
+  personal:
+    color: "E5F0FF"      # Light blue
+    text_color: "0066CC"
+    icon: "+"
+
+  work:
+    color: "FFF5E5"      # Light orange
+    text_color: "CC7700"
+    icon: "#"
+
+  other:
+    color: "F0F0F0"      # Light gray
+    text_color: "666666"
+    icon: "o"
+
+# Priority levels affect visual prominence
+priorities:
+  high:
+    border_width: 1.5
+    bold: true
+  normal:
+    border_width: 0.5
+    bold: false
