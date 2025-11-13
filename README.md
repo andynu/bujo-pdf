@@ -125,8 +125,8 @@ BujoPdf can automatically highlight events from iCal calendars (Google Calendar,
 
 ```yaml
 calendars:
-  - name: "US Holidays"
-    url: "https://www.thunderbird.net/media/caldata/autogen/USHolidays.ics"
+  - name: "US Federal Holidays"
+    url: "https://www.officeholidays.com/ics-fed/usa"
     enabled: true
     color: "FFE5E5"  # Light red background
     icon: "*"        # Displayed with event
@@ -163,8 +163,8 @@ See `config/calendars.yml.example` for full configuration options including:
 #### Public Holiday Calendars
 
 Free holiday calendar URLs available from:
-- [Thunderbird Holidays](https://www.thunderbird.net/en-US/calendar/holidays/)
-- Includes US, UK, Canada, and many other countries
+- [OfficeHolidays.com](https://www.officeholidays.com/countries) - Federal holidays for US, UK, Canada, and 100+ countries
+- US Federal Holidays: `https://www.officeholidays.com/ics-fed/usa` (11 federal holidays per year)
 
 ### Output
 

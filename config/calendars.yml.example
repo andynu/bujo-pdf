@@ -20,12 +20,12 @@ calendars:
     color: "4285F4"  # Blue for work events
     icon: "●"
 
-  # US Holidays (from Thunderbird)
-  - name: "US Holidays"
-    url: "https://www.thunderbird.net/media/caldata/autogen/USHolidays.ics"
+  # US Federal Holidays (from OfficeHolidays.com)
+  - name: "US Federal Holidays"
+    url: "https://www.officeholidays.com/ics-fed/usa"
     enabled: true
-    color: "FF0000"  # Red for holidays
-    icon: "🎉"
+    color: "FFE5E5"  # Light red for holidays
+    icon: "*"
 
   # Birthdays
   - name: "Birthdays"
@@ -64,6 +64,8 @@ filters:
 
 # Notes:
 # - Get Google Calendar iCal URL: Settings → Integrate calendar → Secret address in iCal format
-# - For public holiday calendars, see: https://www.thunderbird.net/en-US/calendar/holidays/
+# - For public holiday calendars, see:
+#   - US Federal Holidays: https://www.officeholidays.com/subscribe/usa
+#   - Other countries: https://www.officeholidays.com/countries
 # - Colors are hex codes without # (e.g., "FF0000" for red)
-# - Icons can be any Unicode character (emojis work great!)
+# - Icons: Use simple ASCII characters (* + # o) - emojis may not render in PDF
