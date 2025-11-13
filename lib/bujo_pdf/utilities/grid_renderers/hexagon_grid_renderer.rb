@@ -65,8 +65,8 @@ module BujoPdf
           # For flat-top hexagons where @spacing is the edge length (side):
           # - hex_width (vertex to vertex) = spacing * 2
           # - hex_height (edge to edge) = spacing * sqrt(3)
-          # - horizontal_spacing (center to center) = spacing * 1.5
-          # - vertical_spacing (center to center) = spacing * sqrt(3)
+          # - horizontal_spacing (center to center, same row) = spacing * 1.5
+          # - vertical_spacing (center to center, same column) = spacing * sqrt(3)
           hex_width = @spacing * 2
           hex_height = @spacing * Math.sqrt(3)
 
@@ -79,12 +79,12 @@ module BujoPdf
           rows = (@height / vertical_spacing).ceil + 2
 
           # Draw hexagons
-          rows.times do |row|
-            cols.times do |col|
-              # Offset even rows for tessellation
-              x_offset = row.even? ? 0 : horizontal_spacing / 2.0
-              center_x = (col * horizontal_spacing) + x_offset
-              center_y = row * vertical_spacing
+          cols.times do |col|
+            rows.times do |row|
+              # Offset odd columns vertically for tessellation (brick pattern)
+              y_offset = col.odd? ? vertical_spacing / 2.0 : 0
+              center_x = col * horizontal_spacing
+              center_y = (row * vertical_spacing) + y_offset
 
               # Only draw if hexagon is at least partially visible
               if hexagon_visible?(center_x, center_y, hex_width, hex_height)
@@ -117,10 +117,10 @@ module BujoPdf
           # Draw hexagons
           rows.times do |row|
             cols.times do |col|
-              # Offset even columns for tessellation
-              y_offset = col.even? ? 0 : vertical_spacing / 2.0
-              center_x = col * horizontal_spacing
-              center_y = (row * vertical_spacing) + y_offset
+              # Offset odd rows by half horizontal spacing for tessellation
+              x_offset = row.odd? ? horizontal_spacing / 2.0 : 0
+              center_x = (col * horizontal_spacing) + x_offset
+              center_y = row * vertical_spacing
 
               # Only draw if hexagon is at least partially visible
               if hexagon_visible?(center_x, center_y, hex_width, hex_height)
@@ -152,20 +152,25 @@ module BujoPdf
         #
         # @param cx [Float] Center X coordinate
         # @param cy [Float] Center Y coordinate
-        # @param size [Float] Radius (distance from center to vertex)
+        # @param edge_length [Float] Length of each edge of the hexagon
         # @param orientation [Symbol] :flat_top or :pointy_top
         # @return [void]
-        def draw_hexagon(cx, cy, size, orientation)
+        def draw_hexagon(cx, cy, edge_length, orientation)
+          # For a regular hexagon, circumradius (center to vertex) equals edge length
+          radius = edge_length
+
           # Calculate six vertices
           vertices = 6.times.map do |i|
             # Starting angle depends on orientation
+            # flat_top: first vertex at 0° (right), edges are horizontal top/bottom
+            # pointy_top: first vertex at 30°, vertices are at top/bottom
             angle_offset = orientation == :flat_top ? 0 : 30
             angle = angle_offset + (i * 60)
             angle_rad = angle * Math::PI / 180.0
 
             [
-              cx + size * Math.cos(angle_rad),
-              cy + size * Math.sin(angle_rad)
+              cx + radius * Math.cos(angle_rad),
+              cy + radius * Math.sin(angle_rad)
             ]
           end
 
