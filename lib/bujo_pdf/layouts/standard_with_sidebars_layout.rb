@@ -18,9 +18,18 @@ module BujoPdf
     #
     # Options:
     #   - :current_week [Integer, nil] - Week number to highlight in week sidebar (nil for no highlight)
-    #   - :highlight_tab [Symbol, nil] - Tab to highlight (:seasonal, :year_events, :year_highlights, nil)
+    #   - :highlight_tab [Symbol, nil] - Tab to highlight (:seasonal, :year_events, :year_highlights, :grids, nil)
     #   - :year [Integer] - Year for sidebar rendering (from page context if not provided)
     #   - :total_weeks [Integer] - Total weeks in year (from page context if not provided)
+    #
+    # Navigation Tab Multi-Tap Cycling:
+    #   Tabs can cycle through multiple pages using destination arrays:
+    #     { label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
+    #
+    #   When not on any page in the cycle, clicking goes to the first page.
+    #   When on a page in the cycle, clicking advances to the next page.
+    #   After the last page, clicking cycles back to the first.
+    #   Tab is highlighted when on any page in the cycle.
     #
     # @example Weekly page (highlight current week, no tab highlight)
     #   use_layout :standard_with_sidebars,
@@ -107,27 +116,143 @@ module BujoPdf
 
       # Build top navigation tabs with optional highlighting.
       #
-      # Creates tabs for seasonal calendar, events, highlights, and multi-year pages.
+      # Creates tabs for seasonal calendar, events, highlights, multi-year, and grids pages.
+      # Supports single destinations (strings/symbols) and multi-destination arrays for cycling.
       # Marks the appropriate tab as current if highlight_tab option is set.
       #
-      # @return [Array<Hash>] Array of tab specifications
+      # @return [Array<Hash>] Array of resolved tab specifications with :label, :dest, and :current
       def build_top_tabs
         tabs = [
           { label: "Year", dest: "seasonal" },
           { label: "Events", dest: "year_events" },
           { label: "Highlights", dest: "year_highlights" },
-          { label: "Multi", dest: "multi_year" }
+          { label: "Multi", dest: "multi_year" },
+          { label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
         ]
 
-        # Apply highlighting if specified
-        if options[:highlight_tab]
-          highlight_dest = options[:highlight_tab].to_s
-          tabs.each do |tab|
-            tab[:current] = (tab[:dest] == highlight_dest)
-          end
+        # Resolve each tab (handles both single destinations and cycling arrays)
+        tabs.map { |tab| resolve_tab_destination(tab) }
+      end
+
+      # Resolve tab destination based on current page and cycle position.
+      #
+      # For single destinations (string/symbol), returns tab with highlighting based on current page.
+      # For destination arrays (multi-tap cycling), computes next destination in cycle.
+      #
+      # @param tab [Hash] Tab specification with :label and :dest
+      # @return [Hash] Resolved tab with :label, :dest (string), and :current (boolean)
+      #
+      # @example Single destination
+      #   resolve_tab_destination({ label: "Year", dest: "seasonal" })
+      #   # => { label: "Year", dest: "seasonal", current: true/false }
+      #
+      # @example Multi-destination cycle (on first page in cycle)
+      #   # When current page is :grids_overview
+      #   resolve_tab_destination({ label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph] })
+      #   # => { label: "Grids", dest: "grid_dot", current: true }
+      #
+      # @example Multi-destination cycle (not in cycle)
+      #   # When current page is :week_1
+      #   resolve_tab_destination({ label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph] })
+      #   # => { label: "Grids", dest: "grids_overview", current: false }
+      def resolve_tab_destination(tab)
+        dest = tab[:dest]
+
+        # Single destination: simple pass-through with highlighting
+        if dest.is_a?(String) || dest.is_a?(Symbol)
+          return {
+            label: tab[:label],
+            dest: dest.to_s,
+            current: current_page?(dest) || highlight_matches?(dest)
+          }
         end
 
-        tabs
+        # Multi-destination array: compute cycle
+        if dest.is_a?(Array)
+          return resolve_cyclic_destination(tab[:label], dest)
+        end
+
+        # Unexpected type: raise error
+        raise ArgumentError, "Tab destination must be String, Symbol, or Array, got #{dest.class}"
+      end
+
+      # Resolve cyclic destination for multi-tap navigation.
+      #
+      # Determines the next destination in the cycle based on the current page.
+      # If not in cycle, goes to first page (entry point).
+      # If in cycle, advances to next page (wraps to first after last).
+      #
+      # @param label [String] Tab label
+      # @param dest_array [Array<Symbol>] Array of destination page keys
+      # @return [Hash] Resolved tab with :label, :dest, and :current
+      #
+      # @example Not in cycle
+      #   resolve_cyclic_destination("Grids", [:a, :b, :c])
+      #   # => { label: "Grids", dest: "a", current: false }
+      #
+      # @example In cycle (first page)
+      #   # When current page is :a
+      #   resolve_cyclic_destination("Grids", [:a, :b, :c])
+      #   # => { label: "Grids", dest: "b", current: true }
+      #
+      # @example In cycle (last page wraps to first)
+      #   # When current page is :c
+      #   resolve_cyclic_destination("Grids", [:a, :b, :c])
+      #   # => { label: "Grids", dest: "a", current: true }
+      def resolve_cyclic_destination(label, dest_array)
+        # Find current page in cycle (nil if not in cycle)
+        current_index = dest_array.index { |d| current_page?(d) }
+
+        # Also check if highlight_tab matches any page in cycle
+        highlight_index = if options[:highlight_tab]
+                            dest_array.index { |d| d.to_s == options[:highlight_tab].to_s }
+                          end
+
+        # Determine which index to use (prefer current_index from actual page)
+        active_index = current_index || highlight_index
+
+        if active_index.nil?
+          # Not in cycle: go to first page (entry point), not highlighted
+          {
+            label: label,
+            dest: dest_array.first.to_s,
+            current: false
+          }
+        else
+          # In cycle: advance to next page (wrap around), highlighted
+          next_index = (active_index + 1) % dest_array.size
+          {
+            label: label,
+            dest: dest_array[next_index].to_s,
+            current: true
+          }
+        end
+      end
+
+      # Check if currently rendering a specific page.
+      #
+      # Accesses the page context to determine current page key.
+      # Must be called during render_before/render_after when page context is available.
+      #
+      # @param dest [Symbol, String] Destination to check
+      # @return [Boolean] True if on specified page
+      def current_page?(dest)
+        # Access context through options (passed from page) or return false if unavailable
+        return false unless options[:page_context]
+
+        options[:page_context].current_page?(dest)
+      end
+
+      # Check if highlight_tab option matches destination.
+      #
+      # Used as fallback when page context isn't available yet.
+      #
+      # @param dest [Symbol, String] Destination to check
+      # @return [Boolean] True if highlight_tab matches
+      def highlight_matches?(dest)
+        return false unless options[:highlight_tab]
+
+        options[:highlight_tab].to_s == dest.to_s
       end
     end
   end

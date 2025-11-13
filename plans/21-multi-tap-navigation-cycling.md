@@ -50,7 +50,8 @@ def build_top_tabs
   tabs = [
     { label: "Year", dest: "seasonal" },
     { label: "Events", dest: "year_events" },
-    { label: "Highlights", dest: [:year_highlights, :year_highlights1, :year_highlights2] }
+    { label: "Highlights", dest: [:year_highlights, :year_highlights1, :year_highlights2] },
+    { label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
   ]
 
   # Transform tabs: resolve dest arrays to single destination based on current page
@@ -148,21 +149,72 @@ The `RightSidebar` component already expects tabs in the format:
 
 No changes needed to RightSidebar—it receives pre-resolved tabs from the layout.
 
-### 2. Update Page Generation for New Highlights Pages
+### 2. Update Page Generation for New Cycling Pages
 
 **2.1 Define New Page Keys**
 
-If `:year_highlights1` and `:year_highlights2` don't exist yet, create them:
+Create named destinations for all pages in the cycles:
 
 ```ruby
 # In PlannerGenerator or page registry
+
+# Highlights cycle (if needed)
 @pdf.add_dest("year_highlights1", @pdf.dest_xyz(0, @pdf.bounds.top))
 @pdf.add_dest("year_highlights2", @pdf.dest_xyz(0, @pdf.bounds.top))
+
+# Grids cycle
+@pdf.add_dest("grids_overview", @pdf.dest_xyz(0, @pdf.bounds.top))
+@pdf.add_dest("grid_dot", @pdf.dest_xyz(0, @pdf.bounds.top))
+@pdf.add_dest("grid_graph", @pdf.dest_xyz(0, @pdf.bounds.top))
+@pdf.add_dest("grid_lined", @pdf.dest_xyz(0, @pdf.bounds.top))
 ```
 
-**2.2 Create Page Classes (if needed)**
+**2.2 Create Page Classes**
 
-If highlights variations require different rendering:
+Create page classes for each page in the grids cycle:
+
+```ruby
+# lib/bujo_pdf/pages/grid_showcase.rb
+module BujoPdf
+  module Pages
+    class GridShowcase < Base
+      def setup
+        use_layout :standard_with_sidebars,
+          highlight_tab: :grids,
+          year: @year,
+          total_weeks: @total_weeks
+      end
+
+      def render_content(content_area)
+        # Grid showcase overview with links to individual grids
+        render_grid_samples(content_area)
+      end
+    end
+  end
+end
+
+# lib/bujo_pdf/pages/grids/dot_grid_page.rb
+module BujoPdf
+  module Pages
+    module Grids
+      class DotGridPage < Base
+        def setup
+          use_layout :full_page
+        end
+
+        def render_content(content_area)
+          # Full page dot grid
+          draw_dot_grid(PAGE_WIDTH, PAGE_HEIGHT)
+        end
+      end
+    end
+  end
+end
+
+# Similar classes for GraphGridPage and LinedGridPage
+```
+
+For highlights variations (if needed):
 
 ```ruby
 # lib/bujo_pdf/pages/year_highlights1.rb
@@ -171,7 +223,7 @@ module BujoPdf
     class YearHighlights1 < YearHighlights
       def setup
         use_layout :standard_with_sidebars,
-          highlight_tab: :year_highlights1,
+          highlight_tab: :year_highlights,  # Highlight the Highlights tab
           year: @year,
           total_weeks: @total_weeks
       end
@@ -187,8 +239,16 @@ end
 
 **2.3 Update Page Context**
 
-Ensure all three pages have correct `page_key` in their RenderContext:
+Ensure all pages have correct `page_key` in their RenderContext:
 ```ruby
+# Grid pages
+RenderContext.new(
+  page_key: :grids_overview,  # Or :grid_dot, :grid_graph, :grid_lined
+  year: @year,
+  # ...
+)
+
+# Highlights pages (if needed)
 RenderContext.new(
   page_key: :year_highlights1,  # Or :year_highlights2
   year: @year,
@@ -264,6 +324,7 @@ Right sidebar tabs can cycle through multiple related pages using destination ar
 ```ruby
 # In StandardWithSidebarsLayout#build_top_tabs
 { label: "Highlights", dest: [:year_highlights, :year_highlights1, :year_highlights2] }
+{ label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
 ```
 
 **Navigation behavior:**
@@ -271,6 +332,13 @@ Right sidebar tabs can cycle through multiple related pages using destination ar
 - When on a page in the cycle, clicking advances to the next page
 - After the last page, clicking cycles back to the first
 - Tab is highlighted (bold) when on any page in the cycle
+
+**Example: Grids Tab Cycle**
+1. Click "Grids" from any weekly page → navigates to grids_overview (grid showcase)
+2. Click "Grids" again → navigates to grid_dot (standard dot grid full page)
+3. Click "Grids" again → navigates to grid_graph (graph/square grid full page)
+4. Click "Grids" again → navigates to grid_lined (ruled lines full page)
+5. Click "Grids" again → cycles back to grids_overview
 ```
 
 **4.2 Code Comments**
@@ -286,10 +354,19 @@ Document the destination array option in `StandardWithSidebarsLayout` class head
 ### Functional Requirements
 
 1. **Cycle Navigation Works**
+
+   **Highlights Cycle:**
    - ✓ Clicking "Highlights" tab on :year_highlights navigates to :year_highlights1
    - ✓ Clicking "Highlights" tab on :year_highlights1 navigates to :year_highlights2
    - ✓ Clicking "Highlights" tab on :year_highlights2 navigates back to :year_highlights
    - ✓ Clicking "Highlights" tab on any other page navigates to :year_highlights
+
+   **Grids Cycle:**
+   - ✓ Clicking "Grids" tab on :grids_overview navigates to :grid_dot
+   - ✓ Clicking "Grids" tab on :grid_dot navigates to :grid_graph
+   - ✓ Clicking "Grids" tab on :grid_graph navigates to :grid_lined
+   - ✓ Clicking "Grids" tab on :grid_lined navigates back to :grids_overview
+   - ✓ Clicking "Grids" tab from any non-grid page navigates to :grids_overview
 
 2. **Visual Highlighting Correct**
    - ✓ Tab is bold/black when current page is any page in the cycle

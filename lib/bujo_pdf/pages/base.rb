@@ -218,6 +218,7 @@ module BujoPdf
         merged_options = options.dup
         merged_options[:year] ||= context[:year] if context[:year]
         merged_options[:total_weeks] ||= context[:total_weeks] if context[:total_weeks]
+        merged_options[:page_context] = @context  # Pass context for page detection
 
         @new_layout = Layouts::LayoutFactory.create(
           layout_name,

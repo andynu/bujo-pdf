@@ -41,7 +41,7 @@ module BujoPdf
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = 4 + total_weeks + 3  # 4 overview + weeks + 3 template pages
+      @total_pages = 4 + total_weeks + 7  # 4 overview + weeks + 7 template/grid pages
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -52,6 +52,7 @@ module BujoPdf
         # Generate all pages
         generate_overview_pages
         generate_weekly_pages
+        generate_grid_pages
         generate_template_pages
 
         # Build PDF outline (table of contents / bookmarks)
@@ -94,6 +95,32 @@ module BujoPdf
       end
     end
 
+    def generate_grid_pages
+      # Grids overview (entry point for Grids tab cycling)
+      @pdf.start_new_page
+      @pdf.add_dest('grids_overview', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grids_overview)
+      @grids_overview_page = @pdf.page_number
+
+      # Dot grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_dot', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_dot)
+      @grid_dot_page = @pdf.page_number
+
+      # Graph grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_graph', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_graph)
+      @grid_graph_page = @pdf.page_number
+
+      # Ruled lines full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_lined', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_lined)
+      @grid_lined_page = @pdf.page_number
+    end
+
     def generate_template_pages
       @pdf.start_new_page
       generate_page(:grid_showcase)
@@ -109,10 +136,12 @@ module BujoPdf
     end
 
     def generate_page(page_key)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
       context = RenderContext.new(
         page_key: page_key,
         page_number: @pdf.page_number,
         year: @year,
+        total_weeks: total_weeks,
         total_pages: @total_pages,
         date_config: @date_config,
         event_store: @event_store
@@ -172,6 +201,10 @@ module BujoPdf
       highlights_page = @highlights_page
       multi_year_page = @multi_year_page
       week_pages = @week_pages
+      grids_overview_page = @grids_overview_page
+      grid_dot_page = @grid_dot_page
+      grid_graph_page = @grid_graph_page
+      grid_lined_page = @grid_lined_page
       grid_showcase_page = @grid_showcase_page
       reference_page = @reference_page
       dots_page = @dots_page
@@ -195,10 +228,16 @@ module BujoPdf
           end
         end
 
-        # Reference/template pages (flat, no nesting)
-        page destination: grid_showcase_page, title: 'Grid Types Showcase'
-        page destination: reference_page, title: 'Grid Reference & Calibration'
-        page destination: dots_page, title: 'Dot Grid'
+        # Grid reference pages (flat, no nesting)
+        page destination: grids_overview_page, title: 'Grid Reference'
+        page destination: grid_dot_page, title: '  - Dot Grid (5mm)'
+        page destination: grid_graph_page, title: '  - Graph Grid (5mm)'
+        page destination: grid_lined_page, title: '  - Ruled Lines (10mm)'
+
+        # Other template pages (flat, no nesting)
+        page destination: grid_showcase_page, title: 'Advanced Grid Types'
+        page destination: reference_page, title: 'Calibration & Reference'
+        page destination: dots_page, title: 'Blank Dot Grid'
       end
     end
 
