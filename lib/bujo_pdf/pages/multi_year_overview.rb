@@ -8,8 +8,7 @@ module BujoPdf
     # Multi-Year Overview page.
     #
     # Displays multiple years side-by-side with months as rows, enabling
-    # year-over-year comparison. Each cell links to the corresponding week
-    # in that year's planner.
+    # year-over-year comparison. Each cell is blank for manual data entry.
     #
     # Grid layout:
     # - Month labels: 3 columns on left
@@ -129,29 +128,8 @@ module BujoPdf
       end
 
       def draw_cell(year, month_num, col, row, width_boxes, height_boxes)
-        # Calculate first day of month and its week number
-        first_day = Date.new(year, month_num, 1)
-        week_num = calculate_week_number(year, first_day)
-
-        # Cell is blank for data collection - no text displayed
-        # Just add clickable link to corresponding week page
-        @grid_system.link(
-          col,
-          row,
-          width_boxes,
-          height_boxes,
-          "week_#{week_num}"
-        )
-      end
-
-      def calculate_week_number(year, date)
-        # Use the same Monday-based week calculation as DateCalculator
-        year_start = Date.new(year, 1, 1)
-        days_back = (year_start.wday + 6) % 7  # Convert to Monday-based
-        year_start_monday = year_start - days_back
-
-        days_from_start = (date - year_start_monday).to_i
-        (days_from_start / 7) + 1
+        # Cell is intentionally blank for manual data entry
+        # No links or text - just an empty cell within the grid
       end
 
       def draw_grid_lines
