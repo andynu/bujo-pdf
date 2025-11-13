@@ -337,5 +337,5 @@ end
 - **test_*.rb** - Test scripts for PDF link coordinate debugging
 
 ## Utilitides
-For managing planning use the `bd` command.
+For managing planning issues and features use the `bd` command.
 Run `bd quickstart` to learn more about its use.
