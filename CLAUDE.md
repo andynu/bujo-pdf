@@ -121,6 +121,39 @@ The `Fieldset` component (`lib/bujo_pdf/components/fieldset.rb`) creates HTML-li
 - `+90` = counter-clockwise (text reads bottom-to-top)
 - `-90` = clockwise (text reads top-to-bottom)
 
+### WeekGrid Component
+
+The `WeekGrid` component (`lib/bujo_pdf/components/week_grid.rb`) renders 7-column week-based grids with optional quantization for visual consistency across pages.
+
+**Key feature**: When `quantize: true` and width is divisible by 7 grid boxes, columns align exactly with the dot grid and have identical widths across all pages using the same box count.
+
+**Usage via grid helper**:
+```ruby
+# Basic usage with quantization
+grid.week_grid(5, 10, 35, 15, quantize: true).render
+
+# With block for custom cell rendering
+grid.week_grid(5, 10, 35, 15) do |day_index, cell_rect|
+  # day_index: 0-6 (Monday-Sunday)
+  # cell_rect: {x:, y:, width:, height:} in points
+  pdf.text_box "Day #{day_index}", at: [cell_rect[:x], cell_rect[:y]]
+end
+```
+
+**Parameters**:
+- `quantize`: Enable box-aligned column widths (default: true)
+- `show_headers`: Render M/T/W/T/F/S/S labels (default: true)
+- `first_day`: Week start day `:monday` or `:sunday` (default: :monday)
+- `header_height`: Height for headers in points (default: DOT_SPACING)
+- `cell_callback`: Proc for custom cell rendering
+
+**Quantization behavior**:
+- **35 boxes ÷ 7 = 5 boxes/day**: Quantized (grid-aligned)
+- **37 boxes ÷ 7 = 5.29 boxes/day**: Proportional (fallback)
+- **42 boxes ÷ 7 = 6 boxes/day**: Quantized (grid-aligned)
+
+**Used by**: DailySection component in weekly pages for consistent day column widths.
+
 ### Debug Mode
 
 Toggle `DEBUG_GRID` constant in `lib/bujo_pdf/planner_generator.rb` to overlay diagnostic grid:
