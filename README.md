@@ -2,6 +2,20 @@
 
 A Ruby gem for generating programmable bullet journal PDFs optimized for digital note-taking apps like Noteshelf and GoodNotes.
 
+## Example PDFs
+
+Download ready-to-use planners in three color themes:
+
+**2025:**
+- [Light Theme](examples/planner_2025_light.pdf) - Classic white background with gray dots
+- [Earth Theme](examples/planner_2025_earth.pdf) - Warm tan background with green accents
+- [Dark Theme](examples/planner_2025_dark.pdf) - Modern dark mode with gray dots
+
+**2026:**
+- [Light Theme](examples/planner_2026_light.pdf) - Classic white background with gray dots
+- [Earth Theme](examples/planner_2026_earth.pdf) - Warm tan background with green accents
+- [Dark Theme](examples/planner_2026_dark.pdf) - Modern dark mode with gray dots
+
 ## Features
 
 - **Seasonal Calendar** - Year-at-a-glance view organized by seasons with mini month calendars
