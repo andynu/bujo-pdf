@@ -29,8 +29,8 @@ module SubComponent
       position: :top_left,          # :top_left, :top_center, :top_right, :bottom_left, :bottom_right
       legend_padding: 5,            # Padding inside legend box
       font_size: 12,                # Legend font size
-      border_color: Styling::Colors::BORDERS,
-      text_color: '000000',
+      border_color: nil,            # Will use Styling::Colors.BORDERS if nil
+      text_color: nil,              # Will use Styling::Colors.TEXT_BLACK if nil
       inset_boxes: 0.5,             # Border inset from outer edge (in grid boxes)
       legend_offset_x: 0,           # Fine-tuning offset
       legend_offset_y: 0            # Fine-tuning offset
@@ -81,8 +81,8 @@ module SubComponent
       end
 
       # Reset colors
-      @pdf.stroke_color '000000'
-      @pdf.fill_color '000000'
+      @pdf.stroke_color Styling::Colors.TEXT_BLACK
+      @pdf.fill_color Styling::Colors.TEXT_BLACK
     end
 
     private

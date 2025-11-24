@@ -6,6 +6,9 @@ require 'date'
 # Load version first
 require_relative 'bujo_pdf/version'
 
+# Load themes (must be loaded before styling)
+require_relative 'bujo_pdf/themes/theme_registry'
+
 # Load utilities (no dependencies)
 require_relative 'bujo_pdf/utilities/styling'
 require_relative 'bujo_pdf/utilities/grid_system'
@@ -68,6 +71,7 @@ module BujoPdf
   #
   # @param year [Integer] The year to generate the planner for (default: current year)
   # @param output_path [String, nil] The output file path (default: planner_YEAR.pdf)
+  # @param theme [Symbol, String, nil] The theme to use (default: :light)
   # @return [String] The path to the generated PDF file
   #
   # @example Generate planner for current year
@@ -79,10 +83,19 @@ module BujoPdf
   # @example Generate with custom output path
   #   BujoPdf.generate(2025, output_path: 'my_planner.pdf')
   #
-  def self.generate(year = Date.today.year, output_path: nil)
+  # @example Generate with a specific theme
+  #   BujoPdf.generate(2025, theme: :earth)
+  #
+  def self.generate(year = Date.today.year, output_path: nil, theme: nil)
+    # Set theme if provided
+    Themes.set(theme) if theme
+
     output_path ||= "planner_#{year}.pdf"
     generator = PlannerGenerator.new(year)
     generator.generate(output_path)
     output_path
+  ensure
+    # Reset theme after generation to avoid side effects
+    Themes.reset! if theme
   end
 end

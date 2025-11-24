@@ -28,7 +28,7 @@ module SubComponent
     DEFAULTS = {
       line_spacing_boxes: 1.5,      # Spacing between lines in grid boxes
       line_count: nil,               # Number of lines (auto-calculated if nil)
-      line_color: Styling::Colors::BORDERS,
+      line_color: nil,               # Will use Styling::Colors.BORDERS if nil
       line_width: 0.5,               # Line stroke width in points
       margin_left_boxes: 0,          # Left margin in grid boxes
       margin_right_boxes: 0,         # Right margin in grid boxes
@@ -99,7 +99,7 @@ module SubComponent
       # Reset line style
       @pdf.undash if line_style != :solid
       @pdf.line_width 1
-      @pdf.stroke_color '000000'
+      @pdf.stroke_color Styling::Colors.TEXT_BLACK
     end
   end
 end

@@ -38,8 +38,8 @@ module SubComponent
       header_padding: 2,
       align: :center,
       valign: :top,
-      weekend_bg_color: Styling::Colors::WEEKEND_BG,
-      text_color: '000000'
+      weekend_bg_color: nil,        # Will use Styling::Colors.WEEKEND_BG if nil
+      text_color: nil               # Will use Styling::Colors.TEXT_BLACK if nil
     }.freeze
 
     # Render the day header at the specified grid position
@@ -65,7 +65,7 @@ module SubComponent
     def draw_background(width, height)
       @pdf.fill_color option(:weekend_bg_color, DEFAULTS[:weekend_bg_color])
       @pdf.fill_rectangle [0, height], width, height
-      @pdf.fill_color '000000'
+      @pdf.fill_color Styling::Colors.TEXT_BLACK
     end
 
     # Draw day header text
@@ -125,7 +125,7 @@ module SubComponent
                    valign: valign,
                    size: date_font_size
 
-      @pdf.fill_color '000000'
+      @pdf.fill_color Styling::Colors.TEXT_BLACK
     end
   end
 end

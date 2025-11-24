@@ -36,9 +36,9 @@ module SubComponent
       day_header_font_size: 8,
       day_date_font_size: 8,
       time_label_font_size: 6,
-      header_color: Styling::Colors::SECTION_HEADERS,
-      border_color: Styling::Colors::BORDERS,
-      weekend_bg_color: Styling::Colors::WEEKEND_BG,
+      header_color: nil,        # Will use Styling::Colors.SECTION_HEADERS if nil
+      border_color: nil,        # Will use Styling::Colors.BORDERS if nil
+      weekend_bg_color: nil,    # Will use Styling::Colors.WEEKEND_BG if nil
       show_time_labels: false,
       weekend: false
     }.freeze
@@ -73,14 +73,14 @@ module SubComponent
       @pdf.transparent(0.1) do
         @pdf.fill_rectangle [0, height], width, height
       end
-      @pdf.fill_color '000000'
+      @pdf.fill_color Styling::Colors.TEXT_BLACK
     end
 
     # Draw column border
     def draw_border(width, height)
       @pdf.stroke_color option(:border_color, DEFAULTS[:border_color])
       @pdf.stroke_bounds
-      @pdf.stroke_color '000000'
+      @pdf.stroke_color Styling::Colors.TEXT_BLACK
     end
 
     # Draw day header with day name and date
@@ -104,7 +104,7 @@ module SubComponent
                      height: header_height,
                      align: :left,
                      valign: :top
-        @pdf.fill_color '000000'
+        @pdf.fill_color Styling::Colors.TEXT_BLACK
       end
 
       # Month/day centered
@@ -141,7 +141,7 @@ module SubComponent
         y_pos = first_line_y - (line_num * section_height)
         @pdf.stroke_color border_color
         @pdf.stroke_horizontal_line line_margin, width - line_margin, at: y_pos
-        @pdf.stroke_color '000000'
+        @pdf.stroke_color Styling::Colors.TEXT_BLACK
       end
 
       # Store spacing info for time labels
@@ -168,7 +168,7 @@ module SubComponent
                      height: 10,
                      size: label_font_size
       end
-      @pdf.fill_color '000000'
+      @pdf.fill_color Styling::Colors.TEXT_BLACK
     end
   end
 end

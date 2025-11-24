@@ -118,9 +118,10 @@ module BujoPdf
 
           # Draw month header cell
           @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-            @pdf.stroke_color BORDERS
+            @pdf.stroke_color Styling::Colors.BORDERS
             @pdf.stroke_bounds
-            @pdf.stroke_color '000000'
+            @pdf.stroke_color Styling::Colors.TEXT_BLACK
+            @pdf.fill_color Styling::Colors.TEXT_BLACK
             @pdf.text_box month_name[0..2],
                           at: [0, cell_height],
                           width: cell_width,
@@ -173,9 +174,9 @@ module BujoPdf
 
       def draw_day_cell(cell_x, cell_y, cell_width, cell_height, month, day_num)
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-          @pdf.stroke_color BORDERS
+          @pdf.stroke_color Styling::Colors.BORDERS
           @pdf.stroke_bounds
-          @pdf.stroke_color '000000'
+          @pdf.stroke_color Styling::Colors.TEXT_BLACK
 
           # Add day number and abbreviation
           date = Date.new(@year, month, day_num)
@@ -201,12 +202,15 @@ module BujoPdf
 
       def draw_empty_cell(cell_x, cell_y, cell_width, cell_height)
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-          @pdf.stroke_color BORDERS
+          @pdf.stroke_color Styling::Colors.BORDERS
           @pdf.stroke_bounds
-          @pdf.stroke_color '000000'
-          @pdf.fill_color 'EEEEEE'
-          @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
-          @pdf.fill_color '000000'
+          @pdf.stroke_color Styling::Colors.TEXT_BLACK
+          # Fill with theme overlay color at 20% opacity for subtle darkening
+          @pdf.fill_color Styling::Colors.EMPTY_CELL_OVERLAY
+          @pdf.transparent(0.2) do
+            @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
+          end
+          @pdf.fill_color Styling::Colors.TEXT_BLACK
         end
       end
 
@@ -245,11 +249,11 @@ module BujoPdf
             cell_height = day_height_rows * DOT_SPACING
 
             # Draw weekend background with 10% opacity
-            @pdf.fill_color WEEKEND_BG
+            @pdf.fill_color Styling::Colors.WEEKEND_BG
             @pdf.transparent(0.1) do
               @pdf.fill_rectangle [cell_x, cell_y], cell_width, cell_height
             end
-            @pdf.fill_color '000000'
+            @pdf.fill_color Styling::Colors.TEXT_BLACK
           end
         end
       end

@@ -7,31 +7,52 @@ require_relative '../lib/bujo_pdf'
 module BujoPdf
   class CLI
     def self.run(args = ARGV)
-      case args.first
-      when '--version', '-v'
-        puts "bujo-pdf version #{BujoPdf::VERSION}"
-        exit 0
-      when '--help', '-h', 'help'
-        show_help
-        exit 0
-      when nil
-        # No arguments - generate for current year
-        year = Date.today.year
-      else
-        # First argument is the year
-        year = args.first.to_i
-        if year < 1900 || year > 2100
-          warn "Error: Invalid year '#{args.first}'"
-          warn "Year must be between 1900 and 2100"
-          exit 1
+      # Parse arguments
+      year = nil
+      theme = nil
+
+      i = 0
+      while i < args.length
+        arg = args[i]
+        case arg
+        when '--version', '-v'
+          puts "bujo-pdf version #{BujoPdf::VERSION}"
+          exit 0
+        when '--help', '-h', 'help'
+          show_help
+          exit 0
+        when '--theme', '-t'
+          i += 1
+          theme = args[i]&.to_sym
+          unless theme && BujoPdf::Themes::ThemeRegistry.exists?(theme)
+            warn "Error: Invalid theme '#{args[i]}'"
+            warn "Available themes: #{BujoPdf::Themes::ThemeRegistry.available_names.join(', ')}"
+            exit 1
+          end
+        when '--list-themes'
+          list_themes
+          exit 0
+        else
+          # Assume it's a year
+          year = arg.to_i
+          if year < 1900 || year > 2100
+            warn "Error: Invalid year '#{arg}'"
+            warn "Year must be between 1900 and 2100"
+            exit 1
+          end
         end
+        i += 1
       end
 
+      # Default to current year if not specified
+      year ||= Date.today.year
+
       output_file = "planner_#{year}.pdf"
-      puts "Generating planner for #{year}..."
+      theme_info = theme ? " (#{theme} theme)" : ""
+      puts "Generating planner for #{year}#{theme_info}..."
 
       begin
-        BujoPdf.generate(year, output_path: output_file)
+        BujoPdf.generate(year, output_path: output_file, theme: theme)
         puts "✓ Generated: #{output_file}"
       rescue StandardError => e
         warn "Error generating planner: #{e.message}"
@@ -51,17 +72,29 @@ module BujoPdf
           YEAR          Year to generate planner for (default: current year)
 
         Options:
-          --version, -v Show version
-          --help, -h    Show this help message
+          --theme, -t THEME    Color theme (light, earth, dark; default: light)
+          --list-themes        Show available themes
+          --version, -v        Show version
+          --help, -h           Show this help message
 
         Examples:
-          bujo-pdf              # Generate planner for current year
-          bujo-pdf 2025         # Generate planner for 2025
-          bujo-pdf --version    # Show version number
+          bujo-pdf                    # Generate planner for current year (light theme)
+          bujo-pdf 2025               # Generate planner for 2025
+          bujo-pdf --theme earth      # Generate with earth theme
+          bujo-pdf 2025 -t dark       # Generate 2025 with dark theme
+          bujo-pdf --list-themes      # Show all available themes
+          bujo-pdf --version          # Show version number
 
         Output:
           Creates planner_YEAR.pdf in the current directory
       HELP
+    end
+
+    def self.list_themes
+      puts "Available themes:"
+      BujoPdf::Themes::ThemeRegistry::THEMES.each do |key, theme|
+        puts "  #{key} - #{theme[:name]}"
+      end
     end
   end
 end

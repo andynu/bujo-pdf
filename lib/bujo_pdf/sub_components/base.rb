@@ -118,6 +118,9 @@ module SubComponent
 
     # Get a configuration option with optional default value
     #
+    # Automatically resolves theme colors when default is nil and key matches
+    # known color option names (border_color, text_color, weekend_bg_color, etc.)
+    #
     # @param key [Symbol] The option key
     # @param default [Object] Default value if option not set
     # @return [Object] The option value or default
@@ -128,7 +131,38 @@ module SubComponent
     #     pdf.fill_color color
     #   end
     def option(key, default = nil)
-      @options.fetch(key, default)
+      value = @options.fetch(key, default)
+
+      # If value is nil and it's a color option, use themed default
+      if value.nil?
+        value = themed_color_default(key)
+      end
+
+      value
+    end
+
+    private
+
+    # Get themed default color for common color option keys
+    # @param key [Symbol] The option key
+    # @return [String, nil] The themed color or nil if not a color option
+    def themed_color_default(key)
+      require_relative '../utilities/styling'
+
+      case key
+      when :border_color
+        Styling::Colors.BORDERS
+      when :text_color
+        Styling::Colors.TEXT_BLACK
+      when :weekend_bg_color
+        Styling::Colors.WEEKEND_BG
+      when :header_color
+        Styling::Colors.SECTION_HEADERS
+      when :line_color
+        Styling::Colors.BORDERS
+      else
+        nil
+      end
     end
   end
 end

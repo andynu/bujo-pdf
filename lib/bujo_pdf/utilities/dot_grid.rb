@@ -44,7 +44,10 @@ module DotGrid
   def self.draw(pdf, width, height,
                 spacing: Styling::Grid::DOT_SPACING,
                 radius: Styling::Grid::DOT_RADIUS,
-                color: Styling::Colors::DOT_GRID)
+                color: nil)
+    # Use themed color if not specified
+    color ||= Styling::Colors.DOT_GRID
+
     # Save current color and switch to dot grid color
     pdf.fill_color color
 
@@ -66,8 +69,8 @@ module DotGrid
       end
     end
 
-    # Restore fill color to black
-    pdf.fill_color Styling::Colors::TEXT_BLACK
+    # Restore fill color to text color
+    pdf.fill_color Styling::Colors.TEXT_BLACK
   end
 
   # Create a reusable PDF stamp for the dot grid pattern
@@ -100,7 +103,10 @@ module DotGrid
                         height: Styling::Grid::PAGE_HEIGHT,
                         spacing: Styling::Grid::DOT_SPACING,
                         radius: Styling::Grid::DOT_RADIUS,
-                        color: Styling::Colors::DOT_GRID)
+                        color: nil)
+    # Use themed color if not specified
+    color ||= Styling::Colors.DOT_GRID
+
     pdf.create_stamp(stamp_name) do
       draw(pdf, width, height, spacing: spacing, radius: radius, color: color)
     end

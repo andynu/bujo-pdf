@@ -33,7 +33,7 @@ module Diagnostics
     return unless enabled
 
     # Draw red dots at every grid intersection
-    pdf.fill_color Styling::Colors::DIAGNOSTIC_RED
+    pdf.fill_color Styling::Colors.DIAGNOSTIC_RED
     (0..grid_system.rows).each do |row|
       y = grid_system.y(row)
       (0..grid_system.cols).each do |col|
@@ -43,7 +43,7 @@ module Diagnostics
     end
 
     # Draw dashed grid lines every label_every boxes
-    pdf.stroke_color Styling::Colors::DIAGNOSTIC_RED
+    pdf.stroke_color Styling::Colors.DIAGNOSTIC_RED
     pdf.line_width 0.25
     pdf.dash(1, space: 2)
 
@@ -64,7 +64,7 @@ module Diagnostics
     pdf.line_width 1
 
     # Add coordinate labels at intersections
-    pdf.fill_color Styling::Colors::DIAGNOSTIC_RED
+    pdf.fill_color Styling::Colors.DIAGNOSTIC_RED
     pdf.font "Helvetica", size: 6
 
     (0..grid_system.rows).step(label_every).each do |row|
@@ -77,11 +77,11 @@ module Diagnostics
         label_width = 25
         label_height = 10
 
-        pdf.fill_color Styling::Colors::DIAGNOSTIC_LABEL_BG
+        pdf.fill_color Styling::Colors.DIAGNOSTIC_LABEL_BG
         pdf.fill_rectangle [x + 2, y - 2], label_width, label_height
 
         # Draw the label text
-        pdf.fill_color Styling::Colors::DIAGNOSTIC_RED
+        pdf.fill_color Styling::Colors.DIAGNOSTIC_RED
         pdf.text_box label,
                      at: [x + 2, y - 2],
                      width: label_width,
@@ -92,7 +92,7 @@ module Diagnostics
     end
 
     # Reset colors to defaults
-    pdf.fill_color Styling::Colors::TEXT_BLACK
-    pdf.stroke_color Styling::Colors::TEXT_BLACK
+    pdf.fill_color Styling::Colors.TEXT_BLACK
+    pdf.stroke_color Styling::Colors.TEXT_BLACK
   end
 end

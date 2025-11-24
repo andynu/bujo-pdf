@@ -5,20 +5,59 @@
 module Styling
   # Color palette for the planner
   # All colors are 6-digit hex strings (e.g., 'CCCCCC')
+  # Colors are now theme-aware and dynamically loaded from the active theme
   module Colors
-    # Dot grid and borders
-    DOT_GRID = 'CCCCCC'           # Light gray for background dots
-    BORDERS = 'E5E5E5'            # Very light gray for borders
-    SECTION_HEADERS = 'AAAAAA'    # Muted gray for section headers
-    WEEKEND_BG = 'CCCCCC'         # Darker gray for weekend backgrounds (used at 10% opacity)
+    class << self
+      # Get current theme colors
+      # @return [Hash] The active theme's color hash
+      def theme_colors
+        BujoPdf::Themes.current[:colors]
+      end
 
-    # Diagnostic/debug colors
-    DIAGNOSTIC_RED = 'FF0000'     # Red for diagnostic grid overlay
-    DIAGNOSTIC_LABEL_BG = 'FFFFFF' # White background for diagnostic labels
+      # Dot grid and borders
+      def DOT_GRID
+        theme_colors[:dot_grid]
+      end
 
-    # Text colors
-    TEXT_BLACK = '000000'         # Standard black text
-    TEXT_GRAY = '888888'          # Gray text for secondary content
+      def BORDERS
+        theme_colors[:borders]
+      end
+
+      def SECTION_HEADERS
+        theme_colors[:section_headers]
+      end
+
+      def WEEKEND_BG
+        theme_colors[:weekend_bg]
+      end
+
+      def EMPTY_CELL_OVERLAY
+        theme_colors[:empty_cell_overlay]
+      end
+
+      # Diagnostic/debug colors
+      def DIAGNOSTIC_RED
+        theme_colors[:diagnostic_red]
+      end
+
+      def DIAGNOSTIC_LABEL_BG
+        theme_colors[:diagnostic_label_bg]
+      end
+
+      # Text colors
+      def TEXT_BLACK
+        theme_colors[:text_black]
+      end
+
+      def TEXT_GRAY
+        theme_colors[:text_gray]
+      end
+
+      # Background color (used for page background)
+      def BACKGROUND
+        theme_colors[:background]
+      end
+    end
   end
 
   # Grid-based layout system constants

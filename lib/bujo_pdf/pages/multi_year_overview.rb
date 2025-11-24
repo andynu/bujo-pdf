@@ -155,7 +155,7 @@ module BujoPdf
       end
 
       def draw_grid_lines
-        @pdf.stroke_color BORDERS
+        @pdf.stroke_color Styling::Colors.BORDERS
         @pdf.line_width 0.5
 
         # Horizontal lines between months (including top and bottom)

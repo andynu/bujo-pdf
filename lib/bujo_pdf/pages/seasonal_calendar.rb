@@ -57,6 +57,7 @@ module BujoPdf
         # Header: rows 0-1 (2 boxes), full width
         header = @grid_system.rect(0, 0, COLS, 2)
         @pdf.font "Helvetica-Bold", size: 18
+        @pdf.fill_color Styling::Colors.TEXT_BLACK
         @pdf.text_box "Year #{@year}",
                       at: [header[:x], header[:y]],
                       width: header[:width],
@@ -123,8 +124,8 @@ module BujoPdf
           font_size: 10,
           legend_padding: 5,
           inset_boxes: 0,  # No inset for seasonal calendar
-          border_color: BORDERS,
-          text_color: BORDERS
+          border_color: Styling::Colors.BORDERS,
+          text_color: Styling::Colors.BORDERS
         )
         fieldset.render_at(start_col, start_row, width_boxes, height_boxes)
       end
@@ -133,6 +134,7 @@ module BujoPdf
         # Month title (1 box high)
         title_box = @grid_system.rect(start_col, start_row, width_boxes, 1)
         @pdf.font "Helvetica-Bold", size: 10
+        @pdf.fill_color Styling::Colors.TEXT_BLACK
         @pdf.text_box MONTH_NAMES[month - 1],
                       at: [title_box[:x], title_box[:y]],
                       width: title_box[:width],
@@ -148,6 +150,7 @@ module BujoPdf
         day_names.each_with_index do |day, i|
           col_x = @grid_system.x(start_col) + (i * @grid_system.width(col_width_boxes))
           @pdf.font "Helvetica", size: 7
+          @pdf.fill_color Styling::Colors.TEXT_BLACK
           @pdf.text_box day,
                         at: [col_x, @grid_system.y(headers_row)],
                         width: @grid_system.width(col_width_boxes),
@@ -184,15 +187,16 @@ module BujoPdf
             cell_height = @grid_system.height(1)
 
             # Draw weekend background with 10% opacity (matching WeekColumn pattern)
-            @pdf.fill_color WEEKEND_BG
+            @pdf.fill_color Styling::Colors.WEEKEND_BG
             @pdf.transparent(0.1) do
               @pdf.fill_rectangle [cell_x, cell_y], cell_width, cell_height
             end
-            @pdf.fill_color '000000'
+            @pdf.fill_color Styling::Colors.TEXT_BLACK
           end
         end
 
         # Second pass: Draw day numbers and links
+        @pdf.fill_color Styling::Colors.TEXT_BLACK
         1.upto(days_in_month) do |day|
           date = Date.new(@year, month, day)
           week_num = Utilities::DateCalculator.week_number_for_date(@year, date)

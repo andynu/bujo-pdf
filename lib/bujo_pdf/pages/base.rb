@@ -286,6 +286,15 @@ module BujoPdf
       #
       # @return [void]
       def draw_background
+        # Draw page background color if not white
+        bg_color = Styling::Colors.BACKGROUND
+        unless bg_color == 'FFFFFF'
+          @pdf.fill_color bg_color
+          @pdf.fill_rectangle [0, Styling::Grid::PAGE_HEIGHT], Styling::Grid::PAGE_WIDTH, Styling::Grid::PAGE_HEIGHT
+          @pdf.fill_color Styling::Colors.TEXT_BLACK  # Reset to text color
+        end
+
+        # Draw background pattern (dots, rules, etc.)
         case @layout.background_type
         when :dot_grid
           @pdf.stamp("page_dots")
