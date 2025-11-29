@@ -5,6 +5,7 @@ require_relative 'section_node'
 require_relative 'columns_node'
 require_relative 'content_node'
 require_relative 'navigation_node'
+require_relative 'component_definition'
 
 module BujoPdf
   module DSL
@@ -342,6 +343,25 @@ module BujoPdf
       # @return [SectionNode] The created node
       def content(**kwargs, &block)
         section(name: :content, flex: 1, **kwargs, &block)
+      end
+
+      # Instantiate a registered component.
+      #
+      # Looks up the component by name in the ComponentRegistry and builds
+      # an instance with the provided parameters.
+      #
+      # @param name [Symbol] Component name
+      # @param kwargs [Hash] Parameters to pass to the component
+      # @raise [ArgumentError] if the component is not registered
+      # @return [SectionNode] The created component wrapper node
+      #
+      # @example Using a component
+      #   component :day_header, day: week.days[0]
+      def component(name, **kwargs)
+        definition = ComponentRegistry.get(name)
+        raise ArgumentError, "Unknown component: #{name}" unless definition
+
+        definition.build(self, **kwargs)
       end
 
       private

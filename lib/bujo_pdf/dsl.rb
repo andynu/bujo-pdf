@@ -49,6 +49,8 @@ module BujoPdf
     autoload :NavLinkNode, 'bujo_pdf/dsl/navigation_node'
     autoload :NavGroupNode, 'bujo_pdf/dsl/navigation_node'
     autoload :TabNode, 'bujo_pdf/dsl/navigation_node'
+    autoload :ComponentDefinition, 'bujo_pdf/dsl/component_definition'
+    autoload :ComponentRegistry, 'bujo_pdf/dsl/component_definition'
     autoload :LayoutBuilder, 'bujo_pdf/dsl/layout_builder'
 
     # Build a layout tree using the DSL.
