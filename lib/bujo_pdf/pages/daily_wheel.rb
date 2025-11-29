@@ -11,6 +11,7 @@ module BujoPdf
     # - 48 radial divisions (24 hours × 2 half-hours)
     # - Bold lines on hour marks, lighter lines on half-hour marks
     # - Lines extend in bands between circles (with one band left empty)
+    # - Optional hour labels around the outside
     #
     # The wheel is centered on the page and sized to fit within the content area.
     #
@@ -20,12 +21,15 @@ module BujoPdf
     class DailyWheel < Base
       # Configuration constants
       NUM_SEGMENTS = 48  # 24 hours × 2 half-hours
+      SHOW_HOUR_LABELS = true  # Set to false to hide hour labels
+      HOUR_LABEL_FONT_SIZE = 7
 
       # All radii as proportions (0.0 to 1.0) relative to max radius
       # Circle 5 is at proportion 360/380 of max radius
       CIRCLE_5_PROP = 360.0 / 380.0
       CIRCLE_BAND_WIDTH = 5.0 / 380.0    # Gap between circles 1-5
       OUTER_EXTENSION = 80.0 / 380.0     # How far lines extend beyond circle 5
+      LABEL_OFFSET = 12.0 / 380.0        # Distance from outer extent to label center
 
       PROPORTIONS = [
         CIRCLE_5_PROP - (4 * CIRCLE_BAND_WIDTH),  # Circle 1 (innermost)
@@ -69,6 +73,7 @@ module BujoPdf
         @pdf.translate(center_x, center_y) do
           draw_circles(radii)
           draw_divisions(radii)
+          draw_hour_labels(radii, scale) if SHOW_HOUR_LABELS
         end
       end
 
@@ -130,6 +135,37 @@ module BujoPdf
             [cos_a * radii[4], sin_a * radii[4]],
             [cos_a * radii[5], sin_a * radii[5]]
           )
+        end
+      end
+
+      # Draw hour labels around the outside of the wheel.
+      #
+      # @param radii [Array<Float>] Array of radii in points
+      # @param scale [Float] Scale factor for converting proportions to points
+      def draw_hour_labels(radii, scale)
+        @pdf.fill_color Styling::Colors.TEXT_GRAY
+
+        label_radius = radii[5] + (LABEL_OFFSET * scale)
+        angle_step = (2 * Math::PI) / 24  # One label per hour
+        start_angle = -Math::PI / 2.0  # Start from top (12 o'clock position = 0)
+
+        # Text box dimensions for centering
+        box_size = 20
+
+        24.times do |hour|
+          angle = start_angle + (hour * angle_step)
+          x = Math.cos(angle) * label_radius
+          y = Math.sin(angle) * label_radius
+
+          # Use text_box for proper centering
+          @pdf.text_box hour.to_s,
+                        at: [x - (box_size / 2), y + (box_size / 2)],
+                        width: box_size,
+                        height: box_size,
+                        align: :center,
+                        valign: :center,
+                        size: HOUR_LABEL_FONT_SIZE,
+                        overflow: :shrink_to_fit
         end
       end
     end
