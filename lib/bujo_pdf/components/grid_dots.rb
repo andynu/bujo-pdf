@@ -43,7 +43,7 @@ module BujoPdf
         def grid_dots(col, row, width, height, color: nil)
           GridDots.new(
             pdf: @pdf,
-            grid: @grid_system,
+            grid: @grid,
             col: col,
             row: row,
             width: width,

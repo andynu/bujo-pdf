@@ -18,7 +18,6 @@ module BujoPdf
       # Mixin providing the erase_dots verb for pages and components
       #
       # Include via Components::All in Pages::Base, or directly in components.
-      # Works with either @grid_system (pages) or @grid (components).
       module Mixin
         # Erase dots over a grid region by covering with background color
         #
@@ -28,10 +27,9 @@ module BujoPdf
         # @param height [Integer] Height in grid boxes (default: 0 for single row)
         # @return [void]
         def erase_dots(col, row, width, height = 0)
-          grid = defined?(@grid_system) && @grid_system ? @grid_system : @grid
           EraseDots.new(
             pdf: @pdf,
-            grid: grid,
+            grid: @grid,
             col: col,
             row: row,
             width: width,

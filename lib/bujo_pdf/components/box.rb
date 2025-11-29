@@ -31,10 +31,9 @@ module BujoPdf
         # @param opacity [Float] Opacity 0.0-1.0 (default: 1.0)
         # @return [void]
         def box(col, row, width, height, stroke: 'CCCCCC', stroke_width: 0.5, fill: nil, radius: 0, opacity: 1.0)
-          grid = defined?(@grid_system) && @grid_system ? @grid_system : @grid
           Box.new(
             pdf: @pdf,
-            grid: grid,
+            grid: @grid,
             col: col,
             row: row,
             width: width,
