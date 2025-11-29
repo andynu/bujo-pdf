@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'base'
+require_relative '../components/grid_ruler'
 
 module BujoPdf
   module Pages
@@ -51,6 +52,9 @@ module BujoPdf
 
       # Render the index page with numbered lines in two columns
       def render
+        # Diagnostic: uncomment to show grid coordinates
+        # Components::GridRuler.new(@pdf, @grid_system).render
+
         draw_header
         draw_two_column_layout
         draw_page_indicator
