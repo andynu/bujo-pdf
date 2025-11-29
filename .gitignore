@@ -23,3 +23,4 @@ config/calendars.yml
 .cache/
 .DS_Store
 .claude/
+config/collections.yml
