@@ -44,7 +44,7 @@ module BujoPdf
     # @param filename [String] Output filename (default: planner_YEAR.pdf)
     # @return [void]
     # Number of index pages to generate (configurable)
-    INDEX_PAGE_COUNT = 4
+    INDEX_PAGE_COUNT = 2
 
     # Number of future log pages (2 pages = 6 months)
     FUTURE_LOG_PAGE_COUNT = 2

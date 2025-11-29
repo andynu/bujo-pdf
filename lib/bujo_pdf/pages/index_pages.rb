@@ -11,26 +11,37 @@ module BujoPdf
     # a named destination so TOC entries can link to specific index pages.
     #
     # Design:
-    # - Clean numbered lines for writing entries
-    # - Page number indicator at bottom
-    # - Named destinations for each index page (index_1, index_2, etc.)
+    # - Two-column layout with numbered lines
+    # - Page number boxes for each entry
+    # - Named destinations for each index page (index_1, index_2)
+    # - 2 pages total covering entries 1-100
     #
     # Example:
     #   context = RenderContext.new(
     #     page_key: :index,
-    #     index_page_num: 1,        # Which index page (1, 2, 3...)
-    #     index_page_count: 4       # Total index pages
+    #     index_page_num: 1,        # Which index page (1 or 2)
+    #     index_page_count: 2       # Total index pages
     #   )
     #   page = IndexPage.new(pdf, context)
     #   page.generate
     class IndexPage < Base
-      # Number of entry lines per page
-      LINES_PER_PAGE = 25
+      # Layout constants
+      LEFT_MARGIN = 2
+      RIGHT_MARGIN = 41
+      COLUMN_GAP = 1
+      HEADER_ROW = 1
+      CONTENT_START_ROW = 4
+
+      # Number of entry lines per column
+      LINES_PER_COLUMN = 25
+
+      # Entries per page (2 columns)
+      ENTRIES_PER_PAGE = LINES_PER_COLUMN * 2
 
       # Setup with full page layout (no sidebars for index)
       def setup
         @index_page_num = context[:index_page_num] || 1
-        @index_page_count = context[:index_page_count] || 4
+        @index_page_count = context[:index_page_count] || 2
 
         # Set named destination for this index page
         set_destination("index_#{@index_page_num}")
@@ -38,10 +49,10 @@ module BujoPdf
         use_layout :full_page
       end
 
-      # Render the index page with numbered lines
+      # Render the index page with numbered lines in two columns
       def render
         draw_header
-        draw_entry_lines
+        draw_two_column_layout
         draw_page_indicator
       end
 
@@ -51,7 +62,7 @@ module BujoPdf
       #
       # @return [void]
       def draw_header
-        header_box = @grid_system.rect(2, 1, 39, 3)
+        header_box = @grid_system.rect(LEFT_MARGIN, HEADER_ROW, content_width, 2)
 
         @pdf.bounding_box([header_box[:x], header_box[:y]],
                           width: header_box[:width],
@@ -60,69 +71,81 @@ module BujoPdf
         end
       end
 
-      # Draw numbered entry lines for TOC entries
+      # Draw the two-column layout with entry lines
       #
       # @return [void]
-      def draw_entry_lines
-        # Start below header
-        start_row = 5
+      def draw_two_column_layout
+        col_width = (content_width - COLUMN_GAP) / 2
         line_height = 2  # 2 grid boxes per line
 
-        @pdf.stroke_color 'CCCCCC'
-        @pdf.line_width 0.5
+        # Starting entry number for this page
+        base_entry = (@index_page_num - 1) * ENTRIES_PER_PAGE
 
-        LINES_PER_PAGE.times do |i|
-          row = start_row + (i * line_height)
-          line_num = ((@index_page_num - 1) * LINES_PER_PAGE) + i + 1
-
-          draw_entry_line(row, line_num)
+        # Draw left column
+        LINES_PER_COLUMN.times do |i|
+          row = CONTENT_START_ROW + (i * line_height)
+          entry_num = base_entry + i + 1
+          draw_entry_line(LEFT_MARGIN, row, col_width, entry_num)
         end
 
-        @pdf.stroke_color '000000'
+        # Draw right column
+        right_col_start = LEFT_MARGIN + col_width + COLUMN_GAP
+        LINES_PER_COLUMN.times do |i|
+          row = CONTENT_START_ROW + (i * line_height)
+          entry_num = base_entry + LINES_PER_COLUMN + i + 1
+          draw_entry_line(right_col_start, row, col_width, entry_num)
+        end
       end
 
-      # Draw a single entry line with number and ruled line
+      # Draw a single entry line with number, ruled line, and page box
       #
+      # @param col [Integer] Starting column
       # @param row [Integer] Grid row for this line
-      # @param line_num [Integer] Line number to display
+      # @param width [Integer] Column width in grid boxes
+      # @param entry_num [Integer] Entry number to display
       # @return [void]
-      def draw_entry_line(row, line_num)
-        # Number column (3 boxes wide)
-        num_box = @grid_system.rect(2, row, 3, 2)
+      def draw_entry_line(col, row, width, entry_num)
+        # Number column (2 boxes wide)
+        num_width = 2
+        num_box = @grid_system.rect(col, row, num_width, 2)
 
         @pdf.bounding_box([num_box[:x], num_box[:y]],
                           width: num_box[:width],
                           height: num_box[:height]) do
-          @pdf.text line_num.to_s.rjust(3),
+          @pdf.text entry_num.to_s,
                     size: 9,
                     color: '999999',
                     align: :right,
                     valign: :bottom
         end
 
-        # Title area with ruled line (32 boxes)
-        title_start_x = @grid_system.x(6)
-        title_end_x = @grid_system.x(38)
-        line_y = @grid_system.y(row + 2) + 3  # Slightly above bottom of box
+        # Title area with ruled line
+        title_start_col = col + num_width + 1
+        page_box_width = 3
+        title_end_col = col + width - page_box_width
 
+        title_start_x = @grid_system.x(title_start_col)
+        title_end_x = @grid_system.x(title_end_col)
+        line_y = @grid_system.y(row + 2)  # Aligned to grid
+
+        @pdf.stroke_color 'CCCCCC'
+        @pdf.line_width 0.5
         @pdf.stroke_line [title_start_x, line_y], [title_end_x, line_y]
 
-        # Page number area (3 boxes at end)
-        page_box = @grid_system.rect(39, row, 3, 2)
+        # Page number box at end
+        page_box = @grid_system.rect(title_end_col, row, page_box_width, 2)
 
-        # Draw a small box for page number
         @pdf.stroke_color 'DDDDDD'
         @pdf.stroke_rectangle [page_box[:x], page_box[:y]],
                               page_box[:width],
                               page_box[:height]
-        @pdf.stroke_color 'CCCCCC'
       end
 
       # Draw page indicator at bottom
       #
       # @return [void]
       def draw_page_indicator
-        indicator_box = @grid_system.rect(2, 52, 39, 2)
+        indicator_box = @grid_system.rect(LEFT_MARGIN, 52, content_width, 2)
 
         @pdf.bounding_box([indicator_box[:x], indicator_box[:y]],
                           width: indicator_box[:width],
@@ -133,6 +156,13 @@ module BujoPdf
                     align: :center,
                     valign: :center
         end
+      end
+
+      # Calculate content width (usable area between margins)
+      #
+      # @return [Integer] Width in grid boxes
+      def content_width
+        RIGHT_MARGIN - LEFT_MARGIN
       end
     end
   end
