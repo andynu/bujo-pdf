@@ -7,17 +7,23 @@ module BujoPdf
     # H1 renders a primary header, one grid box tall.
     #
     # Simple header component that renders bold text positioned at a grid
-    # location. Width is determined by the text content.
+    # location. Width can be explicit or determined by text content.
     #
     # Supports three vertical positions:
     # - :center (default) - centered within the grid box
     # - :superscript - centered on the top dot row (half box up)
     # - :subscript - centered on the bottom dot row (half box down)
     #
+    # Supports text alignment:
+    # - :left (default) - left-aligned
+    # - :center - centered within width
+    # - :right - right-aligned within width
+    #
     # Example usage in a page:
     #   h1(2, 1, "Index")
     #   h1(2, 1, "January 2025", color: '333333')
     #   h1(2, 1, "Legend", position: :subscript)
+    #   h1(2, 1, "Centered", width: 20, align: :center)
     #
     class H1
       include HLine::Mixin
@@ -37,8 +43,10 @@ module BujoPdf
         # @param color [String, nil] Text color as hex string (default: theme text_black)
         # @param style [Symbol] Font style :bold, :normal, :italic (default: :bold)
         # @param position [Symbol] Vertical position :center, :superscript, :subscript (default: :center)
+        # @param align [Symbol] Text alignment :left, :center, :right (default: :left)
+        # @param width [Integer, nil] Width in grid boxes (default: nil, auto-sized)
         # @return [void]
-        def h1(col, row, text, color: nil, style: :bold, position: :center)
+        def h1(col, row, text, color: nil, style: :bold, position: :center, align: :left, width: nil)
           H1.new(
             pdf: @pdf,
             grid: @grid_system,
@@ -47,7 +55,9 @@ module BujoPdf
             text: text,
             color: color,
             style: style,
-            position: position
+            position: position,
+            align: align,
+            width: width
           ).render
         end
       end
@@ -62,7 +72,9 @@ module BujoPdf
       # @param color [String, nil] Text color as hex string
       # @param style [Symbol] Font style
       # @param position [Symbol] Vertical position :center, :superscript, :subscript
-      def initialize(pdf:, grid:, col:, row:, text:, color: nil, style: :bold, position: :center)
+      # @param align [Symbol] Text alignment :left, :center, :right
+      # @param width [Integer, nil] Width in grid boxes
+      def initialize(pdf:, grid:, col:, row:, text:, color: nil, style: :bold, position: :center, align: :left, width: nil)
         @pdf = pdf
         @grid = grid
         @col = col
@@ -71,6 +83,8 @@ module BujoPdf
         @color = color
         @style = style
         @position = position
+        @align = align
+        @width = width
       end
 
       # Render the H1 header
@@ -84,9 +98,12 @@ module BujoPdf
 
         @pdf.font 'Helvetica', style: @style, size: FONT_SIZE
 
-        # Calculate text width for erasing
+        # Calculate text width in points and boxes
         text_width_pt = @pdf.width_of(@text)
         text_width_boxes = (text_width_pt / @grid.dot_spacing).ceil
+
+        # Determine render width (explicit or auto)
+        render_width_boxes = @width || 40
 
         # Calculate vertical offset and erase dots/lines if needed
         y_offset = calculate_y_offset
@@ -96,9 +113,10 @@ module BujoPdf
         @pdf.fill_color text_color
         @pdf.text_box @text,
                       at: [@grid.x(@col), @grid.y(@row) + y_offset],
-                      width: @grid.width(40), # Wide enough for any reasonable header
+                      width: @grid.width(render_width_boxes),
                       height: @grid.height(1),
                       size: FONT_SIZE,
+                      align: @align,
                       valign: :center,
                       overflow: :truncate
 
@@ -133,7 +151,28 @@ module BujoPdf
         # Superscript text is centered on @row (top of box)
         # Subscript text is centered on @row + 1 (bottom of box)
         erase_row = @position == :superscript ? @row : @row + 1
-        hline(@col, erase_row, text_width_boxes, color: bg_color, stroke: 3)
+
+        # Calculate erase start column based on alignment
+        erase_col = calculate_erase_col(text_width_boxes)
+        hline(erase_col, erase_row, text_width_boxes, color: bg_color, stroke: 3)
+      end
+
+      # Calculate the starting column for erasing based on alignment
+      #
+      # @param text_width_boxes [Integer] Width of text in grid boxes
+      # @return [Integer] Starting column for erase
+      def calculate_erase_col(text_width_boxes)
+        return @col if @align == :left || @width.nil?
+
+        render_width_boxes = @width
+        case @align
+        when :center
+          @col + ((render_width_boxes - text_width_boxes) / 2.0).floor
+        when :right
+          @col + render_width_boxes - text_width_boxes
+        else
+          @col
+        end
       end
     end
   end
