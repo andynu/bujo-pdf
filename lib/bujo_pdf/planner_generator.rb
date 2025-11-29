@@ -41,7 +41,7 @@ module BujoPdf
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = 4 + total_weeks + 9  # 4 overview + weeks + 4 grid + 5 template pages
+      @total_pages = 4 + total_weeks + 12  # 4 overview + weeks + 7 grid + 5 template pages
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -119,6 +119,24 @@ module BujoPdf
       @pdf.add_dest('grid_lined', @pdf.dest_xyz(0, @pdf.bounds.top))
       generate_page(:grid_lined)
       @grid_lined_page = @pdf.page_number
+
+      # Isometric grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_isometric', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_isometric)
+      @grid_isometric_page = @pdf.page_number
+
+      # Perspective grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_perspective', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_perspective)
+      @grid_perspective_page = @pdf.page_number
+
+      # Hexagon grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_hexagon', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_hexagon)
+      @grid_hexagon_page = @pdf.page_number
     end
 
     def generate_template_pages
@@ -213,6 +231,9 @@ module BujoPdf
       grid_dot_page = @grid_dot_page
       grid_graph_page = @grid_graph_page
       grid_lined_page = @grid_lined_page
+      grid_isometric_page = @grid_isometric_page
+      grid_perspective_page = @grid_perspective_page
+      grid_hexagon_page = @grid_hexagon_page
       grid_showcase_page = @grid_showcase_page
       reference_page = @reference_page
       daily_wheel_page = @daily_wheel_page
@@ -243,9 +264,12 @@ module BujoPdf
         page destination: grid_dot_page, title: '  - Dot Grid (5mm)'
         page destination: grid_graph_page, title: '  - Graph Grid (5mm)'
         page destination: grid_lined_page, title: '  - Ruled Lines (10mm)'
+        page destination: grid_isometric_page, title: '  - Isometric Grid'
+        page destination: grid_perspective_page, title: '  - Perspective Grid'
+        page destination: grid_hexagon_page, title: '  - Hexagon Grid'
 
         # Template pages
-        page destination: grid_showcase_page, title: 'Advanced Grid Types'
+        page destination: grid_showcase_page, title: 'Grid Types Showcase'
         page destination: reference_page, title: 'Calibration & Reference'
         page destination: daily_wheel_page, title: 'Daily Wheel'
         page destination: year_wheel_page, title: 'Year Wheel'

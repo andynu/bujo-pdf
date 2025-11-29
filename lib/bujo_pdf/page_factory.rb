@@ -7,7 +7,10 @@ require_relative 'pages/grid_showcase'
 require_relative 'pages/grids_overview'
 require_relative 'pages/grids/dot_grid_page'
 require_relative 'pages/grids/graph_grid_page'
+require_relative 'pages/grids/hexagon_grid_page'
+require_relative 'pages/grids/isometric_grid_page'
 require_relative 'pages/grids/lined_grid_page'
+require_relative 'pages/grids/perspective_grid_page'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -36,7 +39,10 @@ module BujoPdf
       grids_overview: Pages::GridsOverview,
       grid_dot: Pages::Grids::DotGridPage,
       grid_graph: Pages::Grids::GraphGridPage,
+      grid_hexagon: Pages::Grids::HexagonGridPage,
+      grid_isometric: Pages::Grids::IsometricGridPage,
       grid_lined: Pages::Grids::LinedGridPage,
+      grid_perspective: Pages::Grids::PerspectiveGridPage,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,

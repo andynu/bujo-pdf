@@ -128,7 +128,7 @@ module BujoPdf
           { label: "Events", dest: "year_events" },
           { label: "Highlights", dest: "year_highlights" },
           { label: "Multi", dest: "multi_year" },
-          { label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
+          { label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon] }
         ]
 
         # Resolve each tab (handles both single destinations and cycling arrays)
