@@ -100,7 +100,8 @@ module BujoPdf
           top_tabs: top_tabs,
           bottom_tabs: [
             { label: "Dots", dest: "dots" }
-          ]
+          ],
+          page_context: page.context  # Pass page context for current_page? detection
         )
         sidebar.render
       end
