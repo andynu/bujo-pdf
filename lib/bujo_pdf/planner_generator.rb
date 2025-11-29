@@ -8,6 +8,7 @@ require_relative 'page_factory'
 require_relative 'render_context'
 require_relative 'date_configuration'
 require_relative 'calendar_integration'
+require_relative 'collections_configuration'
 
 module BujoPdf
   # Main planner generator orchestrator.
@@ -24,14 +25,17 @@ module BujoPdf
     PAGE_WIDTH = 612    # 8.5 inches (letter size)
     PAGE_HEIGHT = 792   # 11 inches
 
-    attr_reader :year, :pdf, :date_config, :event_store
+    attr_reader :year, :pdf, :date_config, :event_store, :collections_config
 
-    def initialize(year = Date.today.year, config_path: 'config/dates.yml', calendars_config_path: 'config/calendars.yml')
+    def initialize(year = Date.today.year, config_path: 'config/dates.yml',
+                   calendars_config_path: 'config/calendars.yml',
+                   collections_config_path: 'config/collections.yml')
       @year = year
       @pdf = nil
       @total_pages = nil
       @date_config = DateConfiguration.new(config_path, year: year)
       @event_store = load_calendar_events(calendars_config_path)
+      @collections_config = CollectionsConfiguration.new(collections_config_path)
     end
 
     # Generate the complete planner PDF.
@@ -47,8 +51,9 @@ module BujoPdf
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      # index + future log + 4 overview + weeks + 7 grid + 4 template pages
-      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + 4 + total_weeks + 11
+      collections_count = @collections_config.count
+      # index + future log + collections + 4 overview + weeks + 7 grid + 4 template pages
+      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + collections_count + 4 + total_weeks + 11
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -59,6 +64,7 @@ module BujoPdf
         # Generate all pages
         generate_index_pages
         generate_future_log_pages
+        generate_collection_pages
         generate_overview_pages
         generate_weekly_pages
         generate_grid_pages
@@ -133,6 +139,36 @@ module BujoPdf
       )
 
       page = PageFactory.create(:future_log, @pdf, context)
+      page.generate
+    end
+
+    def generate_collection_pages
+      @collection_pages = {}
+
+      @collections_config.collections.each do |collection|
+        @pdf.start_new_page
+        generate_collection_page(collection)
+        @collection_pages[collection[:id]] = @pdf.page_number
+      end
+    end
+
+    def generate_collection_page(collection)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+
+      context = RenderContext.new(
+        page_key: "collection_#{collection[:id]}".to_sym,
+        page_number: @pdf.page_number,
+        year: @year,
+        total_weeks: total_weeks,
+        total_pages: @total_pages,
+        collection_id: collection[:id],
+        collection_title: collection[:title],
+        collection_subtitle: collection[:subtitle],
+        date_config: @date_config,
+        event_store: @event_store
+      )
+
+      page = PageFactory.create(:collection, @pdf, context)
       page.generate
     end
 
@@ -294,6 +330,8 @@ module BujoPdf
       year = @year
       index_pages = @index_pages
       future_log_pages = @future_log_pages
+      collection_pages = @collection_pages
+      collections = @collections_config.collections
       seasonal_page = @seasonal_page
       events_page = @events_page
       highlights_page = @highlights_page
@@ -317,6 +355,11 @@ module BujoPdf
 
         # Future log (6-month spread)
         page destination: future_log_pages[1], title: 'Future Log'
+
+        # Collection pages (if any configured)
+        collections.each do |collection|
+          page destination: collection_pages[collection[:id]], title: collection[:title]
+        end
 
         # Year overview pages (flat, no nesting)
         page destination: seasonal_page, title: 'Seasonal Calendar'

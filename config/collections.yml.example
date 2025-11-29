@@ -1,0 +1,33 @@
+# Collection Pages Configuration
+#
+# Define custom collection pages that will be added to your planner.
+# Each collection gets a titled blank page with optional subtitle.
+#
+# Copy this file to collections.yml and customize for your needs.
+#
+# Example collections:
+#   - Books to Read
+#   - Movies to Watch
+#   - Project Ideas
+#   - Recipes to Try
+#   - Gift Ideas
+#   - Bucket List
+#   - Travel Destinations
+#
+# Each collection needs:
+#   id: unique identifier (used for PDF links, snake_case)
+#   title: display title for the page header
+#   subtitle: (optional) description text below title
+
+collections:
+  - id: books_to_read
+    title: Books to Read
+    subtitle: Fiction, non-fiction, and everything in between
+
+  - id: project_ideas
+    title: Project Ideas
+    subtitle: Things to build, make, or create
+
+  - id: recipes
+    title: Recipes to Try
+    subtitle: Meals worth making again
