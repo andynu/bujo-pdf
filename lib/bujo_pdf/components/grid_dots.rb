@@ -28,6 +28,31 @@ module BujoPdf
     #   @grid_system.grid_dots(col: 2, row: 5, width: 20, height: 10).render
     #
     class GridDots
+      # Mixin providing the grid_dots verb for pages
+      #
+      # Include via Components::All in Pages::Base
+      module Mixin
+        # Render dots over a grid region
+        #
+        # @param col [Integer] Starting column (left edge)
+        # @param row [Integer] Starting row (top edge)
+        # @param width [Integer] Width in grid boxes
+        # @param height [Integer] Height in grid boxes
+        # @param color [String, nil] Optional hex color override
+        # @return [void]
+        def grid_dots(col, row, width, height, color: nil)
+          GridDots.new(
+            pdf: @pdf,
+            grid: @grid_system,
+            col: col,
+            row: row,
+            width: width,
+            height: height,
+            color: color
+          ).render
+        end
+      end
+
       # Initialize a new GridDots component
       #
       # @param pdf [Prawn::Document] The PDF document to render into
