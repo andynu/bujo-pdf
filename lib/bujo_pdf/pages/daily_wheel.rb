@@ -1,0 +1,137 @@
+# frozen_string_literal: true
+
+require_relative 'base'
+
+module BujoPdf
+  module Pages
+    # Daily Wheel page - circular clock with 48 half-hour divisions.
+    #
+    # This page renders a circular time wheel with:
+    # - 4 concentric circles defining bands
+    # - 48 radial divisions (24 hours × 2 half-hours)
+    # - Bold lines on hour marks, lighter lines on half-hour marks
+    # - Lines extend in bands between circles (with one band left empty)
+    #
+    # The wheel is centered on the page and sized to fit within the content area.
+    #
+    # Example:
+    #   page = DailyWheel.new(pdf, { year: 2025 })
+    #   page.generate
+    class DailyWheel < Base
+      # Configuration constants
+      NUM_SEGMENTS = 48  # 24 hours × 2 half-hours
+
+      # All radii as proportions (0.0 to 1.0) relative to max radius
+      # Circle 5 is at proportion 360/380 of max radius
+      CIRCLE_5_PROP = 360.0 / 380.0
+      CIRCLE_BAND_WIDTH = 5.0 / 380.0    # Gap between circles 1-5
+      OUTER_EXTENSION = 80.0 / 380.0     # How far lines extend beyond circle 5
+
+      PROPORTIONS = [
+        CIRCLE_5_PROP - (4 * CIRCLE_BAND_WIDTH),  # Circle 1 (innermost)
+        CIRCLE_5_PROP - (3 * CIRCLE_BAND_WIDTH),  # Circle 2
+        CIRCLE_5_PROP - (2 * CIRCLE_BAND_WIDTH),  # Circle 3
+        CIRCLE_5_PROP - (1 * CIRCLE_BAND_WIDTH),  # Circle 4
+        CIRCLE_5_PROP,                             # Circle 5
+        CIRCLE_5_PROP + OUTER_EXTENSION            # Outer extent (for division lines)
+      ].freeze
+
+      # Line widths
+      HOUR_LINE_WIDTH = 0.75
+      HALF_HOUR_LINE_WIDTH = 0.25
+      CIRCLE_LINE_WIDTH = 0.75
+
+      # Set up the named destination for this page.
+      def setup
+        set_destination('daily_wheel')
+        use_layout :full_page
+      end
+
+      # Render the daily wheel on the page.
+      def render
+        draw_dot_grid
+
+        # Calculate center and scale
+        center_x = Styling::Grid::PAGE_WIDTH / 2.0
+        center_y = Styling::Grid::PAGE_HEIGHT / 2.0
+
+        # Calculate scale to fit snugly (limited by width since 8.5" < 11")
+        margin = @grid_system.width(2)  # 2 grid boxes margin
+        usable_width = Styling::Grid::PAGE_WIDTH - (2 * margin)
+        max_proportion = PROPORTIONS.max
+        max_radius = usable_width / 2.0
+        scale = max_radius / max_proportion
+
+        # Convert proportions to actual radii
+        radii = PROPORTIONS.map { |p| p * scale }
+
+        # Draw wheel using Prawn's translate for centered coordinates
+        @pdf.translate(center_x, center_y) do
+          draw_circles(radii)
+          draw_divisions(radii)
+        end
+      end
+
+      private
+
+      # Draw the 4 concentric circles.
+      #
+      # @param radii [Array<Float>] Array of radii in points
+      def draw_circles(radii)
+        @pdf.stroke_color Styling::Colors.SECTION_HEADERS
+        @pdf.line_width CIRCLE_LINE_WIDTH
+
+        # Draw only circles 1-4 (indices 0-3)
+        4.times do |i|
+          @pdf.stroke_circle [0, 0], radii[i]
+        end
+      end
+
+      # Draw the 48 radial divisions.
+      #
+      # @param radii [Array<Float>] Array of radii in points
+      def draw_divisions(radii)
+        @pdf.stroke_color Styling::Colors.TEXT_GRAY
+
+        angle_step = (2 * Math::PI) / NUM_SEGMENTS
+        start_angle = -Math::PI / 2.0  # Start from top (12 o'clock)
+
+        NUM_SEGMENTS.times do |segment|
+          angle = start_angle + (segment * angle_step)
+          cos_a = Math.cos(angle)
+          sin_a = Math.sin(angle)
+
+          # Determine if this is an hour mark (every 2nd segment) or half-hour
+          is_hour = (segment % 2).zero?
+          @pdf.line_width is_hour ? HOUR_LINE_WIDTH : HALF_HOUR_LINE_WIDTH
+
+          # Band 1: between circle 1 and circle 2 (indices 0-1)
+          @pdf.stroke_line(
+            [cos_a * radii[0], sin_a * radii[0]],
+            [cos_a * radii[1], sin_a * radii[1]]
+          )
+
+          # Band 2: between circle 2 and 3 - NO DIVISIONS (intentionally empty)
+
+          # Band 3: between circle 3 and circle 4 (indices 2-3)
+          @pdf.stroke_line(
+            [cos_a * radii[2], sin_a * radii[2]],
+            [cos_a * radii[3], sin_a * radii[3]]
+          )
+
+          # Band 4: between circle 4 and circle 5 (indices 3-4)
+          @pdf.stroke_line(
+            [cos_a * radii[3], sin_a * radii[3]],
+            [cos_a * radii[4], sin_a * radii[4]]
+          )
+
+          # Band 5: between circle 5 and outer extent (indices 4-5)
+          @pdf.stroke_line(
+            [cos_a * radii[4], sin_a * radii[4]],
+            [cos_a * radii[5], sin_a * radii[5]]
+          )
+        end
+      end
+    end
+  end
+end
