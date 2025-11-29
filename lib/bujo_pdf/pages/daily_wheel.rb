@@ -153,7 +153,8 @@ module BujoPdf
         box_size = 20
 
         24.times do |hour|
-          angle = start_angle + (hour * angle_step)
+          # Subtract to go clockwise (standard clock direction)
+          angle = start_angle - (hour * angle_step)
           x = Math.cos(angle) * label_radius
           y = Math.sin(angle) * label_radius
 
