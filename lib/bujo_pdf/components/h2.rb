@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'erase_dots'
+
 module BujoPdf
   module Components
     # H2 renders a secondary header, two grid boxes tall.
@@ -13,6 +15,7 @@ module BujoPdf
     #   h2(2, 1, "Q1 Planning", color: '666666')
     #
     class H2
+      include EraseDots::Mixin
       # Default font size for H2 headers (fits in 2 boxes = ~28pt)
       FONT_SIZE = 18
 
@@ -68,9 +71,18 @@ module BujoPdf
 
         text_color = @color || BujoPdf::Themes.current[:colors][:text_black]
 
-        @pdf.font 'Helvetica', style: @style
-        @pdf.fill_color text_color
+        @pdf.font 'Helvetica', style: @style, size: FONT_SIZE
 
+        # Calculate text width and convert to grid boxes
+        text_width_pt = @pdf.width_of(@text)
+        text_width_boxes = (text_width_pt / @grid.dot_spacing).ceil
+
+        # Erase the middle row of dots behind the text
+        # Row 1 (middle of the 2-box height) runs through the text
+        erase_dots(@col, @row + 1, text_width_boxes)
+
+        # Draw the text
+        @pdf.fill_color text_color
         @pdf.text_box @text,
                       at: [@grid.x(@col), @grid.y(@row)],
                       width: @grid.width(40), # Wide enough for any reasonable header
