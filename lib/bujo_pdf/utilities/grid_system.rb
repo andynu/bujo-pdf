@@ -241,4 +241,39 @@ class GridSystem
       **options
     )
   end
+
+  # Create a TodoList component positioned using grid coordinates
+  #
+  # TodoList renders a configurable to-do list with bullet/checkbox markers.
+  # Each row has a marker column and empty space for handwritten items.
+  #
+  # @param col [Integer] Column number of top-left corner
+  # @param row [Integer] Row number of top-left corner
+  # @param width_boxes [Numeric] Width in grid boxes
+  # @param rows [Integer] Number of to-do items
+  # @param options [Hash] Additional TodoList options
+  # @option options [Symbol] :bullet_style Marker style :bullet, :checkbox, or :circle (default: :bullet)
+  # @option options [Symbol] :divider Row divider style :none, :solid, or :dashed (default: :none)
+  # @option options [String] :divider_color Hex color for dividers
+  # @option options [String] :bullet_color Hex color for bullets
+  # @return [BujoPdf::Components::TodoList] TodoList instance ready to render
+  #
+  # @example Basic usage
+  #   grid.todo_list(5, 10, 20, 8).render
+  #
+  # @example With options
+  #   grid.todo_list(5, 10, 20, 8, bullet_style: :checkbox, divider: :dashed).render
+  def todo_list(col, row, width_boxes, rows, **options)
+    require_relative '../components/todo_list'
+
+    BujoPdf::Components::TodoList.from_grid(
+      pdf: @pdf,
+      grid: self,
+      col: col,
+      row: row,
+      width_boxes: width_boxes,
+      rows: rows,
+      **options
+    )
+  end
 end
