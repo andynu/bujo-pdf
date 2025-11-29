@@ -54,8 +54,9 @@ module BujoPdf
         draw_header
         draw_two_column_layout
         draw_column_divider
-        draw_page_indicator
         @grid.redraw_dots(col: 0, row: 0, width: @grid.cols, height: @grid.rows)
+        # Footer drawn after dots so text appears clean
+        draw_page_indicator
       end
 
       private
@@ -99,21 +100,16 @@ module BujoPdf
         vline(divider_col, CONTENT_START_ROW, divider_height, color: 'E5E5E5')
       end
 
-      # Draw page indicator at bottom
+      # Draw page indicator at bottom (last row)
       #
       # @return [void]
       def draw_page_indicator
-        indicator_box = @grid.rect(LEFT_MARGIN, 52, content_width, 2)
-
-        @pdf.bounding_box([indicator_box[:x], indicator_box[:y]],
-                          width: indicator_box[:width],
-                          height: indicator_box[:height]) do
-          @pdf.text "Index #{@index_page_num} of #{@index_page_count}",
-                    size: 9,
-                    color: '999999',
-                    align: :center,
-                    valign: :center
-        end
+        text(LEFT_MARGIN, 54, "Index #{@index_page_num} of #{@index_page_count}",
+             size: 9,
+             color: '999999',
+             width: content_width,
+             align: :center,
+             position: :subscript)
       end
 
       # Calculate content width (usable area between margins)

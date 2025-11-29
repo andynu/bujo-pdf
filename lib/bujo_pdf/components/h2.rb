@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'hline'
+require_relative 'text'
 
 module BujoPdf
   module Components
@@ -15,7 +15,8 @@ module BujoPdf
     #   h2(2, 1, "Q1 Planning", color: '666666')
     #
     class H2
-      include HLine::Mixin
+      include Text::Mixin
+
       # Default font size for H2 headers (fits in 2 boxes = ~28pt)
       FONT_SIZE = 18
 
@@ -27,17 +28,17 @@ module BujoPdf
         #
         # @param col [Integer] Column position (left edge)
         # @param row [Integer] Row position (top edge)
-        # @param text [String] Header text
+        # @param content [String] Header text
         # @param color [String, nil] Text color as hex string (default: theme text_black)
         # @param style [Symbol] Font style :bold, :normal, :italic (default: :bold)
         # @return [void]
-        def h2(col, row, text, color: nil, style: :bold)
+        def h2(col, row, content, color: nil, style: :bold)
           H2.new(
             pdf: @pdf,
             grid: @grid,
             col: col,
             row: row,
-            text: text,
+            content: content,
             color: color,
             style: style
           ).render
@@ -50,52 +51,28 @@ module BujoPdf
       # @param grid [GridSystem] The grid system for coordinate conversion
       # @param col [Integer] Column position (left edge)
       # @param row [Integer] Row position (top edge)
-      # @param text [String] Header text
+      # @param content [String] Header text
       # @param color [String, nil] Text color as hex string
       # @param style [Symbol] Font style
-      def initialize(pdf:, grid:, col:, row:, text:, color: nil, style: :bold)
+      def initialize(pdf:, grid:, col:, row:, content:, color: nil, style: :bold)
         @pdf = pdf
         @grid = grid
         @col = col
         @row = row
-        @text = text
+        @content = content
         @color = color
         @style = style
       end
 
-      # Render the H2 header
+      # Render the H2 header using the text component
       #
       # @return [void]
       def render
-        require_relative '../themes/theme_registry'
-
-        text_color = @color || BujoPdf::Themes.current[:colors][:text_black]
-
-        @pdf.font 'Helvetica', style: @style, size: FONT_SIZE
-
-        # Calculate text width and convert to grid boxes
-        text_width_pt = @pdf.width_of(@text)
-        text_width_boxes = (text_width_pt / @grid.dot_spacing).ceil
-
-        # Erase the middle row (dots and any line) behind the text
-        # Row 1 (middle of the 2-box height) runs through the text
-        # Use hline with background color to erase both dots and any underlying line
-        bg_color = BujoPdf::Themes.current[:colors][:background]
-        hline(@col, @row + 1, text_width_boxes, color: bg_color, stroke: 3)
-
-        # Draw the text
-        @pdf.fill_color text_color
-        @pdf.text_box @text,
-                      at: [@grid.x(@col), @grid.y(@row)],
-                      width: @grid.width(40), # Wide enough for any reasonable header
-                      height: @grid.height(2),
-                      size: FONT_SIZE,
-                      valign: :center,
-                      overflow: :truncate
-
-        # Reset to defaults
-        @pdf.font 'Helvetica', style: :normal
-        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+        text(@col, @row, @content,
+             size: FONT_SIZE,
+             height: 2,
+             color: @color,
+             style: @style)
       end
     end
   end

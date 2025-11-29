@@ -31,6 +31,7 @@ module BujoPdf
         base.include Box::Mixin
         base.include HLine::Mixin
         base.include VLine::Mixin
+        base.include Text::Mixin
         base.include H1::Mixin
         base.include H2::Mixin
         base.include MiniMonth::Mixin
