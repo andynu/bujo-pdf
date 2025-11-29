@@ -38,10 +38,13 @@ module BujoPdf
     #
     # @param filename [String] Output filename (default: planner_YEAR.pdf)
     # @return [void]
+    # Number of index pages to generate (configurable)
+    INDEX_PAGE_COUNT = 4
+
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = 4 + total_weeks + 11  # 4 overview + weeks + 7 grid + 4 template pages
+      @total_pages = INDEX_PAGE_COUNT + 4 + total_weeks + 11  # index + 4 overview + weeks + 7 grid + 4 template pages
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -50,6 +53,7 @@ module BujoPdf
         DotGrid.create_stamp(@pdf, "page_dots")
 
         # Generate all pages
+        generate_index_pages
         generate_overview_pages
         generate_weekly_pages
         generate_grid_pages
@@ -64,8 +68,40 @@ module BujoPdf
 
     private
 
+    def generate_index_pages
+      @index_pages = {}
+
+      INDEX_PAGE_COUNT.times do |i|
+        page_num = i + 1
+
+        # First page doesn't need start_new_page
+        @pdf.start_new_page unless page_num == 1
+
+        generate_index_page(page_num)
+        @index_pages[page_num] = @pdf.page_number
+      end
+    end
+
+    def generate_index_page(index_page_num)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+      context = RenderContext.new(
+        page_key: "index_#{index_page_num}".to_sym,
+        page_number: @pdf.page_number,
+        year: @year,
+        total_weeks: total_weeks,
+        total_pages: @total_pages,
+        index_page_num: index_page_num,
+        index_page_count: INDEX_PAGE_COUNT,
+        date_config: @date_config,
+        event_store: @event_store
+      )
+
+      page = PageFactory.create(:index, @pdf, context)
+      page.generate
+    end
+
     def generate_overview_pages
-      # First page (no start_new_page needed)
+      @pdf.start_new_page
       generate_page(:seasonal)
       @seasonal_page = @pdf.page_number
 
@@ -220,6 +256,7 @@ module BujoPdf
     def build_outline
       # Capture instance variables in local scope for use in outline block
       year = @year
+      index_pages = @index_pages
       seasonal_page = @seasonal_page
       events_page = @events_page
       highlights_page = @highlights_page
@@ -238,6 +275,9 @@ module BujoPdf
       year_wheel_page = @year_wheel_page
 
       @pdf.outline.define do
+        # Index pages (for custom table of contents)
+        page destination: index_pages[1], title: 'Index'
+
         # Year overview pages (flat, no nesting)
         page destination: seasonal_page, title: 'Seasonal Calendar'
         page destination: events_page, title: 'Year at a Glance - Events'

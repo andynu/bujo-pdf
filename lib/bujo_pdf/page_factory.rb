@@ -10,6 +10,7 @@ require_relative 'pages/grids/hexagon_grid_page'
 require_relative 'pages/grids/isometric_grid_page'
 require_relative 'pages/grids/lined_grid_page'
 require_relative 'pages/grids/perspective_grid_page'
+require_relative 'pages/index_pages'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -41,6 +42,7 @@ module BujoPdf
       grid_isometric: Pages::Grids::IsometricGridPage,
       grid_lined: Pages::Grids::LinedGridPage,
       grid_perspective: Pages::Grids::PerspectiveGridPage,
+      index: Pages::IndexPage,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,
@@ -101,6 +103,30 @@ module BujoPdf
         )
 
         Pages::WeeklyPage.new(pdf, context_with_week)
+      end
+
+      # Create an index page instance.
+      #
+      # This is a specialized factory method for creating index pages with
+      # the appropriate context (index page number, total count).
+      #
+      # @param index_page_num [Integer] The index page number (1, 2, 3...)
+      # @param index_page_count [Integer] Total number of index pages
+      # @param pdf [Prawn::Document] The PDF document to render into
+      # @param context [Hash] Base rendering context
+      # @return [Pages::Base] An index page instance ready to generate
+      def create_index_page(index_page_num, index_page_count, pdf, context)
+        require_relative 'pages/index_pages'
+        require_relative 'render_context'
+
+        context_with_index = context.is_a?(RenderContext) ? context.to_h : context
+        context_with_index = context_with_index.merge(
+          page_key: "index_#{index_page_num}".to_sym,
+          index_page_num: index_page_num,
+          index_page_count: index_page_count
+        )
+
+        Pages::IndexPage.new(pdf, context_with_index)
       end
     end
   end

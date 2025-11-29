@@ -192,6 +192,7 @@ week_num = (days_from_start / 7) + 1
 ### Navigation System
 
 **Named destinations**:
+- `index_N` - Index page N (e.g., `index_1`, `index_2`) - 4 pages by default
 - `seasonal` - Seasonal calendar page
 - `year_events` - Year at a Glance - Events
 - `year_highlights` - Year at a Glance - Highlights
@@ -261,23 +262,30 @@ The codebase uses extensive layout constants in `lib/bujo_pdf/constants.rb` orga
 
 Each page type has its own class in `lib/bujo_pdf/pages/`:
 
-1. **Seasonal Calendar** (`seasonal_calendar.rb`)
+1. **Index Pages** (`index_pages.rb`)
+   - Numbered blank pages at the front for hand-built table of contents
+   - Classic bullet journal technique for custom TOC entries
+   - Numbered lines with ruled entry areas and page number boxes
+   - Named destinations (`index_1`, `index_2`, etc.) for hyperlinking
+   - Configurable page count (default: 4 pages)
+
+2. **Seasonal Calendar** (`seasonal_calendar.rb`)
    - Grid-based layout with four seasons
    - Fieldset borders with season labels
    - Mini month calendars with clickable dates
 
-2. **Year at a Glance** (`year_events.rb`, `year_highlights.rb`)
+3. **Year at a Glance** (`year_events.rb`, `year_highlights.rb`)
    - 12 columns (months) × 31 rows (days)
    - Day numbers with day-of-week abbreviations
    - Each cell links to corresponding week
 
-3. **Weekly Pages** (`weekly_page.rb`)
+4. **Weekly Pages** (`weekly_page.rb`)
    - Daily section (17.5% of usable height): 7 columns with headers and ruled lines
    - Cornell notes section (82.5%): Cues column (25%), Notes column (75%), Summary (20% of section)
    - Navigation links: previous/next week, back to year overview
    - Time period labels (AM/PM/EVE) on Monday column
 
-4. **Grid Pages** (`grid_showcase.rb`, `grids_overview.rb`, `grids/` directory)
+5. **Grid Pages** (`grid_showcase.rb`, `grids_overview.rb`, `grids/` directory)
    - **Grid Showcase**: All grid types displayed in quadrants (entry point)
    - **Grids Overview**: Clickable samples of basic grids
    - **Dot Grid Page**: Full-page 5mm dot grid
@@ -288,13 +296,13 @@ Each page type has its own class in `lib/bujo_pdf/pages/`:
    - **Hexagon Grid Page**: Full-page tessellating flat-top hexagons
    - Accessed via multi-tap Grids navigation tab (8 pages cycle)
 
-5. **Reference Page** (`reference_calibration.rb`)
+6. **Reference Page** (`reference_calibration.rb`)
    - Calibration grid with measurements
    - Centimeter markings along edges
    - Grid system documentation
    - Prawn coordinate system reference
 
-6. **Wheel Pages** (`daily_wheel.rb`, `year_wheel.rb`)
+7. **Wheel Pages** (`daily_wheel.rb`, `year_wheel.rb`)
    - Daily Wheel: Circular daily planning template
    - Year Wheel: Circular year-at-a-glance visualization
 
@@ -361,7 +369,7 @@ end
 ## Output
 
 - **Filename**: `planner_{year}.pdf`
-- **Page count**: 68 pages typical (4 overview + 52-53 weekly + 8 grids + 3 templates)
+- **Page count**: 72 pages typical (4 index + 4 overview + 52-53 weekly + 8 grids + 3 templates)
 - **File size**: ~4-5MB
 - **Generation time**: Under 5 seconds
 
