@@ -128,16 +128,9 @@ module BujoPdf
       end
 
       def draw_month_grid(month, start_col, start_row, width_boxes)
-        # Month title (1 box high)
-        title_box = @grid_system.rect(start_col, start_row, width_boxes, 1)
-        @pdf.font "Helvetica-Bold", size: 10
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
-        @pdf.text_box MONTH_NAMES[month - 1],
-                      at: [title_box[:x], title_box[:y]],
-                      width: title_box[:width],
-                      height: title_box[:height],
-                      align: :center,
-                      valign: :center
+        # Month title (1 box high, centered)
+        h1(start_col, start_row, MONTH_NAMES[month - 1],
+           width: width_boxes, align: :center)
 
         # Day headers (1 box high): M T W T F S S
         headers_row = start_row + 1
