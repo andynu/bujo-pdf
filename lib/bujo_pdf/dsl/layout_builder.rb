@@ -6,6 +6,7 @@ require_relative 'columns_node'
 require_relative 'content_node'
 require_relative 'navigation_node'
 require_relative 'component_definition'
+require_relative 'layout_renderer'
 
 module BujoPdf
   module DSL
@@ -362,6 +363,27 @@ module BujoPdf
         raise ArgumentError, "Unknown component: #{name}" unless definition
 
         definition.build(self, **kwargs)
+      end
+
+      # Create a custom render node.
+      #
+      # Custom nodes allow arbitrary Prawn drawing within a layout.
+      # The block receives the PDF document and bounds in points.
+      #
+      # @param name [Symbol] Node name
+      # @param kwargs [Hash] Constraints (width:, height:, flex:, etc.)
+      # @yield [pdf, bounds] Block for custom rendering
+      # @return [CustomNode] The created node
+      #
+      # @example Drawing a circle
+      #   custom name: :circle, width: 10, height: 10 do |pdf, bounds|
+      #     center_x = bounds[:x] + bounds[:width] / 2
+      #     center_y = bounds[:y] - bounds[:height] / 2
+      #     pdf.stroke_circle([center_x, center_y], bounds[:width] / 2)
+      #   end
+      def custom(name: nil, **kwargs, &block)
+        node = CustomNode.new(name: name, **kwargs, &block)
+        add_node(node)
       end
 
       private
