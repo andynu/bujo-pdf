@@ -27,6 +27,9 @@ module BujoPdf
       # Day of year (0-indexed) when each month starts (non-leap year)
       MONTH_START_DAYS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334].freeze
 
+      # Offset to put December at top (day 334 = Dec 1)
+      TOP_OFFSET_DAYS = 334
+
       # All radii as proportions (0.0 to 1.0) relative to max radius
       # Circle 5 is at proportion 360/380 of max radius
       CIRCLE_5_PROP = 360.0 / 380.0
@@ -110,7 +113,8 @@ module BujoPdf
         start_angle = -Math::PI / 2.0  # Start from top
 
         NUM_DAYS.times do |day|
-          angle = start_angle + (day * angle_step)
+          # Offset so December is at top, subtract to go clockwise
+          angle = start_angle - ((day + TOP_OFFSET_DAYS) * angle_step)
           cos_a = Math.cos(angle)
           sin_a = Math.sin(angle)
 
@@ -162,8 +166,8 @@ module BujoPdf
 
         12.times do |month|
           day = MONTH_START_DAYS[month]
-          # Subtract to go clockwise
-          angle = start_angle - (day * angle_step)
+          # Offset so December is at top, subtract to go clockwise
+          angle = start_angle - ((day + TOP_OFFSET_DAYS) * angle_step)
           cos_a = Math.cos(angle)
           sin_a = Math.sin(angle)
 
