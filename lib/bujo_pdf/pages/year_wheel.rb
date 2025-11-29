@@ -27,8 +27,8 @@ module BujoPdf
       # Day of year (0-indexed) when each month starts (non-leap year)
       MONTH_START_DAYS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334].freeze
 
-      # Offset to put December at top (day 334 = Dec 1)
-      TOP_OFFSET_DAYS = 334
+      # Offset to put January at top (rotate 180 degrees)
+      TOP_OFFSET_DAYS = 182
 
       # All radii as proportions (0.0 to 1.0) relative to max radius
       # Circle 5 is at proportion 360/380 of max radius
@@ -84,6 +84,7 @@ module BujoPdf
           draw_weekend_backgrounds(radii)
           draw_circles(radii)
           draw_divisions(radii)
+          draw_week_markers(radii)
           draw_month_markers(radii, scale)
         end
       end
@@ -98,22 +99,24 @@ module BujoPdf
         angle_step = (2 * Math::PI) / NUM_DAYS
         start_angle = -Math::PI / 2.0
 
-        inner_r = radii[4]  # Circle 5
-        outer_r = radii[5]  # Outer extent
+        inner_r = radii[2]  # Circle 3
+        outer_r = radii[3]  # Circle 4
 
         @pdf.fill_color Styling::Colors.WEEKEND_BG
 
-        NUM_DAYS.times do |day|
-          # Calculate actual date to get day of week
-          date = Date.new(year, 1, 1) + day
-          next unless [0, 6].include?(date.wday)  # Sunday = 0, Saturday = 6
+        @pdf.transparent(0.2) do  # 20% opacity
+          NUM_DAYS.times do |day|
+            # Calculate actual date to get day of week
+            date = Date.new(year, 1, 1) + day
+            next unless [0, 6].include?(date.wday)  # Sunday = 0, Saturday = 6
 
-          # Calculate angles for this day's segment
-          angle1 = start_angle - ((day + TOP_OFFSET_DAYS) * angle_step)
-          angle2 = start_angle - ((day + TOP_OFFSET_DAYS + 1) * angle_step)
+            # Calculate angles for this day's segment
+            angle1 = start_angle - ((day + TOP_OFFSET_DAYS) * angle_step)
+            angle2 = start_angle - ((day + TOP_OFFSET_DAYS + 1) * angle_step)
 
-          # Draw filled arc segment
-          draw_arc_segment(inner_r, outer_r, angle1, angle2)
+            # Draw filled arc segment
+            draw_arc_segment(inner_r, outer_r, angle1, angle2)
+          end
         end
       end
 
@@ -204,6 +207,38 @@ module BujoPdf
           @pdf.stroke_line(
             [cos_a * radii[4], sin_a * radii[4]],
             [cos_a * radii[5], sin_a * radii[5]]
+          )
+        end
+      end
+
+      # Draw week boundary markers between circles 2 and 3.
+      # Aligned with actual Monday starts.
+      #
+      # @param radii [Array<Float>] Array of radii in points
+      def draw_week_markers(radii)
+        year = context[:year] || Date.today.year
+        angle_step = (2 * Math::PI) / NUM_DAYS
+        start_angle = -Math::PI / 2.0
+
+        inner_r = radii[1]  # Circle 2
+        outer_r = radii[2]  # Circle 3
+
+        @pdf.stroke_color Styling::Colors.TEXT_GRAY
+        @pdf.line_width CIRCLE_LINE_WIDTH  # Bolder line for week boundaries
+
+        # Find all Mondays in the year and draw markers
+        jan1 = Date.new(year, 1, 1)
+        NUM_DAYS.times do |day|
+          date = jan1 + day
+          next unless date.wday == 1  # Monday
+
+          angle = start_angle - ((day + TOP_OFFSET_DAYS) * angle_step)
+          cos_a = Math.cos(angle)
+          sin_a = Math.sin(angle)
+
+          @pdf.stroke_line(
+            [cos_a * inner_r, sin_a * inner_r],
+            [cos_a * outer_r, sin_a * outer_r]
           )
         end
       end

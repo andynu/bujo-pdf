@@ -71,6 +71,7 @@ module BujoPdf
 
         # Draw wheel using Prawn's translate for centered coordinates
         @pdf.translate(center_x, center_y) do
+          draw_night_backgrounds(radii)
           draw_circles(radii)
           draw_divisions(radii)
           draw_hour_labels(radii, scale) if SHOW_HOUR_LABELS
@@ -78,6 +79,70 @@ module BujoPdf
       end
 
       private
+
+      # Draw shaded backgrounds for night hours (10 PM to 7 AM).
+      #
+      # @param radii [Array<Float>] Array of radii in points
+      def draw_night_backgrounds(radii)
+        angle_step = (2 * Math::PI) / NUM_SEGMENTS
+        start_angle = -Math::PI / 2.0
+
+        inner_r = radii[2]  # Circle 3
+        outer_r = radii[3]  # Circle 4
+
+        @pdf.fill_color Styling::Colors.WEEKEND_BG
+
+        # Night hours: 22, 23, 0, 1, 2, 3, 4, 5, 6 (10 PM to 7 AM)
+        night_hours = [22, 23, 0, 1, 2, 3, 4, 5, 6]
+
+        @pdf.transparent(0.2) do  # 20% opacity
+          night_hours.each do |hour|
+            # Each hour has 2 segments (on the hour and half past)
+            2.times do |half|
+              segment = (hour * 2) + half
+
+              # Subtract to go clockwise
+              angle1 = start_angle - (segment * angle_step)
+              angle2 = start_angle - ((segment + 1) * angle_step)
+
+              draw_arc_segment(inner_r, outer_r, angle1, angle2)
+            end
+          end
+        end
+      end
+
+      # Draw a filled arc segment between two radii and two angles.
+      #
+      # @param inner_r [Float] Inner radius
+      # @param outer_r [Float] Outer radius
+      # @param angle1 [Float] Starting angle (radians)
+      # @param angle2 [Float] Ending angle (radians)
+      def draw_arc_segment(inner_r, outer_r, angle1, angle2)
+        steps = 8  # Smoothness of arc
+
+        @pdf.save_graphics_state
+        @pdf.move_to(Math.cos(angle1) * outer_r, Math.sin(angle1) * outer_r)
+
+        # Outer arc (from angle1 to angle2)
+        steps.times do |i|
+          t = (i + 1).to_f / steps
+          a = angle1 + (angle2 - angle1) * t
+          @pdf.line_to(Math.cos(a) * outer_r, Math.sin(a) * outer_r)
+        end
+
+        # Line to inner radius
+        @pdf.line_to(Math.cos(angle2) * inner_r, Math.sin(angle2) * inner_r)
+
+        # Inner arc (from angle2 back to angle1)
+        steps.times do |i|
+          t = (i + 1).to_f / steps
+          a = angle2 + (angle1 - angle2) * t
+          @pdf.line_to(Math.cos(a) * inner_r, Math.sin(a) * inner_r)
+        end
+
+        @pdf.fill
+        @pdf.restore_graphics_state
+      end
 
       # Draw the 4 concentric circles.
       #
