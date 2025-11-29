@@ -6,6 +6,7 @@ require_relative '../utilities/dot_grid'
 require_relative '../utilities/diagnostics'
 require_relative '../layout'
 require_relative '../render_context'
+require_relative '../components/all'
 
 module BujoPdf
   module Pages
@@ -59,6 +60,8 @@ module BujoPdf
     #     end
     #   end
     class Base
+      include Components::All
+
       attr_reader :pdf, :context, :grid_system, :layout, :content_area, :new_layout
 
       # Initialize a new page instance.
