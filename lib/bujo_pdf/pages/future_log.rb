@@ -63,20 +63,9 @@ module BujoPdf
       #
       # @return [void]
       def draw_header
-        header_box = @grid_system.rect(LEFT_MARGIN, HEADER_ROW, content_width, 2)
-
-        @pdf.bounding_box([header_box[:x], header_box[:y]],
-                          width: header_box[:width],
-                          height: header_box[:height]) do
-          # Show which months are on this page
-          first_month = Date::MONTHNAMES[@start_month]
-          last_month = Date::MONTHNAMES[@start_month + MONTHS_PER_PAGE - 1]
-          @pdf.text "Future Log: #{first_month} - #{last_month} #{@year}",
-                    size: 14,
-                    style: :bold,
-                    align: :left,
-                    valign: :bottom
-        end
+        first_month = Date::MONTHNAMES[@start_month]
+        last_month = Date::MONTHNAMES[@start_month + MONTHS_PER_PAGE - 1]
+        h2(LEFT_MARGIN, HEADER_ROW, "Future Log: #{first_month} - #{last_month} #{@year}")
       end
 
       # Draw the two-column layout with 3 months per column

@@ -27,6 +27,8 @@ module BujoPdf
         # Include each component's mixin
         base.include GridDots::Mixin
         base.include RuledLines::Mixin
+        base.include H1::Mixin
+        base.include H2::Mixin
       end
     end
   end

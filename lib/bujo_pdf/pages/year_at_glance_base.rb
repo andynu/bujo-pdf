@@ -25,7 +25,6 @@ module BujoPdf
       include Styling::Grid
 
       # Layout constants
-      YEAR_TITLE_FONT_SIZE = 16
       YEAR_MONTH_HEADER_SIZE = 8
       YEAR_DAY_SIZE = 6
       YEAR_DAY_ABBREV_SIZE = 5
@@ -81,19 +80,7 @@ module BujoPdf
       private
 
       def draw_header
-        # Content area dimensions
-        content_start_col = 2
-        content_width_boxes = 40  # Columns 2-41 inclusive
-
-        # Header - rows 0-1 (2 boxes)
-        header_box = @grid_system.rect(content_start_col, 0, content_width_boxes, 2)
-        @pdf.font "Helvetica-Bold", size: YEAR_TITLE_FONT_SIZE
-        @pdf.text_box page_title,
-                      at: [header_box[:x], header_box[:y]],
-                      width: header_box[:width],
-                      height: header_box[:height],
-                      align: :center,
-                      valign: :center
+        h2(2, 0, page_title)
       end
 
       def draw_month_headers
