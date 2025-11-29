@@ -117,17 +117,14 @@ module BujoPdf
       end
 
       def draw_fieldset(start_col, start_row, width_boxes, height_boxes, legend)
-        # Use Fieldset sub-component
-        fieldset = SubComponent::Fieldset.new(@pdf, @grid_system,
-          legend: legend,
-          position: :top_left,  # Top border, left-aligned
-          font_size: 10,
-          legend_padding: 5,
-          inset_boxes: 0,  # No inset for seasonal calendar
-          border_color: Styling::Colors.BORDERS,
-          text_color: Styling::Colors.BORDERS
-        )
-        fieldset.render_at(start_col, start_row, width_boxes, height_boxes)
+        # Draw box border
+        box(start_col, start_row, width_boxes, height_boxes,
+            stroke: Styling::Colors.BORDERS, fill: nil)
+
+        # Draw season label with superscript positioning (centered on top border)
+        h1(start_col + 1, start_row, legend,
+           position: :superscript,
+           color: Styling::Colors.BORDERS)
       end
 
       def draw_month_grid(month, start_col, start_row, width_boxes)

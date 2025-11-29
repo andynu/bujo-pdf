@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'hline'
+
 module BujoPdf
   module Components
     # H1 renders a primary header, one grid box tall.
@@ -7,11 +9,19 @@ module BujoPdf
     # Simple header component that renders bold text positioned at a grid
     # location. Width is determined by the text content.
     #
+    # Supports three vertical positions:
+    # - :center (default) - centered within the grid box
+    # - :superscript - centered on the top dot row (half box up)
+    # - :subscript - centered on the bottom dot row (half box down)
+    #
     # Example usage in a page:
     #   h1(2, 1, "Index")
     #   h1(2, 1, "January 2025", color: '333333')
+    #   h1(2, 1, "Legend", position: :subscript)
     #
     class H1
+      include HLine::Mixin
+
       # Default font size for H1 headers (fits in 1 box = ~14pt)
       FONT_SIZE = 12
 
@@ -26,8 +36,9 @@ module BujoPdf
         # @param text [String] Header text
         # @param color [String, nil] Text color as hex string (default: theme text_black)
         # @param style [Symbol] Font style :bold, :normal, :italic (default: :bold)
+        # @param position [Symbol] Vertical position :center, :superscript, :subscript (default: :center)
         # @return [void]
-        def h1(col, row, text, color: nil, style: :bold)
+        def h1(col, row, text, color: nil, style: :bold, position: :center)
           H1.new(
             pdf: @pdf,
             grid: @grid_system,
@@ -35,7 +46,8 @@ module BujoPdf
             row: row,
             text: text,
             color: color,
-            style: style
+            style: style,
+            position: position
           ).render
         end
       end
@@ -49,7 +61,8 @@ module BujoPdf
       # @param text [String] Header text
       # @param color [String, nil] Text color as hex string
       # @param style [Symbol] Font style
-      def initialize(pdf:, grid:, col:, row:, text:, color: nil, style: :bold)
+      # @param position [Symbol] Vertical position :center, :superscript, :subscript
+      def initialize(pdf:, grid:, col:, row:, text:, color: nil, style: :bold, position: :center)
         @pdf = pdf
         @grid = grid
         @col = col
@@ -57,6 +70,7 @@ module BujoPdf
         @text = text
         @color = color
         @style = style
+        @position = position
       end
 
       # Render the H1 header
@@ -66,12 +80,22 @@ module BujoPdf
         require_relative '../themes/theme_registry'
 
         text_color = @color || BujoPdf::Themes.current[:colors][:text_black]
+        bg_color = BujoPdf::Themes.current[:colors][:background]
 
-        @pdf.font 'Helvetica', style: @style
+        @pdf.font 'Helvetica', style: @style, size: FONT_SIZE
+
+        # Calculate text width for erasing
+        text_width_pt = @pdf.width_of(@text)
+        text_width_boxes = (text_width_pt / @grid.dot_spacing).ceil
+
+        # Calculate vertical offset and erase dots/lines if needed
+        y_offset = calculate_y_offset
+        erase_dot_row(text_width_boxes, bg_color) if @position != :center
+
+        # Draw the text
         @pdf.fill_color text_color
-
         @pdf.text_box @text,
-                      at: [@grid.x(@col), @grid.y(@row)],
+                      at: [@grid.x(@col), @grid.y(@row) + y_offset],
                       width: @grid.width(40), # Wide enough for any reasonable header
                       height: @grid.height(1),
                       size: FONT_SIZE,
@@ -81,6 +105,35 @@ module BujoPdf
         # Reset to defaults
         @pdf.font 'Helvetica', style: :normal
         @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+      end
+
+      private
+
+      # Calculate vertical offset based on position
+      #
+      # @return [Float] Y offset in points
+      def calculate_y_offset
+        half_box = @grid.height(0.5)
+        case @position
+        when :superscript
+          half_box
+        when :subscript
+          -half_box
+        else
+          0
+        end
+      end
+
+      # Erase the dot row that the text overlaps
+      #
+      # @param text_width_boxes [Integer] Width of text in grid boxes
+      # @param bg_color [String] Background color for erasing
+      # @return [void]
+      def erase_dot_row(text_width_boxes, bg_color)
+        # Superscript text is centered on @row (top of box)
+        # Subscript text is centered on @row + 1 (bottom of box)
+        erase_row = @position == :superscript ? @row : @row + 1
+        hline(@col, erase_row, text_width_boxes, color: bg_color, stroke: 3)
       end
     end
   end

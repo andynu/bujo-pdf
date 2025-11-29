@@ -28,6 +28,8 @@ module BujoPdf
         base.include GridDots::Mixin
         base.include RuledLines::Mixin
         base.include EraseDots::Mixin
+        base.include Box::Mixin
+        base.include HLine::Mixin
         base.include H1::Mixin
         base.include H2::Mixin
       end
