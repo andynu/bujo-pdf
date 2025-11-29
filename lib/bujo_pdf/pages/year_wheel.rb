@@ -10,6 +10,7 @@ module BujoPdf
     # - 4 concentric circles defining bands
     # - 365 radial divisions (one per day of the year)
     # - Lines extend in bands between circles (with one band left empty)
+    # - Month markers with labels at the start of each month
     #
     # The wheel is centered on the page and sized to fit within the content area.
     #
@@ -20,11 +21,19 @@ module BujoPdf
       # Configuration constants
       NUM_DAYS = 365
 
+      # Month abbreviations
+      MONTH_LABELS = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec].freeze
+
+      # Day of year (0-indexed) when each month starts (non-leap year)
+      MONTH_START_DAYS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334].freeze
+
       # All radii as proportions (0.0 to 1.0) relative to max radius
       # Circle 5 is at proportion 360/380 of max radius
       CIRCLE_5_PROP = 360.0 / 380.0
       CIRCLE_BAND_WIDTH = 5.0 / 380.0    # Gap between circles 1-5
       OUTER_EXTENSION = 80.0 / 380.0     # How far lines extend beyond circle 5
+      MONTH_LINE_INWARD = 8.0 / 380.0    # How far month lines extend inward from circle 1
+      MONTH_LABEL_OFFSET = 18.0 / 380.0  # Distance inward from circle 1 to month label center
 
       PROPORTIONS = [
         CIRCLE_5_PROP - (4 * CIRCLE_BAND_WIDTH),  # Circle 1 (innermost)
@@ -38,6 +47,10 @@ module BujoPdf
       # Line widths
       DIVISION_LINE_WIDTH = 0.25
       CIRCLE_LINE_WIDTH = 0.75
+      MONTH_LINE_WIDTH = 0.75
+
+      # Font sizes
+      MONTH_LABEL_FONT_SIZE = 8
 
       # Set up the named destination for this page.
       def setup
@@ -67,6 +80,7 @@ module BujoPdf
         @pdf.translate(center_x, center_y) do
           draw_circles(radii)
           draw_divisions(radii)
+          draw_month_markers(radii, scale)
         end
       end
 
@@ -125,6 +139,52 @@ module BujoPdf
             [cos_a * radii[4], sin_a * radii[4]],
             [cos_a * radii[5], sin_a * radii[5]]
           )
+        end
+      end
+
+      # Draw month markers and labels.
+      #
+      # @param radii [Array<Float>] Array of radii in points
+      # @param scale [Float] Scale factor for converting proportions to points
+      def draw_month_markers(radii, scale)
+        angle_step = (2 * Math::PI) / NUM_DAYS
+        start_angle = -Math::PI / 2.0  # Start from top (Jan 1)
+
+        inner_radius = radii[0]
+        line_end_radius = inner_radius - (MONTH_LINE_INWARD * scale)
+        label_radius = inner_radius - (MONTH_LABEL_OFFSET * scale)
+
+        @pdf.stroke_color Styling::Colors.SECTION_HEADERS
+        @pdf.line_width MONTH_LINE_WIDTH
+        @pdf.fill_color Styling::Colors.TEXT_GRAY
+
+        box_size = 24
+
+        12.times do |month|
+          day = MONTH_START_DAYS[month]
+          # Subtract to go clockwise
+          angle = start_angle - (day * angle_step)
+          cos_a = Math.cos(angle)
+          sin_a = Math.sin(angle)
+
+          # Draw line from circle 1 inward
+          @pdf.stroke_line(
+            [cos_a * inner_radius, sin_a * inner_radius],
+            [cos_a * line_end_radius, sin_a * line_end_radius]
+          )
+
+          # Draw month label
+          label_x = cos_a * label_radius
+          label_y = sin_a * label_radius
+
+          @pdf.text_box MONTH_LABELS[month],
+                        at: [label_x - (box_size / 2), label_y + (box_size / 2)],
+                        width: box_size,
+                        height: box_size,
+                        align: :center,
+                        valign: :center,
+                        size: MONTH_LABEL_FONT_SIZE,
+                        overflow: :shrink_to_fit
         end
       end
     end
