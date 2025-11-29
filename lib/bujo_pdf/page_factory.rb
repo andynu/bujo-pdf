@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'pages/base'
-require_relative 'pages/blank_dot_grid'
 require_relative 'pages/daily_wheel'
 require_relative 'pages/grid_showcase'
 require_relative 'pages/grids_overview'
@@ -34,7 +33,6 @@ module BujoPdf
     # Registry mapping page keys to page classes
     @registry = {
       daily_wheel: Pages::DailyWheel,
-      dots: Pages::BlankDotGrid,
       grid_showcase: Pages::GridShowcase,
       grids_overview: Pages::GridsOverview,
       grid_dot: Pages::Grids::DotGridPage,

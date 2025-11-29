@@ -59,7 +59,6 @@ require_relative 'bujo_pdf/pages/year_at_glance_events'
 require_relative 'bujo_pdf/pages/year_at_glance_highlights'
 require_relative 'bujo_pdf/pages/weekly_page'
 require_relative 'bujo_pdf/pages/reference_calibration'
-require_relative 'bujo_pdf/pages/blank_dot_grid'
 
 # Load main generator (depends on everything above)
 require_relative 'bujo_pdf/planner_generator'
