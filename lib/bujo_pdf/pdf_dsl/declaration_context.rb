@@ -176,6 +176,33 @@ module BujoPdf
       def prawn_metadata
         @metadata_builder&.to_prawn_info || {}
       end
+
+      # Include another recipe's pages into this definition.
+      #
+      # This enables recipe composition - building complex PDFs from smaller
+      # reusable recipe fragments.
+      #
+      # @param recipe_name [Symbol] The recipe to include
+      # @param params [Hash] Parameters to pass to the included recipe
+      # @raise [ArgumentError] if the recipe is not found
+      #
+      # @example Composing recipes
+      #   BujoPdf.define_pdf :weekly_essentials do |year:|
+      #     weeks_in(year).each { |w| page :weekly, week: w }
+      #   end
+      #
+      #   BujoPdf.define_pdf :full_planner do |year:|
+      #     page :seasonal_calendar, year: year
+      #     include_recipe :weekly_essentials, year: year
+      #     page :reference
+      #   end
+      def include_recipe(recipe_name, **params)
+        recipe = BujoPdf::PdfDSL.recipes[recipe_name]
+        raise ArgumentError, "Unknown recipe: #{recipe_name}. Available: #{BujoPdf::PdfDSL.recipes.keys.join(', ')}" unless recipe
+
+        # Evaluate the included recipe's block in this context
+        recipe.evaluate(self, **params)
+      end
     end
   end
 end
