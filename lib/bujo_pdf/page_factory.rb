@@ -15,6 +15,7 @@ require_relative 'pages/future_log'
 require_relative 'pages/collection_page'
 require_relative 'pages/monthly_review'
 require_relative 'pages/quarterly_planning'
+require_relative 'pages/tracker_example'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -51,6 +52,7 @@ module BujoPdf
       collection: Pages::CollectionPage,
       monthly_review: Pages::MonthlyReview,
       quarterly_planning: Pages::QuarterlyPlanning,
+      tracker_example: Pages::TrackerExample,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,

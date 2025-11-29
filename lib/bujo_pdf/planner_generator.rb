@@ -58,8 +58,8 @@ module BujoPdf
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
       collections_count = @collections_config.count
-      # index + future log + collections + reviews + quarters + 4 overview + weeks + 7 grid + 4 template pages
-      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + collections_count + MONTHLY_REVIEW_COUNT + QUARTERLY_PLANNING_COUNT + 4 + total_weeks + 11
+      # index + future log + collections + reviews + quarters + 4 overview + weeks + 8 grid + 4 template pages
+      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + collections_count + MONTHLY_REVIEW_COUNT + QUARTERLY_PLANNING_COUNT + 4 + total_weeks + 12
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -321,6 +321,10 @@ module BujoPdf
 
     def generate_template_pages
       @pdf.start_new_page
+      generate_page(:tracker_example)
+      @tracker_example_page = @pdf.page_number
+
+      @pdf.start_new_page
       generate_page(:reference)
       @reference_page = @pdf.page_number
 
@@ -413,6 +417,7 @@ module BujoPdf
       grid_perspective_page = @grid_perspective_page
       grid_hexagon_page = @grid_hexagon_page
       grid_showcase_page = @grid_showcase_page
+      tracker_example_page = @tracker_example_page
       reference_page = @reference_page
       daily_wheel_page = @daily_wheel_page
       year_wheel_page = @year_wheel_page
@@ -464,6 +469,7 @@ module BujoPdf
         page destination: grid_hexagon_page, title: '  - Hexagon Grid'
 
         # Template pages
+        page destination: tracker_example_page, title: 'Tracker Ideas'
         page destination: reference_page, title: 'Calibration & Reference'
         page destination: daily_wheel_page, title: 'Daily Wheel'
         page destination: year_wheel_page, title: 'Year Wheel'

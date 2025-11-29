@@ -197,6 +197,7 @@ week_num = (days_from_start / 7) + 1
 - `collection_<id>` - Collection pages (e.g., `collection_books_to_read`) - user-configured
 - `review_N` - Monthly review page N (e.g., `review_1` for January) - 12 pages
 - `quarter_N` - Quarterly planning page N (e.g., `quarter_1` for Q1) - 4 pages
+- `tracker_example` - Tracker ideas inspiration page
 - `seasonal` - Seasonal calendar page
 - `year_events` - Year at a Glance - Events
 - `year_highlights` - Year at a Glance - Highlights
@@ -330,13 +331,21 @@ Each page type has its own class in `lib/bujo_pdf/pages/`:
    - **Hexagon Grid Page**: Full-page tessellating flat-top hexagons
    - Accessed via multi-tap Grids navigation tab (8 pages cycle)
 
-10. **Reference Page** (`reference_calibration.rb`)
+10. **Tracker Example Page** (`tracker_example.rb`)
+    - "Show, don't prescribe" example of grid usage
+    - Habit tracker example with 31-day grid
+    - Mood/energy log with weekly format
+    - List of other tracking ideas
+    - Inspires creativity without prescribing structure
+    - Named destination `tracker_example`
+
+11. **Reference Page** (`reference_calibration.rb`)
     - Calibration grid with measurements
     - Centimeter markings along edges
     - Grid system documentation
     - Prawn coordinate system reference
 
-11. **Wheel Pages** (`daily_wheel.rb`, `year_wheel.rb`)
+12. **Wheel Pages** (`daily_wheel.rb`, `year_wheel.rb`)
     - Daily Wheel: Circular daily planning template
     - Year Wheel: Circular year-at-a-glance visualization
 
@@ -403,7 +412,7 @@ end
 ## Output
 
 - **Filename**: `planner_{year}.pdf`
-- **Page count**: 90+ pages typical (4 index + 2 future log + collections + 12 reviews + 4 quarters + 4 overview + 52-53 weekly + 8 grids + 3 templates)
+- **Page count**: 91+ pages typical (4 index + 2 future log + collections + 12 reviews + 4 quarters + 4 overview + 52-53 weekly + 8 grids + 4 templates)
 - **File size**: ~4-5MB
 - **Generation time**: Under 5 seconds
 
