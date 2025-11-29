@@ -57,6 +57,7 @@ module BujoPdf
         draw_header
         draw_two_column_layout
         draw_page_indicator
+        @grid_system.redraw_dots(col: 0, row: 0, width: @grid_system.cols, height: @grid_system.rows)
       end
 
       private
