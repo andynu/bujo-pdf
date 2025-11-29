@@ -52,7 +52,7 @@ module BujoPdf
 
       def render
         # Diagnostic: uncomment to show grid coordinates
-        #Components::GridRuler.new(@pdf, @grid_system).render
+        # Components::GridRuler.new(@pdf, @grid_system).render
         draw_header
         draw_two_column_layout
       end
@@ -165,6 +165,7 @@ module BujoPdf
       #
       # Lines are quantized to the dot grid - each line sits exactly on a grid row,
       # providing consistent spacing that aligns with the 5mm dot pattern.
+      # Dots are redrawn over the lines so they appear on top.
       #
       # @param col [Integer] Starting column
       # @param start_row [Integer] Starting row for lines
@@ -184,6 +185,9 @@ module BujoPdf
         end
 
         @pdf.stroke_color '000000'
+
+        # Redraw dots over the lines so they appear on top
+        @grid_system.redraw_dots(col: col, row: start_row, width: width, height: row_count)
       end
 
       # Calculate content width (usable area between margins)
