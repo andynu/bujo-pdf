@@ -66,13 +66,7 @@ module BujoPdf
       #
       # @return [void]
       def draw_header
-        header_box = @grid_system.rect(LEFT_MARGIN, HEADER_ROW, content_width, 2)
-
-        @pdf.bounding_box([header_box[:x], header_box[:y]],
-                          width: header_box[:width],
-                          height: header_box[:height]) do
-          @pdf.text 'Index', size: 18, style: :bold, align: :left, valign: :bottom
-        end
+        h2(LEFT_MARGIN, HEADER_ROW, 'Index')
       end
 
       # Draw the two-column layout with entry lines

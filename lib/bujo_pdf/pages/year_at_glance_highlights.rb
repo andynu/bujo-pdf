@@ -14,7 +14,7 @@ module BujoPdf
     #   page.generate
     class YearAtGlanceHighlights < YearAtGlanceBase
       def page_title
-        "Year #{context[:year]} - Highlights"
+        "Highlights of #{context[:year]}"
       end
 
       def destination_name
