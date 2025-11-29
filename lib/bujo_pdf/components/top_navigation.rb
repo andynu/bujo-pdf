@@ -12,7 +12,8 @@ module BujoPdf
     #   - Centered week title with date range
     #   - Next week link (if not last week)
     #
-    # All navigation links use gray color (888888) for subtle appearance.
+    # Navigation links have rounded rectangle backgrounds (20% opacity)
+    # matching the sidebar navigation style.
     #
     # Example usage:
     #   nav = TopNavigation.new(pdf, grid_system,
@@ -24,9 +25,8 @@ module BujoPdf
     #   )
     #   nav.render
     class TopNavigation < Component
-      FOOTER_FONT_SIZE = 8
+      NAV_FONT_SIZE = 8
       TITLE_FONT_SIZE = 14
-      NAV_COLOR = '888888'
 
       def render
         content_start_col = context[:content_start_col] || 3
@@ -55,59 +55,118 @@ module BujoPdf
       end
 
       def draw_year_link(nav_box)
-        with_font("Helvetica", FOOTER_FONT_SIZE) do
-          with_fill_color(NAV_COLOR) do
-            nav_year_width = @grid.width(4)
-            @pdf.text_box "< #{context[:year]}",
-                          at: [nav_box[:x], nav_box[:y]],
-                          width: nav_year_width,
-                          height: nav_box[:height],
-                          valign: :center
+        require_relative '../themes/theme_registry'
+        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
 
-            @pdf.link_annotation([nav_box[:x], nav_box[:y] - nav_box[:height],
-                                  nav_box[:x] + nav_year_width, nav_box[:y]],
-                                Dest: "seasonal",
-                                Border: [0, 0, 0])
-          end
-        end
+        link_width = @grid.width(2)
+        link_height = @grid.height(1)
+        link_x = @grid.x(0)  # Columns 0-1
+        link_y = @grid.y(0)  # Row 0 - top of page
+
+        # Draw background
+        draw_nav_background(link_x, link_y, link_width, link_height)
+
+        # Draw text
+        @pdf.font "Helvetica", size: NAV_FONT_SIZE
+        @pdf.fill_color nav_color
+        @pdf.text_box context[:year].to_s,
+                      at: [link_x, link_y],
+                      width: link_width,
+                      height: link_height,
+                      align: :center,
+                      valign: :center
+
+        # Link annotation
+        @pdf.link_annotation([link_x, link_y - link_height, link_x + link_width, link_y],
+                            Dest: "seasonal",
+                            Border: [0, 0, 0])
+
+        # Reset color
+        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
       end
 
       def draw_prev_week_link(nav_box)
-        with_fill_color(NAV_COLOR) do
-          nav_year_width = @grid.width(4)
-          nav_prev_x = nav_box[:x] + nav_year_width + @grid.width(1)
-          nav_prev_width = @grid.width(3)
+        require_relative '../themes/theme_registry'
+        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
 
-          @pdf.text_box "< w#{context[:week_num] - 1}",
-                        at: [nav_prev_x, nav_box[:y]],
-                        width: nav_prev_width,
-                        height: nav_box[:height],
-                        valign: :center
+        link_width = @grid.width(2)
+        link_height = @grid.height(1)
+        link_x = @grid.x(2)  # Columns 2-3
+        link_y = @grid.y(0)  # Row 0 - top of page
 
-          @pdf.link_annotation([nav_prev_x, nav_box[:y] - nav_box[:height],
-                                nav_prev_x + nav_prev_width, nav_box[:y]],
-                              Dest: "week_#{context[:week_num] - 1}",
-                              Border: [0, 0, 0])
-        end
+        # Draw background
+        draw_nav_background(link_x, link_y, link_width, link_height)
+
+        # Draw text
+        @pdf.font "Helvetica", size: NAV_FONT_SIZE
+        @pdf.fill_color nav_color
+        @pdf.text_box "w#{format('%02d', context[:week_num] - 1)}",
+                      at: [link_x, link_y],
+                      width: link_width,
+                      height: link_height,
+                      align: :center,
+                      valign: :center
+
+        # Link annotation
+        @pdf.link_annotation([link_x, link_y - link_height, link_x + link_width, link_y],
+                            Dest: "week_#{context[:week_num] - 1}",
+                            Border: [0, 0, 0])
+
+        # Reset color
+        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
       end
 
       def draw_next_week_link(nav_box)
-        with_fill_color(NAV_COLOR) do
-          nav_next_width = @grid.width(3)
-          nav_next_x = nav_box[:x] + nav_box[:width] - nav_next_width
+        require_relative '../themes/theme_registry'
+        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
 
-          @pdf.text_box "w#{context[:week_num] + 1} >",
-                        at: [nav_next_x, nav_box[:y]],
-                        width: nav_next_width,
-                        height: nav_box[:height],
-                        align: :right,
-                        valign: :center
+        link_width = @grid.width(2)
+        link_height = @grid.height(1)
+        link_x = @grid.x(40)  # Columns 40-41 (one box in from right edge)
+        link_y = @grid.y(0)  # Row 0 - top of page
 
-          @pdf.link_annotation([nav_next_x, nav_box[:y] - nav_box[:height],
-                                nav_next_x + nav_next_width, nav_box[:y]],
-                              Dest: "week_#{context[:week_num] + 1}",
-                              Border: [0, 0, 0])
+        # Draw background
+        draw_nav_background(link_x, link_y, link_width, link_height)
+
+        # Draw text
+        @pdf.font "Helvetica", size: NAV_FONT_SIZE
+        @pdf.fill_color nav_color
+        @pdf.text_box "w#{format('%02d', context[:week_num] + 1)}",
+                      at: [link_x, link_y],
+                      width: link_width,
+                      height: link_height,
+                      align: :center,
+                      valign: :center
+
+        # Link annotation
+        @pdf.link_annotation([link_x, link_y - link_height, link_x + link_width, link_y],
+                            Dest: "week_#{context[:week_num] + 1}",
+                            Border: [0, 0, 0])
+
+        # Reset color
+        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+      end
+
+      def draw_nav_background(left, top, width, height)
+        require_relative '../themes/theme_registry'
+        border_color = BujoPdf::Themes.current[:colors][:borders]
+
+        # Small inset for visual breathing room
+        inset = 2
+        rect_left = left + inset
+        rect_width = width - (inset * 2)
+        rect_top = top - inset
+        rect_height = height - (inset * 2)
+
+        # 20% opacity filled background (matching sidebar style)
+        @pdf.transparent(0.2) do
+          @pdf.fill_color border_color
+          @pdf.fill_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
         end
+
+        # Reset color
+        text_color = BujoPdf::Themes.current[:colors][:text_black]
+        @pdf.fill_color text_color
       end
 
       def draw_title(nav_box)
