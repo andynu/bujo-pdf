@@ -33,7 +33,8 @@ module BujoPdf
       # Layout constants
       LEFT_MARGIN = 2
       RIGHT_MARGIN = 41
-      COLUMN_GAP = 1        # Gap between columns in grid boxes
+      COLUMN_GAP = 1        # Gap between month columns in grid boxes
+      ENTRY_COLUMN_GAP = 1  # Gap between entry line columns within a month
       HEADER_ROW = 1
       CONTENT_START_ROW = 4
       MONTHS_PER_COLUMN = 3
@@ -50,6 +51,8 @@ module BujoPdf
       end
 
       def render
+        # Diagnostic: uncomment to show grid coordinates
+        #Components::GridRuler.new(@pdf, @grid_system).render
         draw_header
         draw_two_column_layout
       end
@@ -105,6 +108,8 @@ module BujoPdf
 
       # Draw a single month section
       #
+      # Each month has two columns of entry lines within its allocated space.
+      #
       # @param month_num [Integer] Month number (1-12)
       # @param col [Integer] Starting column for this section
       # @param start_row [Integer] Starting row for this section
@@ -113,7 +118,16 @@ module BujoPdf
       # @return [void]
       def draw_month_section(month_num, col, start_row, width, height)
         draw_month_header(month_num, col, start_row, width)
-        draw_entry_lines(col, start_row + 2, width, height - 2)
+
+        # Split the month width into two columns of entry lines
+        entry_col_width = (width - ENTRY_COLUMN_GAP) / 2
+        entry_col1 = col
+        entry_col2 = col + entry_col_width + ENTRY_COLUMN_GAP
+
+        # Draw entry lines starting 2 rows below the header
+        row = start_row + 2
+        draw_entry_lines(entry_col1, row, entry_col_width, height - 2)
+        draw_entry_lines(entry_col2, row, entry_col_width, height - 2)
       end
 
       # Draw month header with divider line
