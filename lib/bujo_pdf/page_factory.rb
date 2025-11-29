@@ -11,6 +11,7 @@ require_relative 'pages/grids/isometric_grid_page'
 require_relative 'pages/grids/lined_grid_page'
 require_relative 'pages/grids/perspective_grid_page'
 require_relative 'pages/index_pages'
+require_relative 'pages/future_log'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -43,6 +44,7 @@ module BujoPdf
       grid_lined: Pages::Grids::LinedGridPage,
       grid_perspective: Pages::Grids::PerspectiveGridPage,
       index: Pages::IndexPage,
+      future_log: Pages::FutureLog,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,

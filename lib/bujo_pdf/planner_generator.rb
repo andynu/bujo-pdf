@@ -41,10 +41,14 @@ module BujoPdf
     # Number of index pages to generate (configurable)
     INDEX_PAGE_COUNT = 4
 
+    # Number of future log pages (2 pages = 6 months)
+    FUTURE_LOG_PAGE_COUNT = 2
+
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = INDEX_PAGE_COUNT + 4 + total_weeks + 11  # index + 4 overview + weeks + 7 grid + 4 template pages
+      # index + future log + 4 overview + weeks + 7 grid + 4 template pages
+      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + 4 + total_weeks + 11
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -54,6 +58,7 @@ module BujoPdf
 
         # Generate all pages
         generate_index_pages
+        generate_future_log_pages
         generate_overview_pages
         generate_weekly_pages
         generate_grid_pages
@@ -97,6 +102,37 @@ module BujoPdf
       )
 
       page = PageFactory.create(:index, @pdf, context)
+      page.generate
+    end
+
+    def generate_future_log_pages
+      @future_log_pages = {}
+
+      FUTURE_LOG_PAGE_COUNT.times do |i|
+        page_num = i + 1
+        @pdf.start_new_page
+        generate_future_log_page(page_num)
+        @future_log_pages[page_num] = @pdf.page_number
+      end
+    end
+
+    def generate_future_log_page(future_log_page_num)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+      start_month = (future_log_page_num - 1) * 3 + 1  # Page 1 = months 1-3, Page 2 = months 4-6
+
+      context = RenderContext.new(
+        page_key: "future_log_#{future_log_page_num}".to_sym,
+        page_number: @pdf.page_number,
+        year: @year,
+        total_weeks: total_weeks,
+        total_pages: @total_pages,
+        future_log_page: future_log_page_num,
+        future_log_start_month: start_month,
+        date_config: @date_config,
+        event_store: @event_store
+      )
+
+      page = PageFactory.create(:future_log, @pdf, context)
       page.generate
     end
 
@@ -257,6 +293,7 @@ module BujoPdf
       # Capture instance variables in local scope for use in outline block
       year = @year
       index_pages = @index_pages
+      future_log_pages = @future_log_pages
       seasonal_page = @seasonal_page
       events_page = @events_page
       highlights_page = @highlights_page
@@ -277,6 +314,9 @@ module BujoPdf
       @pdf.outline.define do
         # Index pages (for custom table of contents)
         page destination: index_pages[1], title: 'Index'
+
+        # Future log (6-month spread)
+        page destination: future_log_pages[1], title: 'Future Log'
 
         # Year overview pages (flat, no nesting)
         page destination: seasonal_page, title: 'Seasonal Calendar'
