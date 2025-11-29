@@ -96,7 +96,13 @@ module BujoPdf
     end
 
     def generate_grid_pages
-      # Grids overview (entry point for Grids tab cycling)
+      # Grid showcase (entry point for Grids tab cycling)
+      @pdf.start_new_page
+      @pdf.add_dest('grid_showcase', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_showcase)
+      @grid_showcase_page = @pdf.page_number
+
+      # Grids overview
       @pdf.start_new_page
       @pdf.add_dest('grids_overview', @pdf.dest_xyz(0, @pdf.bounds.top))
       generate_page(:grids_overview)
@@ -140,10 +146,6 @@ module BujoPdf
     end
 
     def generate_template_pages
-      @pdf.start_new_page
-      generate_page(:grid_showcase)
-      @grid_showcase_page = @pdf.page_number
-
       @pdf.start_new_page
       generate_page(:reference)
       @reference_page = @pdf.page_number
@@ -254,8 +256,9 @@ module BujoPdf
           end
         end
 
-        # Grid reference pages
-        page destination: grids_overview_page, title: 'Grid Reference'
+        # Grid pages
+        page destination: grid_showcase_page, title: 'Grid Types Showcase'
+        page destination: grids_overview_page, title: '  - Basic Grids Overview'
         page destination: grid_dot_page, title: '  - Dot Grid (5mm)'
         page destination: grid_graph_page, title: '  - Graph Grid (5mm)'
         page destination: grid_lined_page, title: '  - Ruled Lines (10mm)'
@@ -264,7 +267,6 @@ module BujoPdf
         page destination: grid_hexagon_page, title: '  - Hexagon Grid'
 
         # Template pages
-        page destination: grid_showcase_page, title: 'Grid Types Showcase'
         page destination: reference_page, title: 'Calibration & Reference'
         page destination: daily_wheel_page, title: 'Daily Wheel'
         page destination: year_wheel_page, title: 'Year Wheel'

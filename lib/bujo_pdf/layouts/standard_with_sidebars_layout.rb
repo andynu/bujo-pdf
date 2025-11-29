@@ -107,9 +107,7 @@ module BujoPdf
           @pdf,
           @grid_system,
           top_tabs: top_tabs,
-          bottom_tabs: [
-            { label: "Dots", dest: "dots" }
-          ],
+          bottom_tabs: [],
           page_context: page.context  # Pass page context for current_page? detection
         )
         sidebar.render
@@ -128,7 +126,7 @@ module BujoPdf
           { label: "Events", dest: "year_events" },
           { label: "Highlights", dest: "year_highlights" },
           { label: "Multi", dest: "multi_year" },
-          { label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon] }
+          { label: "Grids", dest: [:grid_showcase, :grids_overview, :grid_dot, :grid_graph, :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon] }
         ]
 
         # Resolve each tab (handles both single destinations and cycling arrays)
