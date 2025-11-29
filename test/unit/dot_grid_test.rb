@@ -5,15 +5,20 @@ require_relative '../test_helper'
 
 # Mock PDF class for testing DotGrid
 class MockPDFForDotGrid
-  attr_reader :circles, :fill_colors
+  attr_reader :circles, :fill_colors, :stroke_colors
 
   def initialize
     @circles = []
     @fill_colors = []
+    @stroke_colors = []
   end
 
   def fill_color(color)
     @fill_colors << color
+  end
+
+  def stroke_color(color)
+    @stroke_colors << color
   end
 
   def fill_circle(position, radius)
