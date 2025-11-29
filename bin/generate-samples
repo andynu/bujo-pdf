@@ -17,14 +17,16 @@ DOCS_DIR = File.expand_path('../docs', __dir__)
 DPI = 150  # Resolution for PNG output
 
 # Page numbers (1-indexed as they appear in PDF)
+# Negative numbers count from end: -1 = last, -2 = second to last, etc.
 PAGES = {
   'seasonal_calendar' => 1,
   'year_events' => 2,
   'multi_year_overview' => 4,
-  'weekly' => 10,  # Pick a week in the middle
-  'grid_showcase' => -3,  # Third to last page
-  'reference' => -2,  # Second to last page
-  'blank_dots' => -1  # Last page
+  'weekly' => 10,           # Pick a week in the middle
+  'grid_showcase' => -11,   # First grid page (8 grids + 3 templates from end)
+  'reference' => -3,        # Calibration page
+  'daily_wheel' => -2,      # Daily wheel template
+  'year_wheel' => -1        # Year wheel template (last page)
 }
 
 puts "Generating sample images for planner documentation..."
@@ -44,7 +46,14 @@ puts "   ✓ #{DOCS_DIR}"
 puts
 
 # Step 3: Get total page count
-page_count = `identify -format "%n\n" #{PDF_FILE}`.lines.first.to_i
+# Try pdfinfo first, fall back to pdftk, then to hardcoded value
+page_count = nil
+if system("which pdfinfo > /dev/null 2>&1")
+  page_count = `pdfinfo #{PDF_FILE} 2>/dev/null | grep Pages | awk '{print $2}'`.strip.to_i
+elsif system("which pdftk > /dev/null 2>&1")
+  page_count = `pdftk #{PDF_FILE} dump_data 2>/dev/null | grep NumberOfPages | awk '{print $2}'`.strip.to_i
+end
+page_count = 68 if page_count.nil? || page_count == 0  # Fallback for 2025
 puts "3. PDF has #{page_count} pages"
 puts
 
@@ -60,10 +69,10 @@ PAGES.each do |name, page_num|
                   page_num
                 end
 
-  # ImageMagick uses 0-indexed pages
-  page_arg = "#{PDF_FILE}[#{actual_page - 1}]"
-
-  cmd = "convert -density #{DPI} #{page_arg} -background white -alpha remove -quality 90 #{output_file}"
+  # Use pdftoppm (poppler) for conversion - more commonly available than ImageMagick
+  # pdftoppm uses 1-indexed pages, outputs to stdout with -png flag
+  output_base = output_file.sub(/\.png$/, '')
+  cmd = "pdftoppm -png -r #{DPI} -f #{actual_page} -l #{actual_page} -singlefile #{PDF_FILE} #{output_base}"
 
   print "   Extracting page #{actual_page} (#{name})... "
   system(cmd, err: File::NULL) || abort("\n   ✗ Failed to convert #{name}")

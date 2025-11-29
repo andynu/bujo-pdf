@@ -2,29 +2,32 @@
 
 A Ruby gem for generating programmable bullet journal PDFs optimized for digital note-taking apps like Noteshelf and GoodNotes.
 
-## Example PDFs
+## Generating Example PDFs
 
-Download ready-to-use planners in three color themes:
+Generate planners for the current and next year in all themes:
 
-**2025:**
-- [Light Theme](examples/planner_2025_light.pdf) - Classic white background with gray dots
-- [Earth Theme](examples/planner_2025_earth.pdf) - Warm tan background with green accents
-- [Dark Theme](examples/planner_2025_dark.pdf) - Modern dark mode with gray dots
+```bash
+bin/generate-examples
+```
 
-**2026:**
-- [Light Theme](examples/planner_2026_light.pdf) - Classic white background with gray dots
-- [Earth Theme](examples/planner_2026_earth.pdf) - Warm tan background with green accents
-- [Dark Theme](examples/planner_2026_dark.pdf) - Modern dark mode with gray dots
+This creates `examples/` directory with:
+- `planner_2025_light.pdf` - Classic white background
+- `planner_2025_earth.pdf` - Warm tan with green accents
+- `planner_2025_dark.pdf` - Modern dark mode
+- `planner_2026_light.pdf`, `planner_2026_earth.pdf`, `planner_2026_dark.pdf`
 
 ## Features
 
+- **Color Themes** - Light, Earth, and Dark themes for different preferences
 - **Seasonal Calendar** - Year-at-a-glance view organized by seasons with mini month calendars
 - **Year-at-a-Glance Pages** - Events and Highlights grids (12 months × 31 days)
 - **Weekly Pages** - Daily sections with Cornell notes layout for structured note-taking
-- **PDF Navigation** - Internal hyperlinks between pages with clickable week numbers and tabs
+- **Grid Templates** - 8 full-page grid types: dot, graph, lined, isometric, perspective, hexagon
+- **Wheel Pages** - Daily and Year wheel templates for circular planning
+- **PDF Navigation** - Internal hyperlinks with multi-tap tab cycling through grid pages
+- **Calendar Integration** - Import events from iCal URLs (Google, Apple, Outlook)
 - **Dot Grid Backgrounds** - 5mm dot spacing throughout for handwriting guidance
 - **Grid-Based Layout** - Precise 43×55 grid system for consistent alignment
-- **Component Architecture** - Modular, maintainable code structure
 
 ## Sample Pages
 
@@ -48,16 +51,35 @@ One page per week with daily sections (Mon-Sun) and Cornell notes layout (Cues, 
 
 ![Weekly Page](docs/weekly.png)
 
-### Reference & Templates
+### Grid Showcase
+All grid types displayed in quadrants: dot, isometric, perspective, and hexagon grids.
 
-The planner includes a grid calibration/reference page and a blank dot grid template for additional notes.
+![Grid Showcase](docs/grid_showcase.png)
+
+### Wheel Templates
+Circular planning templates for daily and yearly visualization.
 
 <details>
-<summary>View reference page and blank template</summary>
+<summary>View wheel templates</summary>
+
+**Daily Wheel** - 24-hour circular layout for daily planning:
+
+![Daily Wheel](docs/daily_wheel.png)
+
+**Year Wheel** - 365-day circular calendar with week markers:
+
+![Year Wheel](docs/year_wheel.png)
+
+</details>
+
+### Reference Page
+
+Grid calibration page with measurements and coordinate system documentation.
+
+<details>
+<summary>View reference page</summary>
 
 ![Reference Page](docs/reference.png)
-
-![Blank Dot Grid](docs/blank_dots.png)
 
 </details>
 
@@ -97,10 +119,16 @@ Generate for a specific year:
 bujo-pdf 2025
 ```
 
-Show version:
+Generate with a specific theme:
 
 ```bash
-bujo-pdf --version
+bujo-pdf 2025 --theme earth    # Options: light, earth, dark
+```
+
+List available themes:
+
+```bash
+bujo-pdf --list-themes
 ```
 
 Show help:
@@ -120,8 +148,8 @@ BujoPdf.generate
 # Generate for specific year
 BujoPdf.generate(2025)
 
-# Specify custom output path
-BujoPdf.generate(2025, output_path: 'my_planner.pdf')
+# Specify theme and output path
+BujoPdf.generate(2025, theme: :earth, output_path: 'my_planner.pdf')
 ```
 
 ### Calendar Integration
@@ -187,14 +215,18 @@ The generated PDF includes:
 1. **Seasonal Calendar** - Overview page with all four seasons
 2. **Year Events** - 12×31 grid for tracking events throughout the year
 3. **Year Highlights** - 12×31 grid for noting daily highlights
-4. **Weekly Pages** (52-53 pages) - One page per week with:
+4. **Multi-Year Overview** - 4-year calendar spread
+5. **Weekly Pages** (52-53 pages) - One page per week with:
    - Daily section (7 columns for Mon-Sun)
    - Cornell notes section (Cues, Notes, Summary)
    - Navigation links to previous/next week
-5. **Reference Page** - Grid calibration and measurement guide
-6. **Blank Dot Grid** - Template page for additional notes
+6. **Grid Pages** (8 pages) - Full-page templates:
+   - Grid Showcase (all types in quadrants)
+   - Grids Overview, Dot, Graph, Lined, Isometric, Perspective, Hexagon
+7. **Reference Page** - Grid calibration and measurement guide
+8. **Wheel Pages** - Daily Wheel and Year Wheel templates
 
-Total pages: 57-58 (varies by year)
+Total pages: 68 (varies slightly by year)
 
 ## Development
 
@@ -210,7 +242,7 @@ To install this gem onto your local machine:
 
 ```bash
 gem build bujo-pdf.gemspec
-gem install bujo-pdf-0.1.0.gem
+gem install bujo-pdf-0.2.0.gem
 ```
 
 To test local installation:
