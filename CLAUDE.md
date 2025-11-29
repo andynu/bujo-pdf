@@ -193,13 +193,15 @@ week_num = (days_from_start / 7) + 1
 - `year_highlights` - Year at a Glance - Highlights
 - `multi_year` - Multi-year overview page
 - `week_N` - Weekly page N (e.g., `week_1`, `week_42`)
-- `grids_overview` - Grid reference overview page
+- `grid_showcase` - Grid types showcase (entry point)
+- `grids_overview` - Basic grids overview page
 - `grid_dot` - Full-page dot grid (5mm)
 - `grid_graph` - Full-page graph grid (5mm)
 - `grid_lined` - Full-page ruled lines (10mm)
-- `grid_showcase` - Advanced grid types showcase
+- `grid_isometric` - Full-page isometric grid
+- `grid_perspective` - Full-page 1-point perspective grid
+- `grid_hexagon` - Full-page hexagon grid
 - `reference` - Grid calibration page
-- `dots` - Blank dot grid page
 
 **Link annotations** use `[left, bottom, right, top]` format (all from page bottom):
 ```ruby
@@ -217,7 +219,7 @@ Right sidebar tabs can cycle through multiple related pages using destination ar
 
 ```ruby
 # In StandardWithSidebarsLayout#build_top_tabs
-{ label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
+{ label: "Grids", dest: [:grid_showcase, :grids_overview, :grid_dot, :grid_graph, :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon] }
 ```
 
 **Behavior**:
@@ -226,12 +228,12 @@ Right sidebar tabs can cycle through multiple related pages using destination ar
 - After last page → wraps back to first page
 - Tab is highlighted (bold) when on any page in the cycle
 
-**Example: Grids tab cycling**:
-1. Click "Grids" from weekly page → `grids_overview` (overview with samples)
-2. Click "Grids" again → `grid_dot` (full-page dot grid)
-3. Click "Grids" again → `grid_graph` (full-page graph grid)
-4. Click "Grids" again → `grid_lined` (full-page ruled lines)
-5. Click "Grids" again → cycles back to `grids_overview`
+**Example: Grids tab cycling** (8 pages):
+1. Click "Grids" from weekly page → `grid_showcase` (all grid types in quadrants)
+2. Click "Grids" again → `grids_overview` (basic grids overview)
+3. Click "Grids" again → `grid_dot` → `grid_graph` → `grid_lined`
+4. Continue → `grid_isometric` → `grid_perspective` → `grid_hexagon`
+5. Click "Grids" again → cycles back to `grid_showcase`
 
 **Implementation**: `lib/bujo_pdf/layouts/standard_with_sidebars_layout.rb:137-256`
 
@@ -271,12 +273,16 @@ Each page type has its own class in `lib/bujo_pdf/pages/`:
    - Navigation links: previous/next week, back to year overview
    - Time period labels (AM/PM/EVE) on Monday column
 
-4. **Grid Reference Pages** (`grids_overview.rb`, `grids/` directory)
-   - **Grids Overview**: Entry point with clickable samples of all basic grids
-   - **Dot Grid Page**: Full-page 5mm dot grid template
-   - **Graph Grid Page**: Full-page 5mm square grid (lines at every dot position)
-   - **Lined Grid Page**: Full-page 10mm ruled lines with left margin
-   - Accessed via multi-tap Grids navigation tab
+4. **Grid Pages** (`grid_showcase.rb`, `grids_overview.rb`, `grids/` directory)
+   - **Grid Showcase**: All grid types displayed in quadrants (entry point)
+   - **Grids Overview**: Clickable samples of basic grids
+   - **Dot Grid Page**: Full-page 5mm dot grid
+   - **Graph Grid Page**: Full-page 5mm square grid
+   - **Lined Grid Page**: Full-page 10mm ruled lines
+   - **Isometric Grid Page**: Full-page 30-60-90 degree diamond grid
+   - **Perspective Grid Page**: Full-page 1-point perspective with guide rectangles
+   - **Hexagon Grid Page**: Full-page tessellating flat-top hexagons
+   - Accessed via multi-tap Grids navigation tab (8 pages cycle)
 
 5. **Reference Page** (`reference_calibration.rb`)
    - Calibration grid with measurements
@@ -284,10 +290,9 @@ Each page type has its own class in `lib/bujo_pdf/pages/`:
    - Grid system documentation
    - Prawn coordinate system reference
 
-6. **Grid Showcase** (`grid_showcase.rb`)
-   - Advanced grid types (isometric, perspective, hexagon)
-   - Quadrant-based layout with labels
-   - Visual reference for specialized grids
+6. **Wheel Pages** (`daily_wheel.rb`, `year_wheel.rb`)
+   - Daily Wheel: Circular daily planning template
+   - Year Wheel: Circular year-at-a-glance visualization
 
 ## Common Patterns
 
@@ -352,23 +357,19 @@ end
 ## Output
 
 - **Filename**: `planner_{year}.pdf`
-- **Page count**: 61-62 pages typical (4 overview + 52-53 weekly + 4 grids + 3 templates)
-- **File size**: Under 4MB
+- **Page count**: 68 pages typical (4 overview + 52-53 weekly + 8 grids + 3 templates)
+- **File size**: ~4-5MB
 - **Generation time**: Under 5 seconds
 
 ## Key Files
 
 - **bin/bujo-pdf** - CLI executable for generating planners
+- **bin/generate-examples** - Generate planners for current+next year in all themes
 - **lib/bujo_pdf/** - Component-based generator library
-  - **pages/** - Page classes (seasonal calendar, year-at-a-glance, weekly pages)
+  - **pages/** - Page classes (seasonal calendar, year-at-a-glance, weekly pages, grids)
   - **layouts/** - Layout classes (full page, standard with sidebars)
   - **components/** - Reusable components (week sidebar, navigation tabs, fieldsets)
-  - **utilities/** - Helper classes (grid system, date calculator)
+  - **utilities/** - Helper classes (grid system, date calculator, grid renderers)
+  - **themes/** - Color theme definitions (light, earth, dark)
+- **config/** - Configuration file examples (dates.yml, calendars.yml)
 - **Gemfile** - Dependencies specification
-- **idea.md** - Original design specification
-- **CLAUDE.local.md** - Detailed grid system documentation
-- **test_*.rb** - Test scripts for PDF link coordinate debugging
-
-## Utilitides
-For managing planning issues and features use the `bd` command.
-Run `bd quickstart` to learn more about its use.

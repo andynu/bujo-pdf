@@ -21,3 +21,5 @@ config/dates.yml
 config/calendars.yml
 .cache/
 examples/
+.DS_Store
+.claude/
