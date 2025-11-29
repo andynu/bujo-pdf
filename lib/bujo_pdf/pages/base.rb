@@ -62,7 +62,7 @@ module BujoPdf
     class Base
       include Components::All
 
-      attr_reader :pdf, :context, :grid_system, :layout, :content_area, :new_layout
+      attr_reader :pdf, :context, :grid_system, :grid, :layout, :content_area, :new_layout
 
       # Initialize a new page instance.
       #
@@ -74,6 +74,7 @@ module BujoPdf
         # Accept both RenderContext objects and hashes for backward compatibility
         @context = context.is_a?(RenderContext) ? context : wrap_context_hash(context)
         @grid_system = GridSystem.new(pdf)
+        @grid = @grid_system  # Alias for component compatibility
         @layout = layout || default_layout  # Legacy layout system
         @new_layout = nil  # New declarative layout system (set via use_layout)
         @components = []

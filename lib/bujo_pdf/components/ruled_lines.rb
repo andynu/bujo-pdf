@@ -31,7 +31,7 @@ module BujoPdf
         def ruled_lines(col, row, width, height, color: 'E5E5E5', stroke: 0.5)
           RuledLines.new(
             pdf: @pdf,
-            grid: @grid_system,
+            grid: @grid,
             col: col,
             row: row,
             width: width,

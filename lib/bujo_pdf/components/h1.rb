@@ -49,7 +49,7 @@ module BujoPdf
         def h1(col, row, text, color: nil, style: :bold, position: :center, align: :left, width: nil)
           H1.new(
             pdf: @pdf,
-            grid: @grid_system,
+            grid: @grid,
             col: col,
             row: row,
             text: text,

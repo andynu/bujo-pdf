@@ -29,10 +29,9 @@ module BujoPdf
         # @param stroke [Float] Line width in points (default: 0.5)
         # @return [void]
         def hline(col, row, width, color: 'CCCCCC', stroke: 0.5)
-          grid = defined?(@grid_system) && @grid_system ? @grid_system : @grid
           HLine.new(
             pdf: @pdf,
-            grid: grid,
+            grid: @grid,
             col: col,
             row: row,
             width: width,

@@ -34,7 +34,7 @@ module BujoPdf
         def h2(col, row, text, color: nil, style: :bold)
           H2.new(
             pdf: @pdf,
-            grid: @grid_system,
+            grid: @grid,
             col: col,
             row: row,
             text: text,
