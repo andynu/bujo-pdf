@@ -11,6 +11,7 @@ module BujoPdf
     # Provides minimal structure while guiding the reflection process.
     #
     # Design:
+    # - Top navigation with prev/next month links
     # - Month header with year
     # - Three reflection sections with prompts
     # - Space for writing under each prompt
@@ -25,6 +26,7 @@ module BujoPdf
     #   page = MonthlyReview.new(pdf, context)
     #   page.generate
     class MonthlyReview < Base
+      NAV_FONT_SIZE = 8
       # Reflection prompts for each section
       PROMPTS = [
         {
@@ -52,11 +54,80 @@ module BujoPdf
       end
 
       def render
+        draw_navigation
         draw_header
         draw_prompt_sections
       end
 
       private
+
+      # Draw the top navigation with prev/next month links
+      #
+      # @return [void]
+      def draw_navigation
+        require_relative '../themes/theme_registry'
+        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
+        border_color = BujoPdf::Themes.current[:colors][:borders]
+
+        # Previous month link (if not January)
+        if @review_month > 1
+          prev_month = Date::ABBR_MONTHNAMES[@review_month - 1]
+          draw_nav_link(2, "< #{prev_month}", "review_#{@review_month - 1}", nav_color, border_color)
+        end
+
+        # Next month link (if not December)
+        if @review_month < 12
+          next_month = Date::ABBR_MONTHNAMES[@review_month + 1]
+          draw_nav_link(39, "#{next_month} >", "review_#{@review_month + 1}", nav_color, border_color)
+        end
+      end
+
+      # Draw a navigation link with background
+      #
+      # @param col [Integer] Column position
+      # @param text [String] Link text
+      # @param dest [String] Named destination
+      # @param nav_color [String] Text color
+      # @param border_color [String] Background color
+      # @return [void]
+      def draw_nav_link(col, text, dest, nav_color, border_color)
+        link_width = @grid_system.width(3)
+        link_height = @grid_system.height(1)
+        link_x = @grid_system.x(col)
+        link_y = @grid_system.y(0)
+
+        # Draw background
+        inset = 2
+        @pdf.transparent(0.2) do
+          @pdf.fill_color border_color
+          @pdf.fill_rounded_rectangle(
+            [link_x + inset, link_y - inset],
+            link_width - (inset * 2),
+            link_height - (inset * 2),
+            2
+          )
+        end
+
+        # Draw text
+        @pdf.font "Helvetica", size: NAV_FONT_SIZE
+        @pdf.fill_color nav_color
+        @pdf.text_box text,
+                      at: [link_x, link_y],
+                      width: link_width,
+                      height: link_height,
+                      align: :center,
+                      valign: :center
+
+        # Link annotation
+        @pdf.link_annotation(
+          [link_x, link_y - link_height, link_x + link_width, link_y],
+          Dest: dest,
+          Border: [0, 0, 0]
+        )
+
+        # Reset color
+        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+      end
 
       # Draw the page header with month and year
       #

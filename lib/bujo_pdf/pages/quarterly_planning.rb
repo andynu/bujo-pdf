@@ -11,6 +11,7 @@ module BujoPdf
     # grid for tracking weekly targets.
     #
     # Design:
+    # - Top navigation with prev/next quarter links
     # - Quarter header with date range
     # - Goals section with prompts
     # - 12-week grid with week numbers
@@ -25,6 +26,7 @@ module BujoPdf
     #   page = QuarterlyPlanning.new(pdf, context)
     #   page.generate
     class QuarterlyPlanning < Base
+      NAV_FONT_SIZE = 8
       # Quarter date ranges (start month, end month)
       QUARTER_MONTHS = {
         1 => [1, 3],   # Q1: Jan-Mar
@@ -52,12 +54,79 @@ module BujoPdf
       end
 
       def render
+        draw_navigation
         draw_header
         draw_goals_section
         draw_week_grid
       end
 
       private
+
+      # Draw the top navigation with prev/next quarter links
+      #
+      # @return [void]
+      def draw_navigation
+        require_relative '../themes/theme_registry'
+        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
+        border_color = BujoPdf::Themes.current[:colors][:borders]
+
+        # Previous quarter link (if not Q1)
+        if @quarter > 1
+          draw_nav_link(2, "< Q#{@quarter - 1}", "quarter_#{@quarter - 1}", nav_color, border_color)
+        end
+
+        # Next quarter link (if not Q4)
+        if @quarter < 4
+          draw_nav_link(39, "Q#{@quarter + 1} >", "quarter_#{@quarter + 1}", nav_color, border_color)
+        end
+      end
+
+      # Draw a navigation link with background
+      #
+      # @param col [Integer] Column position
+      # @param text [String] Link text
+      # @param dest [String] Named destination
+      # @param nav_color [String] Text color
+      # @param border_color [String] Background color
+      # @return [void]
+      def draw_nav_link(col, text, dest, nav_color, border_color)
+        link_width = @grid_system.width(3)
+        link_height = @grid_system.height(1)
+        link_x = @grid_system.x(col)
+        link_y = @grid_system.y(0)
+
+        # Draw background
+        inset = 2
+        @pdf.transparent(0.2) do
+          @pdf.fill_color border_color
+          @pdf.fill_rounded_rectangle(
+            [link_x + inset, link_y - inset],
+            link_width - (inset * 2),
+            link_height - (inset * 2),
+            2
+          )
+        end
+
+        # Draw text
+        @pdf.font "Helvetica", size: NAV_FONT_SIZE
+        @pdf.fill_color nav_color
+        @pdf.text_box text,
+                      at: [link_x, link_y],
+                      width: link_width,
+                      height: link_height,
+                      align: :center,
+                      valign: :center
+
+        # Link annotation
+        @pdf.link_annotation(
+          [link_x, link_y - link_height, link_x + link_width, link_y],
+          Dest: dest,
+          Border: [0, 0, 0]
+        )
+
+        # Reset color
+        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+      end
 
       # Draw the quarter header with date range
       #

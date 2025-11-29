@@ -2,6 +2,7 @@
 
 require 'prawn'
 require 'date'
+require 'set'
 require_relative 'utilities/date_calculator'
 require_relative 'utilities/dot_grid'
 require_relative 'page_factory'
@@ -58,8 +59,8 @@ module BujoPdf
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
       collections_count = @collections_config.count
-      # index + future log + collections + reviews + quarters + 4 overview + weeks + 8 grid + 4 template pages
-      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + collections_count + MONTHLY_REVIEW_COUNT + QUARTERLY_PLANNING_COUNT + 4 + total_weeks + 12
+      # 1 seasonal + index + future log + 3 overview + weeks + reviews + quarters + 8 grid + 4 template + collections
+      @total_pages = 1 + INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + 3 + total_weeks + MONTHLY_REVIEW_COUNT + QUARTERLY_PLANNING_COUNT + 12 + collections_count
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -67,16 +68,23 @@ module BujoPdf
         # Create reusable dot grid stamp for efficiency (reduces file size by ~90%)
         DotGrid.create_stamp(@pdf, "page_dots")
 
-        # Generate all pages
+        # Generate all pages in user-requested order:
+        # 1. Seasonal calendar (first page)
+        generate_seasonal_page
+        # 2. Index pages
         generate_index_pages
+        # 3. Future log
         generate_future_log_pages
-        generate_collection_pages
-        generate_monthly_review_pages
-        generate_quarterly_planning_pages
-        generate_overview_pages
-        generate_weekly_pages
+        # 4. Year overview pages (events, highlights, multi-year)
+        generate_year_overview_pages
+        # 5. Weekly pages with interleaved monthly reviews and quarterly planning
+        generate_weekly_pages_interleaved
+        # 6. Grid pages
         generate_grid_pages
+        # 7. Template pages
         generate_template_pages
+        # 8. Collections (at the end)
+        generate_collection_pages
 
         # Build PDF outline (table of contents / bookmarks)
         build_outline
@@ -87,15 +95,18 @@ module BujoPdf
 
     private
 
+    def generate_seasonal_page
+      # First page doesn't need start_new_page
+      generate_page(:seasonal)
+      @seasonal_page = @pdf.page_number
+    end
+
     def generate_index_pages
       @index_pages = {}
 
       INDEX_PAGE_COUNT.times do |i|
         page_num = i + 1
-
-        # First page doesn't need start_new_page
-        @pdf.start_new_page unless page_num == 1
-
+        @pdf.start_new_page
         generate_index_page(page_num)
         @index_pages[page_num] = @pdf.page_number
       end
@@ -180,17 +191,6 @@ module BujoPdf
       page.generate
     end
 
-    def generate_monthly_review_pages
-      @monthly_review_pages = {}
-
-      MONTHLY_REVIEW_COUNT.times do |i|
-        month_num = i + 1
-        @pdf.start_new_page
-        generate_monthly_review_page(month_num)
-        @monthly_review_pages[month_num] = @pdf.page_number
-      end
-    end
-
     def generate_monthly_review_page(month_num)
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
 
@@ -207,17 +207,6 @@ module BujoPdf
 
       page = PageFactory.create(:monthly_review, @pdf, context)
       page.generate
-    end
-
-    def generate_quarterly_planning_pages
-      @quarterly_planning_pages = {}
-
-      QUARTERLY_PLANNING_COUNT.times do |i|
-        quarter_num = i + 1
-        @pdf.start_new_page
-        generate_quarterly_planning_page(quarter_num)
-        @quarterly_planning_pages[quarter_num] = @pdf.page_number
-      end
     end
 
     def generate_quarterly_planning_page(quarter_num)
@@ -238,11 +227,7 @@ module BujoPdf
       page.generate
     end
 
-    def generate_overview_pages
-      @pdf.start_new_page
-      generate_page(:seasonal)
-      @seasonal_page = @pdf.page_number
-
+    def generate_year_overview_pages
       @pdf.start_new_page
       generate_page(:year_events)
       @events_page = @pdf.page_number
@@ -256,13 +241,42 @@ module BujoPdf
       @multi_year_page = @pdf.page_number
     end
 
-    def generate_weekly_pages
+    def generate_weekly_pages_interleaved
       @weekly_start_page = @pdf.page_number + 1  # Next page
       @week_pages = {}
+      @monthly_review_pages = {}
+      @quarterly_planning_pages = {}
+
+      # Track which months/quarters we've generated pages for
+      generated_months = Set.new
+      generated_quarters = Set.new
 
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
       total_weeks.times do |i|
         week_num = i + 1
+        week_start = Utilities::DateCalculator.week_start(@year, week_num)
+
+        # Determine the "primary month" for this week (majority of days or start of week)
+        primary_month = week_start.month
+
+        # Check if this week starts a new quarter
+        quarter = ((primary_month - 1) / 3) + 1
+        if !generated_quarters.include?(quarter) && week_start.year == @year
+          @pdf.start_new_page
+          generate_quarterly_planning_page(quarter)
+          @quarterly_planning_pages[quarter] = @pdf.page_number
+          generated_quarters.add(quarter)
+        end
+
+        # Check if this week starts a new month
+        if !generated_months.include?(primary_month) && week_start.year == @year
+          @pdf.start_new_page
+          generate_monthly_review_page(primary_month)
+          @monthly_review_pages[primary_month] = @pdf.page_number
+          generated_months.add(primary_month)
+        end
+
+        # Generate the weekly page
         @pdf.start_new_page
         generate_weekly_page(week_num)
         @week_pages[week_num] = @pdf.page_number
@@ -423,28 +437,25 @@ module BujoPdf
       year_wheel_page = @year_wheel_page
 
       @pdf.outline.define do
+        # Seasonal Calendar (first page - year overview)
+        page destination: seasonal_page, title: 'Seasonal Calendar'
+
         # Index pages (for custom table of contents)
         page destination: index_pages[1], title: 'Index'
 
         # Future log (6-month spread)
         page destination: future_log_pages[1], title: 'Future Log'
 
-        # Collection pages (if any configured)
-        collections.each do |collection|
-          page destination: collection_pages[collection[:id]], title: collection[:title]
-        end
-
-        # Monthly reviews (12 pages)
-        page destination: monthly_review_pages[1], title: 'Monthly Reviews'
-
-        # Quarterly planning (4 pages)
-        page destination: quarterly_planning_pages[1], title: 'Quarterly Planning'
-
-        # Year overview pages (flat, no nesting)
-        page destination: seasonal_page, title: 'Seasonal Calendar'
+        # Year overview pages
         page destination: events_page, title: 'Year at a Glance - Events'
         page destination: highlights_page, title: 'Year at a Glance - Highlights'
         page destination: multi_year_page, title: 'Multi-Year Overview'
+
+        # Quarterly planning (4 pages - interleaved with weeks)
+        page destination: quarterly_planning_pages[1], title: 'Quarterly Planning'
+
+        # Monthly reviews (12 pages - interleaved with weeks)
+        page destination: monthly_review_pages[1], title: 'Monthly Reviews'
 
         # Month pages (flat, linking to first week of each month)
         (1..12).each do |month|
@@ -473,6 +484,11 @@ module BujoPdf
         page destination: reference_page, title: 'Calibration & Reference'
         page destination: daily_wheel_page, title: 'Daily Wheel'
         page destination: year_wheel_page, title: 'Year Wheel'
+
+        # Collection pages (at the end, if any configured)
+        collections.each do |collection|
+          page destination: collection_pages[collection[:id]], title: collection[:title]
+        end
       end
     end
 
