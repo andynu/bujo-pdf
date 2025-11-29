@@ -105,9 +105,9 @@ module BujoPdf
       # @param entry_num [Integer] Entry number to display
       # @return [void]
       def draw_entry_line(col, row, width, entry_num)
-        # Number column (2 boxes wide)
+        # Number column (2 boxes wide), shifted up one box
         num_width = 2
-        num_box = @grid_system.rect(col, row, num_width, 2)
+        num_box = @grid_system.rect(col, row - 1, num_width, 2)
 
         @pdf.bounding_box([num_box[:x], num_box[:y]],
                           width: num_box[:width],
