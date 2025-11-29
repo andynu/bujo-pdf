@@ -53,6 +53,8 @@ module BujoPdf
     autoload :Week, 'bujo_pdf/pdf_dsl/week'
     autoload :Month, 'bujo_pdf/pdf_dsl/week'
     autoload :PdfBuilder, 'bujo_pdf/pdf_dsl/pdf_builder'
+    autoload :LinkRegistry, 'bujo_pdf/pdf_dsl/link_registry'
+    autoload :LinkResolver, 'bujo_pdf/pdf_dsl/link_registry'
 
     # Recipe registry (Phase 3)
     @recipes = {}

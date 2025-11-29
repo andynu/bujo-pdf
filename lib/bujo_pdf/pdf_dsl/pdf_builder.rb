@@ -2,14 +2,18 @@
 
 require_relative 'declaration_context'
 require_relative 'pdf_definition'
+require_relative 'link_registry'
 
 module BujoPdf
   module PdfDSL
-    # PdfBuilder orchestrates the PDF generation process.
+    # PdfBuilder orchestrates the PDF generation process using two passes.
     #
-    # The builder takes a PDF definition and parameters, evaluates the
-    # definition to collect page declarations, then renders each page
-    # using the existing page classes.
+    # The builder uses a two-pass architecture:
+    # 1. Declaration pass - Evaluate definition, collect pages, build link registry
+    # 2. Render pass - Generate pages with resolved cross-references
+    #
+    # This allows pages to reference each other (prev/next week, year overview
+    # links to weeks) because all destinations are known before rendering.
     #
     # @example Basic usage
     #   definition = PdfDefinition.new(:my_planner) { |year:| ... }
@@ -20,6 +24,8 @@ module BujoPdf
     #   builder.build(definition, year: 2025, output: 'my_planner.pdf')
     #
     class PdfBuilder
+      attr_reader :link_registry
+
       # Build a PDF from a definition.
       #
       # @param definition [PdfDefinition] The PDF definition to build
@@ -27,9 +33,12 @@ module BujoPdf
       # @param params [Hash] Parameters to pass to the definition
       # @return [Prawn::Document, String] The PDF document or output path
       def build(definition, output: nil, **params)
-        # Phase 1: Evaluate definition to collect declarations
+        # Phase 1: Declaration pass
         context = DeclarationContext.new
         definition.evaluate(context, **params)
+
+        # Build link registry from declarations
+        @link_registry = build_link_registry(context)
 
         # Set theme if specified
         apply_theme(context.theme_name) if context.theme_name
@@ -43,7 +52,7 @@ module BujoPdf
         # Build render context base
         base_context = build_base_context(params, context)
 
-        # Phase 2: Render each declared page
+        # Phase 2: Render pass - generate pages with resolved links
         render_pages(pdf, context.pages, base_context)
 
         # Output
@@ -59,6 +68,28 @@ module BujoPdf
       end
 
       private
+
+      # Build the link registry from declarations.
+      #
+      # Registers all pages and groups for link resolution during render.
+      #
+      # @param context [DeclarationContext] The declaration context
+      # @return [LinkRegistry] The populated link registry
+      def build_link_registry(context)
+        registry = LinkRegistry.new
+
+        # Register all pages with their page numbers
+        context.pages.each_with_index do |page_decl, index|
+          registry.register(page_decl, page_number: index + 1)
+        end
+
+        # Register all groups
+        context.groups.each do |group_decl|
+          registry.register_group(group_decl)
+        end
+
+        registry
+      end
 
       # Apply the specified theme.
       #
@@ -111,7 +142,8 @@ module BujoPdf
         {
           year: year,
           total_weeks: total_weeks,
-          total_pages: declaration_context.pages.length
+          total_pages: declaration_context.pages.length,
+          link_registry: @link_registry
         }
       end
 
@@ -159,6 +191,13 @@ module BujoPdf
             context[key] = value
           end
         end
+
+        # Create link resolver for this page
+        context[:link_resolver] = LinkResolver.new(
+          @link_registry,
+          current_page: page_decl.type,
+          current_params: context.slice(:week_num, :month, :year)
+        )
 
         context
       end
