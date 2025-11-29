@@ -18,10 +18,10 @@ This is a Ruby-based PDF planner generator that creates programmable bullet jour
 ### Generate Planner
 ```bash
 # Generate for current year
-bin/bujo-pdf generate
+bin/bujo-pdf 
 
 # Generate for specific year
-bin/bujo-pdf generate 2025
+bin/bujo-pdf 2025
 
 # Install dependencies first if needed
 bundle install
@@ -43,7 +43,7 @@ ruby test_coords.rb
 
 **Core responsibility**: Generate a complete planner PDF for a specified year
 
-**Main flow** (`generate` method):
+**Main flow** :
 1. Set up named destinations for navigation
 2. Generate seasonal calendar page
 3. Generate year-at-a-glance pages (Events & Highlights)
@@ -121,6 +121,39 @@ The `Fieldset` component (`lib/bujo_pdf/components/fieldset.rb`) creates HTML-li
 - `+90` = counter-clockwise (text reads bottom-to-top)
 - `-90` = clockwise (text reads top-to-bottom)
 
+### WeekGrid Component
+
+The `WeekGrid` component (`lib/bujo_pdf/components/week_grid.rb`) renders 7-column week-based grids with optional quantization for visual consistency across pages.
+
+**Key feature**: When `quantize: true` and width is divisible by 7 grid boxes, columns align exactly with the dot grid and have identical widths across all pages using the same box count.
+
+**Usage via grid helper**:
+```ruby
+# Basic usage with quantization
+grid.week_grid(5, 10, 35, 15, quantize: true).render
+
+# With block for custom cell rendering
+grid.week_grid(5, 10, 35, 15) do |day_index, cell_rect|
+  # day_index: 0-6 (Monday-Sunday)
+  # cell_rect: {x:, y:, width:, height:} in points
+  pdf.text_box "Day #{day_index}", at: [cell_rect[:x], cell_rect[:y]]
+end
+```
+
+**Parameters**:
+- `quantize`: Enable box-aligned column widths (default: true)
+- `show_headers`: Render M/T/W/T/F/S/S labels (default: true)
+- `first_day`: Week start day `:monday` or `:sunday` (default: :monday)
+- `header_height`: Height for headers in points (default: DOT_SPACING)
+- `cell_callback`: Proc for custom cell rendering
+
+**Quantization behavior**:
+- **35 boxes ÷ 7 = 5 boxes/day**: Quantized (grid-aligned)
+- **37 boxes ÷ 7 = 5.29 boxes/day**: Proportional (fallback)
+- **42 boxes ÷ 7 = 6 boxes/day**: Quantized (grid-aligned)
+
+**Used by**: DailySection component in weekly pages for consistent day column widths.
+
 ### Debug Mode
 
 Toggle `DEBUG_GRID` constant in `lib/bujo_pdf/planner_generator.rb` to overlay diagnostic grid:
@@ -158,8 +191,14 @@ week_num = (days_from_start / 7) + 1
 - `seasonal` - Seasonal calendar page
 - `year_events` - Year at a Glance - Events
 - `year_highlights` - Year at a Glance - Highlights
+- `multi_year` - Multi-year overview page
 - `week_N` - Weekly page N (e.g., `week_1`, `week_42`)
-- `reference` - Grid reference/calibration page
+- `grids_overview` - Grid reference overview page
+- `grid_dot` - Full-page dot grid (5mm)
+- `grid_graph` - Full-page graph grid (5mm)
+- `grid_lined` - Full-page ruled lines (10mm)
+- `grid_showcase` - Advanced grid types showcase
+- `reference` - Grid calibration page
 - `dots` - Blank dot grid page
 
 **Link annotations** use `[left, bottom, right, top]` format (all from page bottom):
@@ -171,7 +210,30 @@ week_num = (days_from_start / 7) + 1
 
 **Sidebar navigation**:
 - Left sidebar: `lib/bujo_pdf/components/week_sidebar.rb` - Vertical week list with month indicators
-- Right sidebar: `lib/bujo_pdf/components/navigation_tabs.rb` - Rotated tabs for year pages
+- Right sidebar: `lib/bujo_pdf/components/right_sidebar.rb` - Rotated tabs for year and grid pages
+
+**Multi-tap navigation cycling** (Plan 21):
+Right sidebar tabs can cycle through multiple related pages using destination arrays:
+
+```ruby
+# In StandardWithSidebarsLayout#build_top_tabs
+{ label: "Grids", dest: [:grids_overview, :grid_dot, :grid_graph, :grid_lined] }
+```
+
+**Behavior**:
+- When not on any page in the cycle → clicking goes to first page (entry point)
+- When on a page in the cycle → clicking advances to next page in sequence
+- After last page → wraps back to first page
+- Tab is highlighted (bold) when on any page in the cycle
+
+**Example: Grids tab cycling**:
+1. Click "Grids" from weekly page → `grids_overview` (overview with samples)
+2. Click "Grids" again → `grid_dot` (full-page dot grid)
+3. Click "Grids" again → `grid_graph` (full-page graph grid)
+4. Click "Grids" again → `grid_lined` (full-page ruled lines)
+5. Click "Grids" again → cycles back to `grids_overview`
+
+**Implementation**: `lib/bujo_pdf/layouts/standard_with_sidebars_layout.rb:137-256`
 
 ## Layout Constants
 
@@ -209,11 +271,23 @@ Each page type has its own class in `lib/bujo_pdf/pages/`:
    - Navigation links: previous/next week, back to year overview
    - Time period labels (AM/PM/EVE) on Monday column
 
-4. **Reference Page** (`reference_page.rb`)
+4. **Grid Reference Pages** (`grids_overview.rb`, `grids/` directory)
+   - **Grids Overview**: Entry point with clickable samples of all basic grids
+   - **Dot Grid Page**: Full-page 5mm dot grid template
+   - **Graph Grid Page**: Full-page 5mm square grid (lines at every dot position)
+   - **Lined Grid Page**: Full-page 10mm ruled lines with left margin
+   - Accessed via multi-tap Grids navigation tab
+
+5. **Reference Page** (`reference_calibration.rb`)
    - Calibration grid with measurements
    - Centimeter markings along edges
    - Grid system documentation
    - Prawn coordinate system reference
+
+6. **Grid Showcase** (`grid_showcase.rb`)
+   - Advanced grid types (isometric, perspective, hexagon)
+   - Quadrant-based layout with labels
+   - Visual reference for specialized grids
 
 ## Common Patterns
 
@@ -268,6 +342,7 @@ end
 3. **Link annotations** - Use absolute page coordinates even inside bounding boxes
 4. **Rotation origin** - Specify the point around which to rotate
 5. **Color values** - 6-digit hex strings (e.g., `'CCCCCC'`)
+6. **Character encoding** - Built-in fonts use Windows-1252, avoid fancy Unicode characters (arrows, em dashes, etc.). Use simple ASCII equivalents (->  instead of →, -- instead of —)
 
 ## Dependencies
 
@@ -277,8 +352,8 @@ end
 ## Output
 
 - **Filename**: `planner_{year}.pdf`
-- **Page count**: 57-58 pages typical (4 overview + 52-53 weekly + 2 templates)
-- **File size**: Should be under 2MB
+- **Page count**: 61-62 pages typical (4 overview + 52-53 weekly + 4 grids + 3 templates)
+- **File size**: Under 4MB
 - **Generation time**: Under 5 seconds
 
 ## Key Files
@@ -293,3 +368,7 @@ end
 - **idea.md** - Original design specification
 - **CLAUDE.local.md** - Detailed grid system documentation
 - **test_*.rb** - Test scripts for PDF link coordinate debugging
+
+## Utilitides
+For managing planning issues and features use the `bd` command.
+Run `bd quickstart` to learn more about its use.

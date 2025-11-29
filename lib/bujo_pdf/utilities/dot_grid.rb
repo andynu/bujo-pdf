@@ -1,114 +1,110 @@
 # frozen_string_literal: true
 
 require_relative 'styling'
+require_relative 'grid_factory'
 
-# DotGrid module provides functionality for drawing dot grid backgrounds
+# DotGrid module provides functionality for drawing grid backgrounds
 #
-# The dot grid serves as a visual guide for handwriting and drawing,
-# commonly used in bullet journals and planners. Dots are placed at
-# regular intervals matching the grid system spacing.
+# The grid serves as a visual guide for handwriting and drawing,
+# commonly used in bullet journals and planners.
+#
+# Supports multiple grid types:
+# - :dots - Standard dot grid (default)
+# - :isometric - Isometric grid with 30-60-90° triangles
+# - :perspective - Perspective grid with vanishing points
+# - :hexagon - Tessellating hexagon grid
 #
 # Example usage:
-#   # Draw dots across entire page
+#   # Draw dots across entire page (backward compatible)
 #   DotGrid.draw(pdf, 612, 792)
 #
-#   # Draw dots with custom styling
-#   DotGrid.draw(pdf, 400, 600, spacing: 15, radius: 0.75, color: 'DDDDDD')
+#   # Draw specific grid type
+#   DotGrid.draw(pdf, 612, 792, type: :isometric)
+#   DotGrid.draw(pdf, 612, 792, type: :hexagon, orientation: :pointy_top)
 #
 #   # Create a reusable stamp for efficiency (recommended for multi-page documents)
 #   DotGrid.create_stamp(pdf, "page_dots")
+#   DotGrid.create_stamp(pdf, "isometric_grid", type: :isometric)
 #   pdf.stamp("page_dots")  # Use on each page
 module DotGrid
-  # Draw a dot grid pattern within specified dimensions
+  # Draw a grid pattern within specified dimensions
   #
-  # Dots are aligned with the grid coordinate system, starting at (0, 0)
+  # Grid is aligned with the grid coordinate system, starting at (0, 0)
   # which corresponds to the top-left corner in grid coordinates.
   #
   # @param pdf [Prawn::Document] The Prawn PDF document instance
-  # @param width [Float] Width of area to fill with dots (in points)
-  # @param height [Float] Height of area to fill with dots (in points)
-  # @param spacing [Float] Distance between dots (default: DOT_SPACING)
-  # @param radius [Float] Radius of each dot (default: DOT_RADIUS)
-  # @param color [String] 6-digit hex color code (default: COLOR_DOT_GRID)
+  # @param width [Float] Width of area to fill with grid (in points)
+  # @param height [Float] Height of area to fill with grid (in points)
+  # @param type [Symbol] Grid type (:dots, :isometric, :perspective, :hexagon)
+  # @param options [Hash] Grid-specific rendering options
+  # @option options [Float] :spacing Distance between grid elements (default: DOT_SPACING)
+  # @option options [Float] :radius Radius of each dot (for :dots type, default: DOT_RADIUS)
+  # @option options [String] :color 6-digit hex color code (default: COLOR_DOT_GRID)
+  # @option options [String] :line_color Line color for non-dot grids (default: COLOR_DOT_GRID)
+  # @option options [Float] :line_width Line width for non-dot grids (default: 0.25)
+  # @option options [Symbol] :orientation Hexagon orientation (:flat_top, :pointy_top)
+  # @option options [Integer] :num_points Perspective vanishing points (1, 2, or 3)
   #
-  # @example Draw full-page dot grid
+  # @example Draw full-page dot grid (backward compatible)
   #   DotGrid.draw(pdf, 612, 792)
   #
-  # @example Draw in a bounding box with custom color
-  #   pdf.bounding_box([100, 700], width: 400, height: 600) do
-  #     DotGrid.draw(pdf, 400, 600, color: 'DDDDDD')
-  #   end
+  # @example Draw isometric grid
+  #   DotGrid.draw(pdf, 612, 792, type: :isometric)
   #
-  # Note: This method temporarily changes the fill color but restores it
-  # to black ('000000') when complete.
-  def self.draw(pdf, width, height,
-                spacing: Styling::Grid::DOT_SPACING,
-                radius: Styling::Grid::DOT_RADIUS,
-                color: nil)
-    # Use themed color if not specified
-    color ||= Styling::Colors.DOT_GRID
-
-    # Save current color and switch to dot grid color
-    pdf.fill_color color
-
-    # Align with grid coordinate system: start at (0, height) which
-    # corresponds to grid position (0, 0) - top-left corner
-    start_x = 0
-    start_y = height
-
-    # Calculate how many dots fit in the given dimensions
-    cols = (width / spacing).floor
-    rows = (height / spacing).floor
-
-    # Draw dots at exact grid positions
-    (0..rows).each do |row|
-      y = start_y - (row * spacing)
-      (0..cols).each do |col|
-        x = start_x + (col * spacing)
-        pdf.fill_circle [x, y], radius
-      end
+  # @example Draw hexagon grid with custom options
+  #   DotGrid.draw(pdf, 612, 792, type: :hexagon,
+  #     spacing: 20, orientation: :pointy_top, line_color: 'AAAAAA')
+  #
+  # Note: This method temporarily changes colors but restores them when complete.
+  def self.draw(pdf, width, height, type: :dots, **options)
+    # For backward compatibility, handle old parameter names
+    if options[:color] && !options[:fill_color]
+      options[:fill_color] = options[:color]
     end
 
-    # Restore fill color to text color
-    pdf.fill_color Styling::Colors.TEXT_BLACK
+    # Create and render the appropriate grid type
+    renderer = BujoPdf::Utilities::GridFactory.create(type, pdf, width, height, **options)
+    renderer.render
   end
 
-  # Create a reusable PDF stamp for the dot grid pattern
+  # Create a reusable PDF stamp for a grid pattern
   #
   # This is the recommended approach for multi-page documents as it significantly
-  # reduces file size by storing the dot pattern once and referencing it on each page.
-  # Typical file size reduction: 85-90% compared to drawing dots on every page.
+  # reduces file size by storing the grid pattern once and referencing it on each page.
+  # Typical file size reduction: 85-90% compared to drawing on every page.
   #
   # @param pdf [Prawn::Document] The Prawn PDF document instance
   # @param stamp_name [String] Name to identify this stamp (default: "dot_grid")
-  # @param width [Float] Width of area to fill with dots (default: PAGE_WIDTH)
-  # @param height [Float] Height of area to fill with dots (default: PAGE_HEIGHT)
-  # @param spacing [Float] Distance between dots (default: DOT_SPACING)
-  # @param radius [Float] Radius of each dot (default: DOT_RADIUS)
-  # @param color [String] 6-digit hex color code (default: COLOR_DOT_GRID)
+  # @param type [Symbol] Grid type (:dots, :isometric, :perspective, :hexagon)
+  # @param width [Float] Width of area to fill (default: PAGE_WIDTH)
+  # @param height [Float] Height of area to fill (default: PAGE_HEIGHT)
+  # @param options [Hash] Grid-specific rendering options (spacing, color, etc.)
   #
-  # @example Create and use a full-page dot grid stamp
+  # @example Create and use a full-page dot grid stamp (backward compatible)
   #   DotGrid.create_stamp(pdf, "page_dots")
   #   pdf.stamp("page_dots")  # Use on current page
   #   pdf.start_new_page
   #   pdf.stamp("page_dots")  # Reuse on next page
   #
+  # @example Create stamps for all grid types
+  #   DotGrid.create_stamp(pdf, "page_dots", type: :dots)
+  #   DotGrid.create_stamp(pdf, "page_isometric", type: :isometric)
+  #   DotGrid.create_stamp(pdf, "page_perspective", type: :perspective)
+  #   DotGrid.create_stamp(pdf, "page_hexagon", type: :hexagon)
+  #
   # @example Custom dimensions for a bounding box
-  #   DotGrid.create_stamp(pdf, "notes_area", 400, 600)
+  #   DotGrid.create_stamp(pdf, "notes_area", width: 400, height: 600)
   #   pdf.bounding_box([100, 700], width: 400, height: 600) do
   #     pdf.stamp("notes_area")
   #   end
   def self.create_stamp(pdf, stamp_name = "dot_grid",
+                        type: :dots,
                         width: Styling::Grid::PAGE_WIDTH,
                         height: Styling::Grid::PAGE_HEIGHT,
-                        spacing: Styling::Grid::DOT_SPACING,
-                        radius: Styling::Grid::DOT_RADIUS,
-                        color: nil)
-    # Use themed color if not specified
-    color ||= Styling::Colors.DOT_GRID
+                        **options)
 
     pdf.create_stamp(stamp_name) do
-      draw(pdf, width, height, spacing: spacing, radius: radius, color: color)
+      draw(pdf, width, height, type: type, **options)
     end
   end
 end

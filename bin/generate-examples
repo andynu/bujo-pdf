@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate example planners for documentation and testing
+#
+# This script generates planners for the current year and next year
+# in all available themes, saving them to the examples/ directory.
+
+require 'fileutils'
+require 'date'
+
+EXAMPLES_DIR = File.expand_path('../examples', __dir__)
+CURRENT_YEAR = Date.today.year
+YEARS = [CURRENT_YEAR, CURRENT_YEAR + 1]
+THEMES = %w[light earth dark]
+
+puts "Generating example planners..."
+puts "  Years: #{YEARS.join(', ')}"
+puts "  Themes: #{THEMES.join(', ')}"
+puts "  Output: #{EXAMPLES_DIR}"
+puts
+
+# Create examples directory
+FileUtils.mkdir_p(EXAMPLES_DIR)
+
+# Track results
+results = []
+start_time = Time.now
+
+YEARS.each do |year|
+  THEMES.each do |theme|
+    output_file = File.join(EXAMPLES_DIR, "planner_#{year}_#{theme}.pdf")
+
+    print "  Generating #{year} (#{theme})... "
+
+    cmd = "bundle exec bin/bujo-pdf #{year} --theme #{theme}"
+    temp_file = "planner_#{year}.pdf"
+
+    success = system(cmd, out: File::NULL, err: File::NULL)
+
+    if success && File.exist?(temp_file)
+      FileUtils.mv(temp_file, output_file)
+      size_mb = (File.size(output_file) / (1024.0 * 1024.0)).round(2)
+      puts "done (#{size_mb} MB)"
+      results << { file: output_file, size: size_mb, success: true }
+    else
+      puts "FAILED"
+      results << { file: output_file, success: false }
+    end
+  end
+end
+
+elapsed = (Time.now - start_time).round(1)
+
+puts
+puts "Results:"
+results.each do |r|
+  basename = File.basename(r[:file])
+  if r[:success]
+    puts "  #{basename} (#{r[:size]} MB)"
+  else
+    puts "  #{basename} - FAILED"
+  end
+end
+
+successful = results.count { |r| r[:success] }
+puts
+puts "Generated #{successful}/#{results.size} planners in #{elapsed}s"
+puts "Output directory: #{EXAMPLES_DIR}"

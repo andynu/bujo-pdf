@@ -54,6 +54,12 @@ module BujoPdf
     # @return [Integer, nil] Total weeks in the year
     attr_reader :total_weeks
 
+    # @return [DateConfiguration, nil] Date configuration for highlighted dates
+    attr_reader :date_config
+
+    # @return [CalendarIntegration::EventStore, nil] Event store for iCal calendar events
+    attr_reader :event_store
+
     # @return [Hash] Additional context data
     attr_reader :data
 
@@ -67,10 +73,12 @@ module BujoPdf
     # @param week_end [Date, nil] Week end date for weekly pages
     # @param total_weeks [Integer, nil] Total weeks in year
     # @param total_pages [Integer, nil] Total pages in document
+    # @param date_config [DateConfiguration, nil] Date configuration
+    # @param event_store [CalendarIntegration::EventStore, nil] Event store
     # @param data [Hash] Additional context data
     def initialize(page_key:, page_number:, year:,
                    week_num: nil, week_start: nil, week_end: nil,
-                   total_weeks: nil, total_pages: nil, **data)
+                   total_weeks: nil, total_pages: nil, date_config: nil, event_store: nil, **data)
       @page_key = page_key
       @page_number = page_number
       @year = year
@@ -79,6 +87,8 @@ module BujoPdf
       @week_end = week_end
       @total_weeks = total_weeks
       @total_pages = total_pages
+      @date_config = date_config
+      @event_store = event_store
       @data = data
     end
 
@@ -148,6 +158,8 @@ module BujoPdf
       when :week_end then @week_end
       when :total_weeks then @total_weeks
       when :total_pages then @total_pages
+      when :date_config then @date_config
+      when :event_store then @event_store
       else @data[key]
       end
     end
@@ -170,7 +182,9 @@ module BujoPdf
         week_start: @week_start,
         week_end: @week_end,
         total_weeks: @total_weeks,
-        total_pages: @total_pages
+        total_pages: @total_pages,
+        date_config: @date_config,
+        event_store: @event_store
       }.merge(@data)
     end
   end

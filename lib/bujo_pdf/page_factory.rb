@@ -3,6 +3,11 @@
 require_relative 'pages/base'
 require_relative 'pages/blank_dot_grid'
 require_relative 'pages/daily_wheel'
+require_relative 'pages/grid_showcase'
+require_relative 'pages/grids_overview'
+require_relative 'pages/grids/dot_grid_page'
+require_relative 'pages/grids/graph_grid_page'
+require_relative 'pages/grids/lined_grid_page'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -27,6 +32,11 @@ module BujoPdf
     @registry = {
       daily_wheel: Pages::DailyWheel,
       dots: Pages::BlankDotGrid,
+      grid_showcase: Pages::GridShowcase,
+      grids_overview: Pages::GridsOverview,
+      grid_dot: Pages::Grids::DotGridPage,
+      grid_graph: Pages::Grids::GraphGridPage,
+      grid_lined: Pages::Grids::LinedGridPage,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,

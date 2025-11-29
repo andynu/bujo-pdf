@@ -1,20 +1,111 @@
-# Plan #18: Flat Table of Contents
+# Plan #18: Flat PDF Outline (Bookmarks)
+
+## Status: COMPLETED ✅
 
 ## Overview
 
-Create a comprehensive **visual table of contents page** that lists all major sections and weeks in a flat, non-hierarchical format. This provides a single-page directory for quick navigation to any part of the planner.
+Simplify the **PDF outline/bookmarks** (metadata navigation tree in PDF viewers) by flattening the deeply nested structure. Remove all individual week entries and keep only year-level pages, month pages (linking to first week of each month), and reference pages.
 
-## Key Distinctions
+## Implementation
 
-### From PDF Outline (Existing Bookmarks)
-- **PDF Outline**: The existing `@pdf.outline.define` structure creates sidebar bookmarks in PDF readers (potentially nested)
-- **This TOC Page**: A visual page in the document itself, printed/visible when scrolling through the PDF
+Modified `lib/bujo_pdf/planner_generator.rb`'s `build_outline` method to create a flat bookmark structure.
 
-### From Plan #17 (Monthly TOC Pages)
-- **Plan #17**: One TOC page per month (12 pages total), showing only that month's 4-5 weeks, inserted at month boundaries
-- **Plan #18**: Single comprehensive page listing all 52-53 weeks plus major sections, inserted early in document
+### Previous Structure (Deeply Nested)
+```
+- 2025 Overview
+  - Seasonal Calendar
+  - Year at a Glance - Events
+  - Year at a Glance - Highlights
+  - Multi-Year Overview
+- Monthly Pages
+  - January 2025
+    - Week 1
+    - Week 2
+    - Week 3
+    - Week 4
+    - Week 5
+  - February 2025
+    - Week 6
+    - Week 7
+    - ...
+  - (all months with all weeks)
+- Templates
+  - Grid Types Showcase
+  - Grid Reference & Calibration
+  - Dot Grid
+```
 
-Both can coexist - Plan #17 provides month-scoped navigation, Plan #18 provides year-wide overview.
+### New Structure (Flat)
+```
+- Seasonal Calendar
+- Year at a Glance - Events
+- Year at a Glance - Highlights
+- Multi-Year Overview
+- January 2025 (links to Week 1)
+- February 2025 (links to Week 6)
+- March 2025 (links to Week 10)
+- April 2025 (links to Week 14)
+- May 2025 (links to Week 18)
+- June 2025 (links to Week 23)
+- July 2025 (links to Week 27)
+- August 2025 (links to Week 31)
+- September 2025 (links to Week 36)
+- October 2025 (links to Week 40)
+- November 2025 (links to Week 44)
+- December 2025 (links to Week 49)
+- Grid Types Showcase
+- Grid Reference & Calibration
+- Dot Grid
+```
+
+All entries at the same level, no nesting. Total: 19 bookmark entries (4 year pages + 12 months + 3 reference pages).
+
+## Benefits
+
+1. **Simpler navigation**: No need to expand nested sections to find content
+2. **Faster access**: Reduced clicks to reach any month
+3. **Cleaner bookmark sidebar**: Less visual clutter in PDF readers
+4. **Preserved functionality**: All major navigation targets still accessible
+
+## Technical Changes
+
+**File**: `lib/bujo_pdf/planner_generator.rb`
+
+Changed from nested `section` blocks to flat `page` entries:
+
+```ruby
+@pdf.outline.define do
+  # Year overview pages (flat, no nesting)
+  page destination: seasonal_page, title: 'Seasonal Calendar'
+  page destination: events_page, title: 'Year at a Glance - Events'
+  page destination: highlights_page, title: 'Year at a Glance - Highlights'
+  page destination: multi_year_page, title: 'Multi-Year Overview'
+
+  # Month pages (flat, linking to first week of each month)
+  (1..12).each do |month|
+    month_name = Date::MONTHNAMES[month]
+    weeks_in_month = Utilities::DateCalculator.weeks_for_month(year, month)
+
+    if weeks_in_month.any?
+      first_week = weeks_in_month.first
+      page destination: week_pages[first_week], title: "#{month_name} #{year}"
+    end
+  end
+
+  # Reference/template pages (flat, no nesting)
+  page destination: grid_showcase_page, title: 'Grid Types Showcase'
+  page destination: reference_page, title: 'Grid Reference & Calibration'
+  page destination: dots_page, title: 'Dot Grid'
+end
+```
+
+Removed all `section` nesting and individual week entries, keeping only the first week of each month.
+
+---
+
+## Original Plan (Archived)
+
+**Note**: The original plan below described creating a physical TOC page, but the actual requirement was to flatten the PDF outline/bookmarks metadata structure instead.
 
 ## Visual Layout Design
 

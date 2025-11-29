@@ -1,0 +1,71 @@
+# BujoPdf Calendar Integration Configuration
+#
+# This file configures iCal calendar sources for automatic event highlighting
+# in your planner. Copy this file to calendars.yml and customize with your
+# calendar URLs.
+
+# Calendar sources
+calendars:
+  # Personal events calendar
+  - name: "Personal"
+    url: "https://calendar.google.com/calendar/ical/YOUR_CALENDAR_ID/public/basic.ics"
+    enabled: true
+    color: "FFD700"  # Gold for personal events
+    icon: "★"        # Display icon for these events
+
+  # Work calendar
+  - name: "Work"
+    url: "https://calendar.google.com/calendar/ical/work@company.com/public/basic.ics"
+    enabled: true
+    color: "4285F4"  # Blue for work events
+    icon: "●"
+
+  # US Federal Holidays (from OfficeHolidays.com)
+  - name: "US Federal Holidays"
+    url: "https://www.officeholidays.com/ics-fed/usa"
+    enabled: true
+    color: "FFE5E5"  # Light red for holidays
+    icon: "*"
+
+  # Birthdays
+  - name: "Birthdays"
+    url: "https://calendar.google.com/calendar/ical/birthdays.contacts@gmail.com/public/basic.ics"
+    enabled: false   # Can be disabled without removing
+    color: "E91E63"  # Pink for birthdays
+    icon: "🎂"
+
+# Cache settings
+cache:
+  enabled: true
+  directory: ".cache/ical"
+  ttl_hours: 24  # Re-fetch after 24 hours
+
+# Network settings
+network:
+  timeout_seconds: 10
+  max_retries: 3
+  retry_delay_seconds: 2
+
+# Event filtering
+filters:
+  # Only include events within the planner year
+  date_range_only: true
+
+  # Skip all-day events (optional)
+  skip_all_day: false
+
+  # Maximum number of events to show per day (prevents overcrowding)
+  max_events_per_day: 3
+
+  # Event title patterns to exclude (regex)
+  exclude_patterns:
+    - "^\\[Private\\]"
+    - "^Out of office$"
+
+# Notes:
+# - Get Google Calendar iCal URL: Settings → Integrate calendar → Secret address in iCal format
+# - For public holiday calendars, see:
+#   - US Federal Holidays: https://www.officeholidays.com/subscribe/usa
+#   - Other countries: https://www.officeholidays.com/countries
+# - Colors are hex codes without # (e.g., "FF0000" for red)
+# - Icons: Use simple ASCII characters (* + # o) - emojis may not render in PDF

@@ -1,5 +1,33 @@
 # Plan #19: Flat-File Configuration for Highlighted Dates
 
+**Status**: Completed (2025-11-12)
+
+## Implementation Summary
+
+Successfully implemented YAML-based date configuration system for highlighting special dates (holidays, events, birthdays) throughout the planner.
+
+**Key Features Implemented**:
+- DateConfiguration class loads and manages dates from config/dates.yml
+- Year-at-a-glance pages show highlights with:
+  - Category-based background colors
+  - ASCII icon in top-right corner (* for holidays, + for personal, # for work)
+  - Thicker colored borders for high-priority dates
+  - Legend section at bottom displaying all highlighted dates with labels
+- Weekly pages show highlighted dates with:
+  - Colored label box below day header (0.85 boxes high)
+  - Category color background with dark text
+  - Bold text for high-priority dates
+  - Label truncates with shrink_to_fit
+
+**Changes Made**:
+- Icon moved to top-right corner (date number is top-left)
+- Legend added to bottom 5 rows of year-at-a-glance pages
+- Uses ASCII icons (*+#o) instead of Unicode for PDF compatibility
+- Config file includes US federal holidays for 2025
+- config/dates.yml added to .gitignore for privacy
+
+**Note**: Tests deferred per plan's "light-touch testing" approach. Core functionality verified via successful PDF generation.
+
 ## Configuration File Format
 
 Use **YAML** for the configuration file due to:

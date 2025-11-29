@@ -6,6 +6,8 @@ require_relative 'utilities/date_calculator'
 require_relative 'utilities/dot_grid'
 require_relative 'page_factory'
 require_relative 'render_context'
+require_relative 'date_configuration'
+require_relative 'calendar_integration'
 
 module BujoPdf
   # Main planner generator orchestrator.
@@ -22,12 +24,14 @@ module BujoPdf
     PAGE_WIDTH = 612    # 8.5 inches (letter size)
     PAGE_HEIGHT = 792   # 11 inches
 
-    attr_reader :year, :pdf
+    attr_reader :year, :pdf, :date_config, :event_store
 
-    def initialize(year = Date.today.year)
+    def initialize(year = Date.today.year, config_path: 'config/dates.yml', calendars_config_path: 'config/calendars.yml')
       @year = year
       @pdf = nil
       @total_pages = nil
+      @date_config = DateConfiguration.new(config_path, year: year)
+      @event_store = load_calendar_events(calendars_config_path)
     end
 
     # Generate the complete planner PDF.
@@ -37,7 +41,7 @@ module BujoPdf
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      @total_pages = 4 + total_weeks + 4  # 4 overview + weeks + 4 template pages
+      @total_pages = 4 + total_weeks + 9  # 4 overview + weeks + 4 grid + 5 template pages
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -48,6 +52,7 @@ module BujoPdf
         # Generate all pages
         generate_overview_pages
         generate_weekly_pages
+        generate_grid_pages
         generate_template_pages
 
         # Build PDF outline (table of contents / bookmarks)
@@ -90,7 +95,37 @@ module BujoPdf
       end
     end
 
+    def generate_grid_pages
+      # Grids overview (entry point for Grids tab cycling)
+      @pdf.start_new_page
+      @pdf.add_dest('grids_overview', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grids_overview)
+      @grids_overview_page = @pdf.page_number
+
+      # Dot grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_dot', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_dot)
+      @grid_dot_page = @pdf.page_number
+
+      # Graph grid full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_graph', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_graph)
+      @grid_graph_page = @pdf.page_number
+
+      # Ruled lines full page
+      @pdf.start_new_page
+      @pdf.add_dest('grid_lined', @pdf.dest_xyz(0, @pdf.bounds.top))
+      generate_page(:grid_lined)
+      @grid_lined_page = @pdf.page_number
+    end
+
     def generate_template_pages
+      @pdf.start_new_page
+      generate_page(:grid_showcase)
+      @grid_showcase_page = @pdf.page_number
+
       @pdf.start_new_page
       generate_page(:reference)
       @reference_page = @pdf.page_number
@@ -109,11 +144,15 @@ module BujoPdf
     end
 
     def generate_page(page_key)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
       context = RenderContext.new(
         page_key: page_key,
         page_number: @pdf.page_number,
         year: @year,
-        total_pages: @total_pages
+        total_weeks: total_weeks,
+        total_pages: @total_pages,
+        date_config: @date_config,
+        event_store: @event_store
       )
       page = PageFactory.create(page_key, @pdf, context)
       page.generate
@@ -127,7 +166,9 @@ module BujoPdf
         year: @year,
         year_count: 4,  # Show 4 years
         total_weeks: total_weeks,
-        total_pages: @total_pages
+        total_pages: @total_pages,
+        date_config: @date_config,
+        event_store: @event_store
       )
       page = PageFactory.create(:multi_year, @pdf, context)
       page.generate
@@ -147,7 +188,9 @@ module BujoPdf
         week_start: week_start,
         week_end: week_end,
         total_weeks: total_weeks,
-        total_pages: @total_pages
+        total_pages: @total_pages,
+        date_config: @date_config,
+        event_store: @event_store
       )
 
       # Note: PageFactory.create_weekly_page expects a hash with :year
@@ -165,47 +208,55 @@ module BujoPdf
       events_page = @events_page
       highlights_page = @highlights_page
       multi_year_page = @multi_year_page
-      weekly_start_page = @weekly_start_page
       week_pages = @week_pages
+      grids_overview_page = @grids_overview_page
+      grid_dot_page = @grid_dot_page
+      grid_graph_page = @grid_graph_page
+      grid_lined_page = @grid_lined_page
+      grid_showcase_page = @grid_showcase_page
       reference_page = @reference_page
       daily_wheel_page = @daily_wheel_page
       year_wheel_page = @year_wheel_page
       dots_page = @dots_page
 
       @pdf.outline.define do
-        section "#{year} Overview", destination: seasonal_page do
-          page destination: seasonal_page, title: 'Seasonal Calendar'
-          page destination: events_page, title: 'Year at a Glance - Events'
-          page destination: highlights_page, title: 'Year at a Glance - Highlights'
-          page destination: multi_year_page, title: 'Multi-Year Overview'
-        end
+        # Year overview pages (flat, no nesting)
+        page destination: seasonal_page, title: 'Seasonal Calendar'
+        page destination: events_page, title: 'Year at a Glance - Events'
+        page destination: highlights_page, title: 'Year at a Glance - Highlights'
+        page destination: multi_year_page, title: 'Multi-Year Overview'
 
-        # Monthly groupings of weekly pages
-        section 'Monthly Pages', destination: weekly_start_page do
-          (1..12).each do |month|
-            month_name = Date::MONTHNAMES[month]
-            weeks_in_month = Utilities::DateCalculator.weeks_for_month(year, month)
+        # Month pages (flat, linking to first week of each month)
+        (1..12).each do |month|
+          month_name = Date::MONTHNAMES[month]
+          weeks_in_month = Utilities::DateCalculator.weeks_for_month(year, month)
 
-            # Only create section if there are weeks for this month
-            if weeks_in_month.any?
-              first_week = weeks_in_month.first
-              section "#{month_name} #{year}", destination: week_pages[first_week] do
-                weeks_in_month.each do |week_num|
-                  page_num = week_pages[week_num]
-                  page destination: page_num, title: "Week #{week_num}" if page_num
-                end
-              end
-            end
+          # Only create entry if there are weeks for this month
+          if weeks_in_month.any?
+            first_week = weeks_in_month.first
+            page destination: week_pages[first_week], title: "#{month_name} #{year}"
           end
         end
 
-        section 'Templates', destination: reference_page do
-          page destination: reference_page, title: 'Grid Reference & Calibration'
-          page destination: daily_wheel_page, title: 'Daily Wheel'
-          page destination: year_wheel_page, title: 'Year Wheel'
-          page destination: dots_page, title: 'Dot Grid'
-        end
+        # Grid reference pages
+        page destination: grids_overview_page, title: 'Grid Reference'
+        page destination: grid_dot_page, title: '  - Dot Grid (5mm)'
+        page destination: grid_graph_page, title: '  - Graph Grid (5mm)'
+        page destination: grid_lined_page, title: '  - Ruled Lines (10mm)'
+
+        # Template pages
+        page destination: grid_showcase_page, title: 'Advanced Grid Types'
+        page destination: reference_page, title: 'Calibration & Reference'
+        page destination: daily_wheel_page, title: 'Daily Wheel'
+        page destination: year_wheel_page, title: 'Year Wheel'
+        page destination: dots_page, title: 'Blank Dot Grid'
       end
+    end
+
+    def load_calendar_events(config_path)
+      return nil unless File.exist?(config_path)
+
+      CalendarIntegration.load_events(config_path: config_path, year: @year)
     end
   end
 end

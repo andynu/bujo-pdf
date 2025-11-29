@@ -222,6 +222,37 @@ box_width = GRID_COLS / cols  # boxes per column
 end
 ```
 
+### Week-Based Grid (7 Columns) with WeekGrid Component
+
+The WeekGrid component provides quantized, grid-aligned 7-day week layouts:
+
+```ruby
+# Quantized: 35 boxes → 5 boxes/day (grid-aligned)
+grid = @grid_system.week_grid(5, 10, 35, 15, quantize: true)
+
+# Iterate over each day column
+grid.each_cell do |day_index, rect|
+  # day_index: 0-6 (Monday-Sunday)
+  # rect: {x:, y:, width:, height:} in points
+  @pdf.stroke_rectangle([rect[:x], rect[:y]], rect[:width], rect[:height])
+end
+
+# Or use block syntax for inline rendering
+@grid_system.week_grid(5, 10, 35, 15) do |day_index, rect|
+  @pdf.text_box "Day #{day_index + 1}", at: [rect[:x], rect[:y]], width: rect[:width]
+end
+```
+
+**Quantization examples:**
+- **35 boxes**: 35 ÷ 7 = 5 boxes/day (quantized, grid-aligned)
+- **37 boxes**: Not divisible by 7, falls back to proportional (5.29 boxes/day)
+- **42 boxes**: 42 ÷ 7 = 6 boxes/day (quantized, grid-aligned)
+
+**Benefits:**
+- Consistent column widths across different pages using same box count
+- Borders align with dot grid for cleaner appearance
+- Easier for users to extend columns with hand-drawn annotations
+
 ## Text Positioning with Grid
 
 ### text_box with Grid Coordinates
@@ -383,6 +414,34 @@ The calibration page (`generate_reference_page`) shows:
 - Grid dimensions and helper methods in the reference section
 - Centimeter markings along edges
 - Division lines for halves and thirds
+
+## Prawn Rectangle Positioning - Critical Gotcha
+
+**IMPORTANT**: Prawn's `pdf.rectangle([x, y], width, height)` uses the **TOP-LEFT corner** as the anchor point, NOT the bottom-left.
+
+The `y` parameter specifies the Y coordinate of the **top edge** of the rectangle (even though Prawn's coordinate system has Y increasing upward from the bottom).
+
+### Centering a Rectangle
+
+To center a rectangle at point `(center_x, center_y)`:
+
+```ruby
+# WRONG - this positions the rectangle incorrectly
+rect_x = center_x - (width / 2.0)
+rect_y = center_y - (height / 2.0)  # This gives you the BOTTOM, not top!
+pdf.rectangle([rect_x, rect_y], width, height)
+
+# CORRECT - use TOP-LEFT corner
+top_left_x = center_x - (width / 2.0)
+top_left_y = center_y + (height / 2.0)  # ADD half height to go UP to top edge
+pdf.rectangle([top_left_x, top_left_y], width, height)
+```
+
+### Why This Matters
+
+Since Prawn's Y-axis increases upward (origin at bottom), you might expect `rectangle([x, y], w, h)` to take the bottom-left corner. But it actually takes the top-left corner, which means you need to ADD height/2 when centering, not subtract.
+
+This is especially tricky when working with vanishing points or other center-based coordinates.
 
 ## Future Enhancements
 

@@ -54,6 +54,7 @@ module BujoPdf
         draw_header
         draw_month_headers
         draw_days_grid
+        draw_legend if context.date_config&.any?
       end
 
       protected
@@ -173,13 +174,44 @@ module BujoPdf
       end
 
       def draw_day_cell(cell_x, cell_y, cell_width, cell_height, month, day_num)
+        date = Date.new(@year, month, day_num)
+        highlighted_date = context.date_config&.date_for_day(date)
+        calendar_events = context.event_store&.events_for_date(date, limit: 1) || []
+
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
+          # Draw background highlight if date is highlighted from date_config
+          if highlighted_date
+            category_style = context.date_config.category_style(highlighted_date.category)
+            bg_color = highlighted_date.color || category_style['color']
+
+            @pdf.fill_color bg_color
+            @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
+            @pdf.fill_color Styling::Colors.TEXT_BLACK
+          # Or draw background for calendar events if no date_config highlight
+          elsif !calendar_events.empty?
+            event = calendar_events.first
+            if event.color
+              @pdf.fill_color event.color
+              @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
+              @pdf.fill_color Styling::Colors.TEXT_BLACK
+            end
+          end
+
+          # Draw border (highlighted dates with high priority get thicker border)
           @pdf.stroke_color Styling::Colors.BORDERS
+          if highlighted_date
+            priority_style = context.date_config.priority_style(highlighted_date.priority)
+            if priority_style['border_width'] > 0.5
+              category_style = context.date_config.category_style(highlighted_date.category)
+              @pdf.stroke_color category_style['text_color']
+              @pdf.line_width = priority_style['border_width']
+            end
+          end
           @pdf.stroke_bounds
+          @pdf.line_width = 0.5  # Reset
           @pdf.stroke_color Styling::Colors.TEXT_BLACK
 
           # Add day number and abbreviation
-          date = Date.new(@year, month, day_num)
           day_abbrev = date.strftime('%a')  # Mon, Tue, Wed, etc.
 
           @pdf.formatted_text_box [
@@ -190,6 +222,37 @@ module BujoPdf
                        width: cell_width - (YEAR_DAY_NUMBER_OFFSET * 2),
                        height: cell_height - (YEAR_DAY_NUMBER_OFFSET * 2),
                        overflow: :shrink_to_fit
+
+          # Add category icon if highlighted (top-right corner)
+          # Priority: date_config icon > calendar event icon
+          if highlighted_date
+            category_style = context.date_config.category_style(highlighted_date.category)
+            icon = category_style['icon']
+
+            @pdf.fill_color category_style['text_color']
+            @pdf.text_box icon,
+                          at: [cell_width - 10, cell_height - 2],
+                          width: 8,
+                          height: 8,
+                          size: 6,
+                          align: :right,
+                          valign: :top
+            @pdf.fill_color '000000'  # Reset
+          elsif !calendar_events.empty?
+            # Show calendar event icon
+            event = calendar_events.first
+            if event.icon
+              @pdf.fill_color '666666'  # Default gray for event icons
+              @pdf.text_box event.icon,
+                            at: [cell_width - 10, cell_height - 2],
+                            width: 8,
+                            height: 8,
+                            size: 6,
+                            align: :right,
+                            valign: :top
+              @pdf.fill_color '000000'  # Reset
+            end
+          end
 
           # Add clickable link to the week containing this date
           week_num = Utilities::DateCalculator.week_number_for_date(@year, date)
@@ -256,6 +319,39 @@ module BujoPdf
             @pdf.fill_color Styling::Colors.TEXT_BLACK
           end
         end
+      end
+
+      # Draw legend showing highlighted date labels
+      # Uses bottom 5 rows (rows 50-54) for the legend area
+      def draw_legend
+        content_start_col = 2
+        content_width_boxes = 40
+
+        # Legend area - rows 50-54 (5 boxes)
+        legend_box = @grid_system.rect(content_start_col, 50, content_width_boxes, 5)
+
+        # Get all dates for this year, sorted by date
+        all_dates = context.date_config.dates.sort_by(&:date)
+        return if all_dates.empty?
+
+        # Build legend text with icon, date, and label
+        @pdf.font "Helvetica", size: 7
+        legend_text = all_dates.map do |highlighted_date|
+          category_style = context.date_config.category_style(highlighted_date.category)
+          icon = category_style['icon']
+          date_str = highlighted_date.date.strftime('%b %-d')
+          "#{icon} #{date_str}: #{highlighted_date.label}"
+        end.join('   ')
+
+        # Draw legend text box
+        @pdf.text_box legend_text,
+                      at: [legend_box[:x] + 4, legend_box[:y] - 4],
+                      width: legend_box[:width] - 8,
+                      height: legend_box[:height] - 8,
+                      align: :left,
+                      valign: :top,
+                      overflow: :shrink_to_fit,
+                      leading: 2
       end
 
     end

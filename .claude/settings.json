@@ -7,6 +7,10 @@
     {
       "command": "pdftoppm",
       "description": "Convert PDF pages to PNG images"
+    },
+    {
+      "command": "bd:*",
+      "description": "Backlog dependency management tool - create, list, show, and manage planning issues"
     }
   ]
 }

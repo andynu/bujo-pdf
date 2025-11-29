@@ -59,10 +59,10 @@ class TestDotGrid < Minitest::Test
     DotGrid.draw(@pdf, 50, 50)
 
     # Should set dot grid color first
-    assert_equal Styling::Colors::DOT_GRID, @pdf.fill_colors[0]
+    assert_equal Styling::Colors.DOT_GRID, @pdf.fill_colors[0]
 
     # Should restore to black at end
-    assert_equal Styling::Colors::TEXT_BLACK, @pdf.fill_colors[-1]
+    assert_equal Styling::Colors.TEXT_BLACK, @pdf.fill_colors[-1]
   end
 
   def test_uses_custom_color
@@ -72,7 +72,7 @@ class TestDotGrid < Minitest::Test
     assert_equal 'FF0000', @pdf.fill_colors[0]
 
     # Still restores to black
-    assert_equal Styling::Colors::TEXT_BLACK, @pdf.fill_colors[-1]
+    assert_equal Styling::Colors.TEXT_BLACK, @pdf.fill_colors[-1]
   end
 
   def test_calculates_correct_grid_positions

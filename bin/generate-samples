@@ -22,6 +22,7 @@ PAGES = {
   'year_events' => 2,
   'multi_year_overview' => 4,
   'weekly' => 10,  # Pick a week in the middle
+  'grid_showcase' => -3,  # Third to last page
   'reference' => -2,  # Second to last page
   'blank_dots' => -1  # Last page
 }

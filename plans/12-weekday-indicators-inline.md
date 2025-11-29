@@ -1,4 +1,4 @@
-# Plan #12: Inline Weekday Indicators with Day Numbers
+# Plan #12: Inline Weekday Indicators with Day Numbers 
 
 ## Overview
 Move weekday abbreviations (Mon, Tue, etc.) to appear inline with day numbers in the year-at-a-glance pages, styled as muted gray text. Day numbers remain in their current position with weekday indicators appearing on the same line.

@@ -2,6 +2,7 @@
 
 require_relative '../component'
 require_relative '../sub_components/week_column'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Components
@@ -13,7 +14,8 @@ module BujoPdf
     #   - Time labels on Monday column (AM/PM/EVE)
     #   - Weekend background shading
     #
-    # Uses the WeekColumn sub-component (from Plan 04) for rendering each day.
+    # Uses WeekGrid (Plan #22) for consistent, quantized column widths
+    # and WeekColumn sub-component for rendering each day.
     #
     # Example usage:
     #   section = DailySection.new(pdf, grid_system,
@@ -34,10 +36,20 @@ module BujoPdf
     #   section.render
     class DailySection < Component
       def render
-        day_col_width_boxes = context[:content_width_boxes] / 7.0  # ~5.57 boxes per day
+        # Use WeekGrid for consistent, quantized column widths (Plan #22)
+        # Note: show_headers: false because WeekColumn handles the complex headers
+        week_grid = @grid.week_grid(
+          context[:content_start_col],
+          context[:content_start_row],
+          context[:content_width_boxes],
+          context[:daily_rows],
+          quantize: true,
+          show_headers: false
+        )
 
-        7.times do |i|
-          render_day_column(i, day_col_width_boxes)
+        # Render each day column using the WeekColumn sub-component
+        week_grid.each_cell do |day_index, cell_rect|
+          render_day_column(day_index, cell_rect)
         end
       end
 
@@ -48,10 +60,16 @@ module BujoPdf
                        :content_width_boxes, :daily_rows)
       end
 
-      def render_day_column(day_index, day_col_width_boxes)
+      def render_day_column(day_index, cell_rect)
         date = context[:week_start] + day_index
         day_name = date.strftime('%A')
         is_weekend = (day_index == 5 || day_index == 6)  # Saturday and Sunday
+
+        # Convert cell_rect (points) back to grid coordinates for WeekColumn
+        col = cell_rect[:x] / Styling::Grid::DOT_SPACING
+        row = context[:content_start_row]
+        width_boxes = cell_rect[:width] / Styling::Grid::DOT_SPACING
+        height_boxes = context[:daily_rows]
 
         # Create WeekColumn sub-component (from Plan 04)
         column = SubComponent::WeekColumn.new(@pdf, @grid,
@@ -66,12 +84,13 @@ module BujoPdf
           lines_padding: context.fetch(:lines_padding, 40),
           line_margin: context.fetch(:line_margin, 3),
           day_header_font_size: context.fetch(:day_header_font_size, 9),
-          day_date_font_size: context.fetch(:day_date_font_size, 8)
+          day_date_font_size: context.fetch(:day_date_font_size, 8),
+          date_config: context[:date_config],
+          event_store: context[:event_store]
         )
 
         # Render at column position
-        col = context[:content_start_col] + (day_index * day_col_width_boxes)
-        column.render_at(col, context[:content_start_row], day_col_width_boxes, context[:daily_rows])
+        column.render_at(col, row, width_boxes, height_boxes)
       end
     end
   end

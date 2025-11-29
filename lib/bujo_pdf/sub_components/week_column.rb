@@ -60,6 +60,7 @@ module SubComponent
         draw_weekend_background(box[:width], box[:height]) if option(:weekend, DEFAULTS[:weekend])
         draw_border(box[:width], box[:height])
         draw_header(date, day_name, box[:width], box[:height])
+        draw_date_label(date, box[:width], box[:height]) if option(:date_config) || option(:event_store)
         draw_ruled_lines(box[:width], box[:height])
         draw_time_labels(box[:width], box[:height]) if option(:show_time_labels, DEFAULTS[:show_time_labels])
       end
@@ -169,6 +170,83 @@ module SubComponent
                      size: label_font_size
       end
       @pdf.fill_color Styling::Colors.TEXT_BLACK
+    end
+
+    # Draw highlighted date label below day header
+    # Label appears directly below the 1-box header if date is highlighted
+    # Supports both date_config highlights and calendar events
+    def draw_date_label(date, width, height)
+      return unless date
+
+      # Check both date_config and event_store
+      date_config = option(:date_config)
+      event_store = option(:event_store)
+
+      # Try date_config first (takes priority)
+      highlighted_date = date_config&.date_for_day(date)
+
+      # If no date_config entry, try calendar events
+      calendar_events = []
+      if !highlighted_date && event_store
+        calendar_events = event_store.events_for_date(date, limit: 1)
+        return if calendar_events.empty?
+      end
+
+      return unless highlighted_date || !calendar_events.empty?
+
+      # Label box positioned 1 box below header (grid-aligned)
+      # Label is 0.85 boxes high
+      header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
+      label_height_boxes = 0.85
+      label_start_row = header_height_boxes + 1  # Skip 1 box after header
+
+      label_height = @grid.height(label_height_boxes)
+      label_y = height - @grid.height(label_start_row)
+
+      # Horizontal padding (2pt on each side)
+      h_padding = 2
+
+      # Determine colors and label text based on source
+      if highlighted_date
+        # From date_config
+        category_style = date_config.category_style(highlighted_date.category)
+        priority_style = date_config.priority_style(highlighted_date.priority)
+        bg_color = category_style['color']
+        text_color = category_style['text_color']
+        label_text = highlighted_date.label
+        bold = priority_style['bold']
+      else
+        # From calendar events
+        event = calendar_events.first
+        bg_color = event.color || 'E5E5E5'
+        text_color = '333333'
+        label_text = event.display_label(include_icon: true)
+        bold = false
+      end
+
+      # Background
+      @pdf.fill_color bg_color
+      @pdf.fill_rectangle [h_padding, label_y + label_height], width - (h_padding * 2), label_height
+      @pdf.fill_color '000000'
+
+      # Text (with small vertical and horizontal padding)
+      v_padding = 1
+      text_h_padding = 2
+
+      @pdf.font('Helvetica-Bold') if bold
+
+      @pdf.fill_color text_color
+      @pdf.text_box label_text,
+                    at: [h_padding + text_h_padding, label_y + label_height - v_padding],
+                    width: width - (h_padding * 2) - (text_h_padding * 2),
+                    height: label_height - (v_padding * 2),
+                    size: 7,
+                    align: :center,
+                    valign: :center,
+                    overflow: :shrink_to_fit
+
+      @pdf.fill_color '000000'
+      @pdf.font('Helvetica')  # Reset font
     end
   end
 end

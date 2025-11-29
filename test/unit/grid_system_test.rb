@@ -135,4 +135,27 @@ class TestGridSystem < Minitest::Test
     assert_equal 43, @grid.cols
     assert_equal 55, @grid.rows
   end
+
+  def test_week_grid_helper_creates_week_grid_instance
+    week = @grid.week_grid(5, 10, 35, 15, quantize: true)
+
+    assert_instance_of BujoPdf::Components::WeekGrid, week
+
+    # Verify grid coordinates were properly converted
+    rect = week.cell_rect(0)
+    assert_equal 70.85, rect[:x]  # col 5 = 5 * 14.17
+  end
+
+  def test_week_grid_helper_with_block
+    invocations = []
+
+    week = @grid.week_grid(0, 0, 35, 15) do |day_index, rect|
+      invocations << day_index
+    end
+
+    week.render
+
+    # Block should be called for each day
+    assert_equal [0, 1, 2, 3, 4, 5, 6], invocations
+  end
 end

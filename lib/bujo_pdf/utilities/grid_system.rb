@@ -193,4 +193,52 @@ class GridSystem
   def bottom(row, height_boxes)
     y(row + height_boxes)
   end
+
+  # Create a WeekGrid component positioned using grid coordinates
+  #
+  # WeekGrid renders a 7-column week-based grid with optional quantization
+  # for visual consistency across pages. When quantize is true and width
+  # is divisible by 7 grid boxes, columns align perfectly with the dot grid.
+  #
+  # @param col [Integer] Column number of top-left corner
+  # @param row [Integer] Row number of top-left corner
+  # @param width_boxes [Numeric] Width in grid boxes
+  # @param height_boxes [Numeric] Height in grid boxes
+  # @param options [Hash] Additional WeekGrid options
+  # @option options [Boolean] :quantize Enable grid-aligned column widths (default: true)
+  # @option options [Symbol] :first_day Week start day :monday or :sunday (default: :monday)
+  # @option options [Boolean] :show_headers Render day labels (default: true)
+  # @option options [Float] :header_height Height for headers in points (default: DOT_SPACING)
+  # @option options [Proc] :cell_callback Optional callback for custom cell rendering
+  # @return [BujoPdf::Components::WeekGrid] WeekGrid instance ready to render
+  #
+  # @example Basic usage
+  #   grid.week_grid(5, 10, 35, 15, quantize: true).render
+  #
+  # @example With cell callback
+  #   grid.week_grid(5, 10, 35, 15) do |day_index, rect|
+  #     # Custom rendering for each day column
+  #     @pdf.text_box "Day #{day_index}", at: [rect[:x], rect[:y]]
+  #   end
+  #
+  # @example Store reference for later use
+  #   week = grid.week_grid(5, 10, 35, 15, quantize: true)
+  #   # Access individual cells
+  #   monday_rect = week.cell_rect(0)
+  def week_grid(col, row, width_boxes, height_boxes, **options, &block)
+    require_relative '../components/week_grid'
+
+    # If a block is provided, use it as cell_callback
+    options[:cell_callback] = block if block_given?
+
+    BujoPdf::Components::WeekGrid.from_grid(
+      pdf: @pdf,
+      grid: self,
+      col: col,
+      row: row,
+      width_boxes: width_boxes,
+      height_boxes: height_boxes,
+      **options
+    )
+  end
 end

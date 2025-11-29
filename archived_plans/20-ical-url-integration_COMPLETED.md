@@ -322,3 +322,7 @@ The implementation prioritizes:
 - **Compatibility** - Works alongside Plan #19 flat-file approach
 
 This makes calendar integration a powerful optional feature that enhances the planner without adding complexity for users who don't need it.
+
+## References:
+- Source for various holiday calendars: https://www.thunderbird.net/en-US/calendar/holidays/
+  - US Holidays: https://www.thunderbird.net/media/caldata/autogen/USHolidays.ics
