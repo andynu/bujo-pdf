@@ -1,4 +1,5 @@
 *.pdf
+!examples/*.pdf
 test_*.rb
 vendor/
 gems/
@@ -20,6 +21,5 @@ config/dates.yml
 # Personal calendar configuration and cache (keep private)
 config/calendars.yml
 .cache/
-examples/
 .DS_Store
 .claude/

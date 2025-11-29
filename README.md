@@ -2,19 +2,17 @@
 
 A Ruby gem for generating programmable bullet journal PDFs optimized for digital note-taking apps like Noteshelf and GoodNotes.
 
-## Generating Example PDFs
+## Download Example PDFs
 
-Generate planners for the current and next year in all themes:
+Pre-generated planners with US Federal Holidays:
 
-```bash
-bin/generate-examples
-```
+| Theme | 2025 | 2026 |
+|-------|------|------|
+| **Light** | [planner_2025_light.pdf](examples/planner_2025_light.pdf) | [planner_2026_light.pdf](examples/planner_2026_light.pdf) |
+| **Earth** | [planner_2025_earth.pdf](examples/planner_2025_earth.pdf) | [planner_2026_earth.pdf](examples/planner_2026_earth.pdf) |
+| **Dark** | [planner_2025_dark.pdf](examples/planner_2025_dark.pdf) | [planner_2026_dark.pdf](examples/planner_2026_dark.pdf) |
 
-This creates `examples/` directory with:
-- `planner_2025_light.pdf` - Classic white background
-- `planner_2025_earth.pdf` - Warm tan with green accents
-- `planner_2025_dark.pdf` - Modern dark mode
-- `planner_2026_light.pdf`, `planner_2026_earth.pdf`, `planner_2026_dark.pdf`
+Or generate your own with custom calendars using `bin/generate-examples`.
 
 ## Features
 
