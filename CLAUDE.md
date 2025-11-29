@@ -125,6 +125,82 @@ The `Fieldset` component (`lib/bujo_pdf/components/fieldset.rb`) creates HTML-li
 - `+90` = counter-clockwise (text reads bottom-to-top)
 - `-90` = clockwise (text reads top-to-bottom)
 
+### Component Verb System
+
+Components provide **verb methods** that pages can call directly for common rendering tasks. This creates a clean, declarative API where pages describe what to render rather than how.
+
+**Architecture:**
+- Each component defines a `Mixin` module with its verb method(s)
+- `Components::All` aggregates all mixins
+- `Pages::Base` includes `Components::All`, giving all pages access to verbs
+
+**Available verbs:**
+```ruby
+# Render dots over a grid region (for z-index layering)
+grid_dots(col, row, width, height, color: nil)
+
+# Render ruled lines with dots on top
+ruled_lines(col, row, width, height, color: 'E5E5E5', stroke: 0.5)
+```
+
+**Usage in pages:**
+```ruby
+class MyPage < Pages::Base
+  def render
+    # Draw ruled lines - dots automatically rendered on top
+    ruled_lines(2, 5, 20, 10)
+
+    # Draw text after (appears on top of everything)
+    @pdf.text_box "Title", at: [@grid_system.x(2), @grid_system.y(3)]
+  end
+end
+```
+
+**Adding a new component with verb:**
+
+1. Create `lib/bujo_pdf/components/my_component.rb`:
+```ruby
+module BujoPdf
+  module Components
+    class MyComponent
+      module Mixin
+        def my_verb(col, row, width, height, **options)
+          MyComponent.new(
+            pdf: @pdf,
+            grid: @grid_system,
+            col: col, row: row, width: width, height: height,
+            **options
+          ).render
+        end
+      end
+
+      def initialize(pdf:, grid:, col:, row:, width:, height:, **options)
+        # ...
+      end
+
+      def render
+        # ...
+      end
+    end
+  end
+end
+```
+
+2. Add to `lib/bujo_pdf/components/all.rb`:
+```ruby
+module All
+  def self.included(base)
+    base.include GridDots::Mixin
+    base.include RuledLines::Mixin
+    base.include MyComponent::Mixin  # Add this
+  end
+end
+```
+
+3. Add require to `lib/bujo_pdf.rb`
+
+**Key benefit**: Pages become declarative - they call verbs like `ruled_lines(...)` instead of manually managing PDF state, colors, and z-index.
+
 ### WeekGrid Component
 
 The `WeekGrid` component (`lib/bujo_pdf/components/week_grid.rb`) renders 7-column week-based grids with optional quantization for visual consistency across pages.
