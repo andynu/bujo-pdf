@@ -52,6 +52,10 @@ module BujoPdf
     autoload :ComponentDefinition, 'bujo_pdf/dsl/component_definition'
     autoload :ComponentRegistry, 'bujo_pdf/dsl/component_definition'
     autoload :LayoutBuilder, 'bujo_pdf/dsl/layout_builder'
+    autoload :StyleResolver, 'bujo_pdf/dsl/style_resolver'
+    autoload :Theme, 'bujo_pdf/dsl/style_resolver'
+    autoload :ThemeBuilder, 'bujo_pdf/dsl/style_resolver'
+    autoload :ThemeRegistry, 'bujo_pdf/dsl/style_resolver'
 
     # Build a layout tree using the DSL.
     #
