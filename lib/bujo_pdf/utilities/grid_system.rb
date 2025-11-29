@@ -276,4 +276,46 @@ class GridSystem
       **options
     )
   end
+
+  # Create a GridDots component for rendering dots over a specific region
+  #
+  # Use this to restore dots after drawing background elements (lines, fills)
+  # that should appear behind the dot grid.
+  #
+  # @param col [Integer] Column number of top-left corner
+  # @param row [Integer] Row number of top-left corner
+  # @param width [Integer] Width in grid boxes
+  # @param height [Integer] Height in grid boxes
+  # @param color [String, nil] Optional hex color override
+  # @return [BujoPdf::Components::GridDots] GridDots instance ready to render
+  #
+  # @example Draw lines behind dots
+  #   # 1. Draw background lines
+  #   @pdf.stroke_line [x1, y1], [x2, y2]
+  #
+  #   # 2. Redraw dots over the lines
+  #   @grid_system.grid_dots(col: 2, row: 5, width: 20, height: 10).render
+  #
+  #   # 3. Draw text on top (won't have dots over it)
+  #   @pdf.text_box "Title", at: [x, y]
+  def grid_dots(col:, row:, width:, height:, color: nil)
+    require_relative '../components/grid_dots'
+
+    BujoPdf::Components::GridDots.new(
+      pdf: @pdf,
+      grid: self,
+      col: col,
+      row: row,
+      width: width,
+      height: height,
+      color: color
+    )
+  end
+
+  # Convenience method to render dots immediately
+  #
+  # @see #grid_dots
+  def redraw_dots(col:, row:, width:, height:, color: nil)
+    grid_dots(col: col, row: row, width: width, height: height, color: color).render
+  end
 end
