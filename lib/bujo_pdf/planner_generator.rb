@@ -48,12 +48,15 @@ module BujoPdf
     # Number of future log pages (2 pages = 6 months)
     FUTURE_LOG_PAGE_COUNT = 2
 
+    # Number of monthly review pages (one per month)
+    MONTHLY_REVIEW_COUNT = 12
+
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
       collections_count = @collections_config.count
-      # index + future log + collections + 4 overview + weeks + 7 grid + 4 template pages
-      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + collections_count + 4 + total_weeks + 11
+      # index + future log + collections + reviews + 4 overview + weeks + 7 grid + 4 template pages
+      @total_pages = INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + collections_count + MONTHLY_REVIEW_COUNT + 4 + total_weeks + 11
 
       Prawn::Document.generate(filename, page_size: 'LETTER', margin: 0) do |pdf|
         @pdf = pdf
@@ -65,6 +68,7 @@ module BujoPdf
         generate_index_pages
         generate_future_log_pages
         generate_collection_pages
+        generate_monthly_review_pages
         generate_overview_pages
         generate_weekly_pages
         generate_grid_pages
@@ -169,6 +173,35 @@ module BujoPdf
       )
 
       page = PageFactory.create(:collection, @pdf, context)
+      page.generate
+    end
+
+    def generate_monthly_review_pages
+      @monthly_review_pages = {}
+
+      MONTHLY_REVIEW_COUNT.times do |i|
+        month_num = i + 1
+        @pdf.start_new_page
+        generate_monthly_review_page(month_num)
+        @monthly_review_pages[month_num] = @pdf.page_number
+      end
+    end
+
+    def generate_monthly_review_page(month_num)
+      total_weeks = Utilities::DateCalculator.total_weeks(@year)
+
+      context = RenderContext.new(
+        page_key: "review_#{month_num}".to_sym,
+        page_number: @pdf.page_number,
+        year: @year,
+        total_weeks: total_weeks,
+        total_pages: @total_pages,
+        review_month: month_num,
+        date_config: @date_config,
+        event_store: @event_store
+      )
+
+      page = PageFactory.create(:monthly_review, @pdf, context)
       page.generate
     end
 
@@ -332,6 +365,7 @@ module BujoPdf
       future_log_pages = @future_log_pages
       collection_pages = @collection_pages
       collections = @collections_config.collections
+      monthly_review_pages = @monthly_review_pages
       seasonal_page = @seasonal_page
       events_page = @events_page
       highlights_page = @highlights_page
@@ -360,6 +394,9 @@ module BujoPdf
         collections.each do |collection|
           page destination: collection_pages[collection[:id]], title: collection[:title]
         end
+
+        # Monthly reviews (12 pages)
+        page destination: monthly_review_pages[1], title: 'Monthly Reviews'
 
         # Year overview pages (flat, no nesting)
         page destination: seasonal_page, title: 'Seasonal Calendar'

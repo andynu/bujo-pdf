@@ -13,6 +13,7 @@ require_relative 'pages/grids/perspective_grid_page'
 require_relative 'pages/index_pages'
 require_relative 'pages/future_log'
 require_relative 'pages/collection_page'
+require_relative 'pages/monthly_review'
 require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
@@ -47,6 +48,7 @@ module BujoPdf
       index: Pages::IndexPage,
       future_log: Pages::FutureLog,
       collection: Pages::CollectionPage,
+      monthly_review: Pages::MonthlyReview,
       reference: Pages::ReferenceCalibration,
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,
