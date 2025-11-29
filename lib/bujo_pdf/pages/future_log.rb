@@ -163,31 +163,13 @@ module BujoPdf
 
       # Draw ruled entry lines for a section
       #
-      # Lines are quantized to the dot grid - each line sits exactly on a grid row,
-      # providing consistent spacing that aligns with the 5mm dot pattern.
-      # Dots are redrawn over the lines so they appear on top.
-      #
       # @param col [Integer] Starting column
       # @param start_row [Integer] Starting row for lines
       # @param width [Integer] Width in grid boxes
       # @param row_count [Integer] Number of rows available
       # @return [void]
       def draw_entry_lines(col, start_row, width, row_count)
-        @pdf.stroke_color 'E5E5E5'
-        @pdf.line_width 0.5
-
-        # Draw one line per grid row, aligned exactly with grid positions
-        row_count.times do |i|
-          row = start_row + i
-          line_y = @grid_system.y(row + 1)  # Bottom of the row, aligned to grid
-
-          @pdf.stroke_line [@grid_system.x(col), line_y], [@grid_system.x(col + width), line_y]
-        end
-
-        @pdf.stroke_color '000000'
-
-        # Redraw dots over the lines so they appear on top
-        @grid_system.redraw_dots(col: col, row: start_row, width: width, height: row_count)
+        ruled_lines(col, start_row, width, row_count)
       end
 
       # Calculate content width (usable area between margins)
