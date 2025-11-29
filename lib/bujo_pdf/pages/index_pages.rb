@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'base'
-require_relative '../components/grid_ruler'
 
 module BujoPdf
   module Pages

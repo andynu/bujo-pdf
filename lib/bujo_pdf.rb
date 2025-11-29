@@ -38,6 +38,7 @@ require_relative 'bujo_pdf/components/right_sidebar'
 require_relative 'bujo_pdf/components/daily_section'
 require_relative 'bujo_pdf/components/cornell_notes'
 require_relative 'bujo_pdf/components/week_grid'
+require_relative 'bujo_pdf/components/grid_ruler'
 
 # Load layouts
 require_relative 'bujo_pdf/layouts/base_layout'
