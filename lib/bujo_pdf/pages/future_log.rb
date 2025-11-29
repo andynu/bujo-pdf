@@ -6,13 +6,13 @@ module BujoPdf
   module Pages
     # Future log page for capturing events beyond the current planning horizon.
     #
-    # Classic bullet journal technique: 6-month spread with minimal structure.
-    # Each page shows 3 months with headers and ruled lines for entries.
+    # Classic bullet journal technique: 12-month spread with minimal structure.
+    # Each page shows 6 months in a two-column layout (3 months per column).
     # Users write future events here and migrate them to weekly pages when
     # the time comes.
     #
     # Design:
-    # - 6-month spread across 2 pages (3 months per page)
+    # - 12-month spread across 2 pages (6 months per page, 2 columns)
     # - Month headers with simple dividers
     # - Ruled lines for writing entries
     # - Minimal structure to allow flexible use
@@ -27,11 +27,16 @@ module BujoPdf
     #   page = FutureLog.new(pdf, context)
     #   page.generate
     class FutureLog < Base
-      # Number of months per page
-      MONTHS_PER_PAGE = 3
+      # Number of months per page (2 columns x 3 rows)
+      MONTHS_PER_PAGE = 6
 
-      # Number of entry lines per month section
-      LINES_PER_MONTH = 14
+      # Layout constants
+      LEFT_MARGIN = 2
+      RIGHT_MARGIN = 41
+      COLUMN_GAP = 1        # Gap between columns in grid boxes
+      HEADER_ROW = 1
+      CONTENT_START_ROW = 4
+      MONTHS_PER_COLUMN = 3
 
       def setup
         @future_log_page = context[:future_log_page] || 1
@@ -46,7 +51,7 @@ module BujoPdf
 
       def render
         draw_header
-        draw_month_sections
+        draw_two_column_layout
       end
 
       private
@@ -55,7 +60,7 @@ module BujoPdf
       #
       # @return [void]
       def draw_header
-        header_box = @grid_system.rect(2, 1, 39, 3)
+        header_box = @grid_system.rect(LEFT_MARGIN, HEADER_ROW, content_width, 2)
 
         @pdf.bounding_box([header_box[:x], header_box[:y]],
                           width: header_box[:width],
@@ -71,43 +76,55 @@ module BujoPdf
         end
       end
 
-      # Draw all month sections
+      # Draw the two-column layout with 3 months per column
       #
       # @return [void]
-      def draw_month_sections
-        # Calculate available height for months
-        start_row = 5
-        section_height = 16  # boxes per month section
-        spacing = 1          # boxes between sections
+      def draw_two_column_layout
+        # Calculate column dimensions
+        col_width = (content_width - COLUMN_GAP) / 2
 
-        MONTHS_PER_PAGE.times do |i|
+        # Available height for month sections (rows 4-53 = 50 rows)
+        available_rows = 50
+        section_height = available_rows / MONTHS_PER_COLUMN  # ~16 rows per month
+
+        # Draw left column (first 3 months)
+        MONTHS_PER_COLUMN.times do |i|
           month_num = @start_month + i
-          row = start_row + (i * (section_height + spacing))
-          draw_month_section(month_num, row, section_height)
+          row = CONTENT_START_ROW + (i * section_height)
+          draw_month_section(month_num, LEFT_MARGIN, row, col_width, section_height)
+        end
+
+        # Draw right column (next 3 months)
+        right_col_start = LEFT_MARGIN + col_width + COLUMN_GAP
+        MONTHS_PER_COLUMN.times do |i|
+          month_num = @start_month + MONTHS_PER_COLUMN + i
+          row = CONTENT_START_ROW + (i * section_height)
+          draw_month_section(month_num, right_col_start, row, col_width, section_height)
         end
       end
 
       # Draw a single month section
       #
       # @param month_num [Integer] Month number (1-12)
+      # @param col [Integer] Starting column for this section
       # @param start_row [Integer] Starting row for this section
+      # @param width [Integer] Width in grid boxes
       # @param height [Integer] Section height in grid boxes
       # @return [void]
-      def draw_month_section(month_num, start_row, height)
-        # Month header
-        draw_month_header(month_num, start_row)
-
-        # Entry lines below header
-        draw_entry_lines(start_row + 2, height - 2)
+      def draw_month_section(month_num, col, start_row, width, height)
+        draw_month_header(month_num, col, start_row, width)
+        draw_entry_lines(col, start_row + 2, width, height - 2)
       end
 
       # Draw month header with divider line
       #
       # @param month_num [Integer] Month number (1-12)
+      # @param col [Integer] Starting column
       # @param row [Integer] Row for the header
+      # @param width [Integer] Width in grid boxes
       # @return [void]
-      def draw_month_header(month_num, row)
-        header_box = @grid_system.rect(2, row, 39, 2)
+      def draw_month_header(month_num, col, row, width)
+        header_box = @grid_system.rect(col, row, width, 2)
 
         # Month name
         @pdf.bounding_box([header_box[:x], header_box[:y]],
@@ -126,7 +143,7 @@ module BujoPdf
         line_y = @grid_system.y(row + 2)
         @pdf.stroke_color 'CCCCCC'
         @pdf.line_width 1.0
-        @pdf.stroke_line [@grid_system.x(2), line_y], [@grid_system.x(41), line_y]
+        @pdf.stroke_line [@grid_system.x(col), line_y], [@grid_system.x(col + width), line_y]
         @pdf.line_width 0.5
       end
 
@@ -135,10 +152,12 @@ module BujoPdf
       # Lines are quantized to the dot grid - each line sits exactly on a grid row,
       # providing consistent spacing that aligns with the 5mm dot pattern.
       #
+      # @param col [Integer] Starting column
       # @param start_row [Integer] Starting row for lines
+      # @param width [Integer] Width in grid boxes
       # @param row_count [Integer] Number of rows available
       # @return [void]
-      def draw_entry_lines(start_row, row_count)
+      def draw_entry_lines(col, start_row, width, row_count)
         @pdf.stroke_color 'E5E5E5'
         @pdf.line_width 0.5
 
@@ -147,10 +166,17 @@ module BujoPdf
           row = start_row + i
           line_y = @grid_system.y(row + 1)  # Bottom of the row, aligned to grid
 
-          @pdf.stroke_line [@grid_system.x(2), line_y], [@grid_system.x(41), line_y]
+          @pdf.stroke_line [@grid_system.x(col), line_y], [@grid_system.x(col + width), line_y]
         end
 
         @pdf.stroke_color '000000'
+      end
+
+      # Calculate content width (usable area between margins)
+      #
+      # @return [Integer] Width in grid boxes
+      def content_width
+        RIGHT_MARGIN - LEFT_MARGIN
       end
     end
   end

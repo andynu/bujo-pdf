@@ -143,7 +143,7 @@ module BujoPdf
 
     def generate_future_log_page(future_log_page_num)
       total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      start_month = (future_log_page_num - 1) * 3 + 1  # Page 1 = months 1-3, Page 2 = months 4-6
+      start_month = (future_log_page_num - 1) * 6 + 1  # Page 1 = months 1-6, Page 2 = months 7-12
 
       context = RenderContext.new(
         page_key: "future_log_#{future_log_page_num}".to_sym,
