@@ -7,6 +7,7 @@ require_relative 'pages/reference_calibration'
 require_relative 'pages/seasonal_calendar'
 require_relative 'pages/year_at_glance_events'
 require_relative 'pages/year_at_glance_highlights'
+require_relative 'pages/year_wheel'
 require_relative 'pages/multi_year_overview'
 
 module BujoPdf
@@ -30,6 +31,7 @@ module BujoPdf
       seasonal: Pages::SeasonalCalendar,
       year_events: Pages::YearAtGlanceEvents,
       year_highlights: Pages::YearAtGlanceHighlights,
+      year_wheel: Pages::YearWheel,
       multi_year: Pages::MultiYearOverview
     }
 
