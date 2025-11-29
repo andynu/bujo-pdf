@@ -52,7 +52,7 @@ module BujoPdf
       # Render the index page with numbered lines in two columns
       def render
         # Diagnostic: uncomment to show grid coordinates
-        # Components::GridRuler.new(@pdf, @grid_system).render
+        #Components::GridRuler.new(@pdf, @grid_system).render
 
         draw_header
         draw_two_column_layout
