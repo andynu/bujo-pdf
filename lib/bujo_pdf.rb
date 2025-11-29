@@ -28,7 +28,6 @@ require_relative 'bujo_pdf/layout'
 require_relative 'bujo_pdf/sub_components/base'
 require_relative 'bujo_pdf/sub_components/fieldset'
 require_relative 'bujo_pdf/sub_components/week_column'
-require_relative 'bujo_pdf/sub_components/ruled_lines'
 require_relative 'bujo_pdf/sub_components/day_header'
 
 # Load components
@@ -40,6 +39,8 @@ require_relative 'bujo_pdf/components/cornell_notes'
 require_relative 'bujo_pdf/components/week_grid'
 require_relative 'bujo_pdf/components/grid_ruler'
 require_relative 'bujo_pdf/components/grid_dots'
+require_relative 'bujo_pdf/components/ruled_lines'
+require_relative 'bujo_pdf/components/all'
 
 # Load layouts
 require_relative 'bujo_pdf/layouts/base_layout'

@@ -367,15 +367,6 @@ module BujoPdf
       create_sub_component(SubComponent::Fieldset, **options)
     end
 
-    # Create a RuledLines sub-component.
-    #
-    # @param options [Hash] Options for RuledLines
-    # @return [SubComponent::RuledLines] The ruled lines instance
-    def create_ruled_lines(**options)
-      require_relative 'sub_components/ruled_lines'
-      create_sub_component(SubComponent::RuledLines, **options)
-    end
-
     # Create a DayHeader sub-component.
     #
     # @param options [Hash] Options for DayHeader
