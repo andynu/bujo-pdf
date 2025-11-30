@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'sub_component_base'
+require_relative '../base/component'
 require_relative 'text'
 require_relative '../utilities/styling'
 
@@ -13,19 +13,24 @@ module BujoPdf
     # and can be rotated for vertical orientations.
     #
     # @example Basic top-left fieldset
-    #   fieldset = BujoPdf::Components::Fieldset.new(pdf, grid_system,
+    #   canvas = Canvas.new(pdf, grid)
+    #   fieldset = BujoPdf::Components::Fieldset.new(
+    #     canvas: canvas,
+    #     col: 5, row: 10, width: 20, height: 30,
     #     legend: "Winter",
     #     position: :top_left
     #   )
-    #   fieldset.render_at(5, 10, 20, 30)
+    #   fieldset.render
     #
     # @example Vertical label on right edge
-    #   fieldset = BujoPdf::Components::Fieldset.new(pdf, grid_system,
+    #   fieldset = BujoPdf::Components::Fieldset.new(
+    #     canvas: canvas,
+    #     col: 25, row: 10, width: 20, height: 30,
     #     legend: "Summer",
-    #     position: :top_right  # Rotated clockwise (-90°)
+    #     position: :top_right  # Rotated clockwise (-90deg)
     #   )
-    #   fieldset.render_at(25, 10, 20, 30)
-    class Fieldset < SubComponentBase
+    #   fieldset.render
+    class Fieldset < Component
       include Text::Mixin
 
       # Mixin providing the fieldset verb for pages and components
@@ -47,11 +52,14 @@ module BujoPdf
         # @param legend_offset_y [Integer] Fine-tuning Y offset (default: 0)
         # @return [void]
         def fieldset(col, row, width, height, legend:, position: :top_left, **options)
-          Fieldset.new(@pdf, @grid,
+          canvas = @canvas || Canvas.new(@pdf, @grid)
+          Fieldset.new(
+            canvas: canvas,
+            col: col, row: row, width: width, height: height,
             legend: legend,
             position: position,
             **options
-          ).render_at(col, row, width, height)
+          ).render
         end
       end
 
@@ -76,23 +84,39 @@ module BujoPdf
         bottom_right: { edge: :left,   align: :bottom, rotation: 90 }
       }.freeze
 
-      # Render the fieldset at the specified grid position
-      #
-      # @param col [Float] Starting column in grid coordinates
-      # @param row [Float] Starting row in grid coordinates
-      # @param width_boxes [Float] Width in grid boxes
-      # @param height_boxes [Float] Height in grid boxes
-      def render_at(col, row, width_boxes, height_boxes)
-        @legend = option(:legend)
-        raise ArgumentError, "legend required" unless @legend
+      def initialize(canvas:, col:, row:, width:, height:, legend:,
+                     position: DEFAULTS[:position],
+                     legend_padding: DEFAULTS[:legend_padding],
+                     font_size: DEFAULTS[:font_size],
+                     border_color: DEFAULTS[:border_color],
+                     text_color: DEFAULTS[:text_color],
+                     inset_boxes: DEFAULTS[:inset_boxes],
+                     legend_offset_x: DEFAULTS[:legend_offset_x],
+                     legend_offset_y: DEFAULTS[:legend_offset_y])
+        super(canvas: canvas)
+        @col = col
+        @row = row
+        @width_boxes = width
+        @height_boxes = height
+        @legend = legend
+        @position_name = position
+        @legend_padding = legend_padding
+        @font_size = font_size
+        @border_color_option = border_color
+        @text_color_option = text_color
+        @inset_boxes = inset_boxes
+        @legend_offset_x = legend_offset_x
+        @legend_offset_y = legend_offset_y
 
-        @box = @grid.rect(col, row, width_boxes, height_boxes)
-        @position_name = option(:position, DEFAULTS[:position])
         @config = POSITION_CONFIG[@position_name]
         raise ArgumentError, "Invalid position: #{@position_name}" unless @config
+      end
+
+      def render
+        @box = grid.rect(@col, @row, @width_boxes, @height_boxes)
 
         # Calculate inset border
-        inset = @grid.width(option(:inset_boxes, DEFAULTS[:inset_boxes]))
+        inset = grid.width(@inset_boxes)
         @border = {
           x: @box[:x] + inset,
           y: @box[:y] - inset,
@@ -101,10 +125,8 @@ module BujoPdf
         }
 
         # Measure legend
-        @font_size = option(:font_size, DEFAULTS[:font_size])
-        @pdf.font "Helvetica-Bold", size: @font_size
-        @legend_width = @pdf.width_of(@legend)
-        @legend_padding = option(:legend_padding, DEFAULTS[:legend_padding])
+        pdf.font "Helvetica-Bold", size: @font_size
+        @legend_width = pdf.width_of(@legend)
         @legend_total_width = @legend_width + (@legend_padding * 2)
 
         draw_border
@@ -116,17 +138,15 @@ module BujoPdf
       private
 
       def border_color
-        @border_color ||= option(:border_color, DEFAULTS[:border_color]) ||
-                          Themes.current[:colors][:border]
+        @border_color ||= @border_color_option || Themes.current[:colors][:border]
       end
 
       def text_color
-        @text_color ||= option(:text_color, DEFAULTS[:text_color]) ||
-                        Themes.current[:colors][:text_black]
+        @text_color ||= @text_color_option || Themes.current[:colors][:text_black]
       end
 
       def draw_border
-        @pdf.stroke_color border_color
+        pdf.stroke_color border_color
 
         case @config[:edge]
         when :top
@@ -144,8 +164,8 @@ module BujoPdf
         gap_start, gap_end = calculate_horizontal_gap(@config[:align])
 
         # Top edge with gap
-        @pdf.stroke_line [@border[:x], @border[:y]], [gap_start, @border[:y]]
-        @pdf.stroke_line [gap_end, @border[:y]], [@border[:x] + @border[:width], @border[:y]]
+        pdf.stroke_line [@border[:x], @border[:y]], [gap_start, @border[:y]]
+        pdf.stroke_line [gap_end, @border[:y]], [@border[:x] + @border[:width], @border[:y]]
         # Remaining edges
         draw_right_edge
         draw_bottom_edge_full
@@ -158,9 +178,9 @@ module BujoPdf
         draw_top_edge_full
         draw_right_edge
         # Bottom edge with gap
-        @pdf.stroke_line [@border[:x] + @border[:width], @border[:y] - @border[:height]],
+        pdf.stroke_line [@border[:x] + @border[:width], @border[:y] - @border[:height]],
                          [gap_end, @border[:y] - @border[:height]]
-        @pdf.stroke_line [gap_start, @border[:y] - @border[:height]],
+        pdf.stroke_line [gap_start, @border[:y] - @border[:height]],
                          [@border[:x], @border[:y] - @border[:height]]
         draw_left_edge
       end
@@ -170,9 +190,9 @@ module BujoPdf
 
         draw_top_edge_full
         # Right edge with gap
-        @pdf.stroke_line [@border[:x] + @border[:width], @border[:y]],
+        pdf.stroke_line [@border[:x] + @border[:width], @border[:y]],
                          [@border[:x] + @border[:width], gap_start]
-        @pdf.stroke_line [@border[:x] + @border[:width], gap_end],
+        pdf.stroke_line [@border[:x] + @border[:width], gap_end],
                          [@border[:x] + @border[:width], @border[:y] - @border[:height]]
         draw_bottom_edge_full
         draw_left_edge
@@ -185,55 +205,51 @@ module BujoPdf
         draw_right_edge
         draw_bottom_edge_full
         # Left edge with gap
-        @pdf.stroke_line [@border[:x], @border[:y] - @border[:height]],
+        pdf.stroke_line [@border[:x], @border[:y] - @border[:height]],
                          [@border[:x], gap_end]
-        @pdf.stroke_line [@border[:x], gap_start],
+        pdf.stroke_line [@border[:x], gap_start],
                          [@border[:x], @border[:y]]
       end
 
       # Full edge drawing helpers
       def draw_top_edge_full
-        @pdf.stroke_line [@border[:x], @border[:y]], [@border[:x] + @border[:width], @border[:y]]
+        pdf.stroke_line [@border[:x], @border[:y]], [@border[:x] + @border[:width], @border[:y]]
       end
 
       def draw_right_edge
-        @pdf.stroke_line [@border[:x] + @border[:width], @border[:y]],
+        pdf.stroke_line [@border[:x] + @border[:width], @border[:y]],
                          [@border[:x] + @border[:width], @border[:y] - @border[:height]]
       end
 
       def draw_bottom_edge_full
-        @pdf.stroke_line [@border[:x] + @border[:width], @border[:y] - @border[:height]],
+        pdf.stroke_line [@border[:x] + @border[:width], @border[:y] - @border[:height]],
                          [@border[:x], @border[:y] - @border[:height]]
       end
 
       def draw_left_edge
-        @pdf.stroke_line [@border[:x], @border[:y] - @border[:height]], [@border[:x], @border[:y]]
+        pdf.stroke_line [@border[:x], @border[:y] - @border[:height]], [@border[:x], @border[:y]]
       end
 
       def calculate_horizontal_gap(align)
-        offset_x = option(:legend_offset_x, DEFAULTS[:legend_offset_x])
-
         case align
         when :left
-          start = @box[:x] + @grid.width(1) + offset_x
+          start = @box[:x] + grid.width(1) + @legend_offset_x
         when :center
-          start = @box[:x] + (@box[:width] / 2) - (@legend_total_width / 2) + offset_x
+          start = @box[:x] + (@box[:width] / 2) - (@legend_total_width / 2) + @legend_offset_x
         when :right
-          start = @box[:x] + @box[:width] - @grid.width(1) - @legend_total_width + offset_x
+          start = @box[:x] + @box[:width] - grid.width(1) - @legend_total_width + @legend_offset_x
         end
 
         [start, start + @legend_total_width]
       end
 
       def calculate_vertical_gap(align)
-        offset_y = option(:legend_offset_y, DEFAULTS[:legend_offset_y])
-
         case align
         when :top
-          start = @box[:y] - @grid.height(1) + offset_y
+          start = @box[:y] - grid.height(1) + @legend_offset_y
           [start, start - @legend_total_width]
         when :bottom
-          start = @box[:y] - @box[:height] + @grid.height(1) + offset_y
+          start = @box[:y] - @box[:height] + grid.height(1) + @legend_offset_y
           [start, start + @legend_total_width]
         end
       end
@@ -252,20 +268,18 @@ module BujoPdf
       end
 
       def draw_horizontal_legend(y_base, align)
-        offset_x = option(:legend_offset_x, DEFAULTS[:legend_offset_x])
-
         case align
         when :left
-          x = @box[:x] + @grid.width(1) + @legend_padding + offset_x
+          x = @box[:x] + grid.width(1) + @legend_padding + @legend_offset_x
         when :center
-          x = @box[:x] + (@box[:width] / 2) - (@legend_width / 2) + offset_x
+          x = @box[:x] + (@box[:width] / 2) - (@legend_width / 2) + @legend_offset_x
         when :right
-          x = @box[:x] + @box[:width] - @grid.width(1) - @legend_total_width + @legend_padding + offset_x
+          x = @box[:x] + @box[:width] - grid.width(1) - @legend_total_width + @legend_padding + @legend_offset_x
         end
 
-        @pdf.fill_color text_color
-        @pdf.font "Helvetica-Bold", size: @font_size
-        @pdf.text_box @legend,
+        pdf.fill_color text_color
+        pdf.font "Helvetica-Bold", size: @font_size
+        pdf.text_box @legend,
                       at: [x, y_base + (@font_size / 2)],
                       width: @legend_width,
                       height: @font_size + 4,
@@ -273,23 +287,20 @@ module BujoPdf
       end
 
       def draw_vertical_legend(edge)
-        offset_x = option(:legend_offset_x, DEFAULTS[:legend_offset_x])
-        offset_y = option(:legend_offset_y, DEFAULTS[:legend_offset_y])
-
         if edge == :right
           center_x = @box[:x] + @box[:width]
-          center_y = @box[:y] - @grid.height(1) - @legend_padding - (@legend_width / 2)
+          center_y = @box[:y] - grid.height(1) - @legend_padding - (@legend_width / 2)
           rotation = -90
         else # :left
-          center_x = @box[:x] + offset_x
-          center_y = @box[:y] - @box[:height] + @grid.height(1) + @legend_padding + (@legend_width / 2) + offset_y
+          center_x = @box[:x] + @legend_offset_x
+          center_y = @box[:y] - @box[:height] + grid.height(1) + @legend_padding + (@legend_width / 2) + @legend_offset_y
           rotation = 90
         end
 
-        @pdf.fill_color text_color
-        @pdf.font "Helvetica-Bold", size: @font_size
-        @pdf.rotate(rotation, origin: [center_x, center_y]) do
-          @pdf.text_box @legend,
+        pdf.fill_color text_color
+        pdf.font "Helvetica-Bold", size: @font_size
+        pdf.rotate(rotation, origin: [center_x, center_y]) do
+          pdf.text_box @legend,
                         at: [center_x - (@legend_width / 2), center_y + (@font_size / 2)],
                         width: @legend_width,
                         height: @font_size + 4,
@@ -298,8 +309,8 @@ module BujoPdf
       end
 
       def reset_colors
-        @pdf.stroke_color Styling::Colors.TEXT_BLACK
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.stroke_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color Styling::Colors.TEXT_BLACK
       end
     end
   end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'sub_component_base'
+require_relative '../base/component'
 require_relative '../utilities/styling'
 
 module BujoPdf
@@ -14,21 +14,26 @@ module BujoPdf
     # - Time period labels (AM/PM/EVE) for Monday
     #
     # @example Basic usage
-    #   column = BujoPdf::Components::WeekColumn.new(pdf, grid_system,
+    #   canvas = Canvas.new(pdf, grid)
+    #   column = BujoPdf::Components::WeekColumn.new(
+    #     canvas: canvas,
+    #     col: 5, row: 10, width: 5.57, height: 9,
     #     date: Date.new(2025, 1, 6),
     #     day_name: "Monday",
     #     show_time_labels: true
     #   )
-    #   column.render_at(5, 10, 5.57, 9)
+    #   column.render
     #
     # @example Weekend column
-    #   column = BujoPdf::Components::WeekColumn.new(pdf, grid_system,
+    #   column = BujoPdf::Components::WeekColumn.new(
+    #     canvas: canvas,
+    #     col: 30, row: 10, width: 5.57, height: 9,
     #     date: Date.new(2025, 1, 11),
     #     day_name: "Saturday",
     #     weekend: true
     #   )
-    #   column.render_at(30, 10, 5.57, 9)
-    class WeekColumn < SubComponentBase
+    #   column.render
+    class WeekColumn < Component
       # Default configuration values
       DEFAULTS = {
         line_count: 4,
@@ -44,45 +49,87 @@ module BujoPdf
         weekend: false
       }.freeze
 
-      # Render the week column at the specified grid position
-      #
-      # @param col [Float] Starting column in grid coordinates
-      # @param row [Float] Starting row in grid coordinates
-      # @param width_boxes [Float] Width in grid boxes
-      # @param height_boxes [Float] Height in grid boxes
-      def render_at(col, row, width_boxes, height_boxes)
-        date = option(:date)
-        day_name = option(:day_name) || date&.strftime('%A')
+      def initialize(canvas:, col:, row:, width:, height:,
+                     date: nil, day_name: nil,
+                     line_count: DEFAULTS[:line_count],
+                     header_height_boxes: DEFAULTS[:header_height_boxes],
+                     line_margin: DEFAULTS[:line_margin],
+                     day_header_font_size: DEFAULTS[:day_header_font_size],
+                     day_date_font_size: DEFAULTS[:day_date_font_size],
+                     time_label_font_size: DEFAULTS[:time_label_font_size],
+                     header_color: DEFAULTS[:header_color],
+                     border_color: DEFAULTS[:border_color],
+                     weekend_bg_color: DEFAULTS[:weekend_bg_color],
+                     show_time_labels: DEFAULTS[:show_time_labels],
+                     weekend: DEFAULTS[:weekend],
+                     date_config: nil, event_store: nil,
+                     header_height: nil, header_padding: nil, lines_start: nil,
+                     lines_padding: nil)
+        super(canvas: canvas)
+        @col = col
+        @row = row
+        @width_boxes = width
+        @height_boxes = height
+        @date = date
+        @day_name = day_name || date&.strftime('%A')
+        @line_count = line_count
+        @header_height_boxes = header_height_boxes
+        @line_margin = line_margin
+        @day_header_font_size = day_header_font_size
+        @day_date_font_size = day_date_font_size
+        @time_label_font_size = time_label_font_size
+        @header_color = header_color
+        @border_color = border_color
+        @weekend_bg_color = weekend_bg_color
+        @show_time_labels = show_time_labels
+        @weekend = weekend
+        @date_config = date_config
+        @event_store = event_store
 
-        raise ArgumentError, "date or day_name required" unless date || day_name
+        raise ArgumentError, "date or day_name required" unless @date || @day_name
+      end
 
-        in_grid_box(col, row, width_boxes, height_boxes) do
-          box = @grid.rect(col, row, width_boxes, height_boxes)
-          draw_weekend_background(box[:width], box[:height]) if option(:weekend, DEFAULTS[:weekend])
+      def render
+        box = grid.rect(@col, @row, @width_boxes, @height_boxes)
+
+        pdf.bounding_box([box[:x], box[:y]], width: box[:width], height: box[:height]) do
+          draw_weekend_background(box[:width], box[:height]) if @weekend
           draw_border(box[:width], box[:height])
-          draw_header(date, day_name, box[:width], box[:height])
-          draw_date_label(date, box[:width], box[:height]) if option(:date_config) || option(:event_store)
+          draw_header(@date, @day_name, box[:width], box[:height])
+          draw_date_label(@date, box[:width], box[:height]) if @date_config || @event_store
           draw_ruled_lines(box[:width], box[:height])
-          draw_time_labels(box[:width], box[:height]) if option(:show_time_labels, DEFAULTS[:show_time_labels])
+          draw_time_labels(box[:width], box[:height]) if @show_time_labels
         end
       end
 
       private
 
+      def effective_header_color
+        @header_color || Styling::Colors.SECTION_HEADERS
+      end
+
+      def effective_border_color
+        @border_color || Styling::Colors.BORDERS
+      end
+
+      def effective_weekend_bg_color
+        @weekend_bg_color || Styling::Colors.WEEKEND_BG
+      end
+
       # Draw subtle weekend background
       def draw_weekend_background(width, height)
-        @pdf.fill_color option(:weekend_bg_color, DEFAULTS[:weekend_bg_color])
-        @pdf.transparent(0.1) do
-          @pdf.fill_rectangle [0, height], width, height
+        pdf.fill_color effective_weekend_bg_color
+        pdf.transparent(0.1) do
+          pdf.fill_rectangle [0, height], width, height
         end
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color Styling::Colors.TEXT_BLACK
       end
 
       # Draw column border
       def draw_border(width, height)
-        @pdf.stroke_color option(:border_color, DEFAULTS[:border_color])
-        @pdf.stroke_bounds
-        @pdf.stroke_color Styling::Colors.TEXT_BLACK
+        pdf.stroke_color effective_border_color
+        pdf.stroke_bounds
+        pdf.stroke_color Styling::Colors.TEXT_BLACK
       end
 
       # Draw day header with day name and date
@@ -90,30 +137,27 @@ module BujoPdf
       # - Three-letter weekday in gray on top left
       # - Month/day centered
       def draw_header(date, day_name, width, height)
-        header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
-        header_height = @grid.height(header_height_boxes)
-        header_color = option(:header_color, DEFAULTS[:header_color])
-        font_size = option(:day_header_font_size, DEFAULTS[:day_header_font_size])
+        header_height = grid.height(@header_height_boxes)
 
         # Three-letter weekday abbreviation in gray, top left
         short_day = day_name[0..2] if day_name
         if short_day
-          @pdf.fill_color header_color
-          @pdf.font "Helvetica", size: font_size
-          @pdf.text_box short_day,
+          pdf.fill_color effective_header_color
+          pdf.font "Helvetica", size: @day_header_font_size
+          pdf.text_box short_day,
                        at: [2, height - 2],
                        width: width / 2,
                        height: header_height,
                        align: :left,
                        valign: :top
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
+          pdf.fill_color Styling::Colors.TEXT_BLACK
         end
 
         # Month/day centered
         if date
           date_str = date.strftime('%-m/%-d')
-          @pdf.font "Helvetica", size: font_size
-          @pdf.text_box date_str,
+          pdf.font "Helvetica", size: @day_header_font_size
+          pdf.text_box date_str,
                        at: [0, height - 2],
                        width: width,
                        height: header_height,
@@ -125,25 +169,20 @@ module BujoPdf
       # Draw ruled lines that divide content into 2-box-high rows
       # Lines start at the bottom edge of the 1-box header
       def draw_ruled_lines(width, height)
-        line_count = option(:line_count, DEFAULTS[:line_count])
-        line_margin = option(:line_margin, DEFAULTS[:line_margin])
-        border_color = option(:border_color, DEFAULTS[:border_color])
-        header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
-
         # Calculate line spacing (2 boxes per section)
-        box_height = @grid.height(1)
+        box_height = grid.height(1)
         section_height = box_height * 2 # Each section is 2 boxes high
-        header_height = @grid.height(header_height_boxes)
+        header_height = grid.height(@header_height_boxes)
 
         # Lines start at bottom of header
         first_line_y = height - header_height
 
         # Draw lines every 2 boxes, starting from bottom of header
-        line_count.to_i.times do |line_num|
+        @line_count.to_i.times do |line_num|
           y_pos = first_line_y - (line_num * section_height)
-          @pdf.stroke_color border_color
-          @pdf.stroke_horizontal_line line_margin, width - line_margin, at: y_pos
-          @pdf.stroke_color Styling::Colors.TEXT_BLACK
+          pdf.stroke_color effective_border_color
+          pdf.stroke_horizontal_line @line_margin, width - @line_margin, at: y_pos
+          pdf.stroke_color Styling::Colors.TEXT_BLACK
         end
 
         # Store spacing info for time labels
@@ -156,21 +195,19 @@ module BujoPdf
         return unless @line_start_y && @line_spacing
 
         labels = ['AM', 'PM', 'EVE']
-        label_font_size = option(:time_label_font_size, DEFAULTS[:time_label_font_size])
-        border_color = option(:border_color, DEFAULTS[:border_color])
 
-        @pdf.fill_color border_color
-        @pdf.font "Helvetica", size: label_font_size
+        pdf.fill_color effective_border_color
+        pdf.font "Helvetica", size: @time_label_font_size
 
         labels.each_with_index do |label, idx|
           region_y = @line_start_y - (idx * @line_spacing) - 2
-          @pdf.text_box label,
+          pdf.text_box label,
                        at: [3, region_y],
                        width: 20,
                        height: 10,
-                       size: label_font_size
+                       size: @time_label_font_size
         end
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color Styling::Colors.TEXT_BLACK
       end
 
       # Draw highlighted date label below day header
@@ -179,17 +216,13 @@ module BujoPdf
       def draw_date_label(date, width, height)
         return unless date
 
-        # Check both date_config and event_store
-        date_config = option(:date_config)
-        event_store = option(:event_store)
-
         # Try date_config first (takes priority)
-        highlighted_date = date_config&.date_for_day(date)
+        highlighted_date = @date_config&.date_for_day(date)
 
         # If no date_config entry, try calendar events
         calendar_events = []
-        if !highlighted_date && event_store
-          calendar_events = event_store.events_for_date(date, limit: 1)
+        if !highlighted_date && @event_store
+          calendar_events = @event_store.events_for_date(date, limit: 1)
           return if calendar_events.empty?
         end
 
@@ -197,12 +230,11 @@ module BujoPdf
 
         # Label box positioned 1 box below header (grid-aligned)
         # Label is 0.85 boxes high
-        header_height_boxes = option(:header_height_boxes, DEFAULTS[:header_height_boxes])
         label_height_boxes = 0.85
-        label_start_row = header_height_boxes + 1  # Skip 1 box after header
+        label_start_row = @header_height_boxes + 1  # Skip 1 box after header
 
-        label_height = @grid.height(label_height_boxes)
-        label_y = height - @grid.height(label_start_row)
+        label_height = grid.height(label_height_boxes)
+        label_y = height - grid.height(label_start_row)
 
         # Horizontal padding (2pt on each side)
         h_padding = 2
@@ -210,8 +242,8 @@ module BujoPdf
         # Determine colors and label text based on source
         if highlighted_date
           # From date_config
-          category_style = date_config.category_style(highlighted_date.category)
-          priority_style = date_config.priority_style(highlighted_date.priority)
+          category_style = @date_config.category_style(highlighted_date.category)
+          priority_style = @date_config.priority_style(highlighted_date.priority)
           bg_color = category_style['color']
           text_color = category_style['text_color']
           label_text = highlighted_date.label
@@ -226,18 +258,18 @@ module BujoPdf
         end
 
         # Background
-        @pdf.fill_color bg_color
-        @pdf.fill_rectangle [h_padding, label_y + label_height], width - (h_padding * 2), label_height
-        @pdf.fill_color '000000'
+        pdf.fill_color bg_color
+        pdf.fill_rectangle [h_padding, label_y + label_height], width - (h_padding * 2), label_height
+        pdf.fill_color '000000'
 
         # Text (with small vertical and horizontal padding)
         v_padding = 1
         text_h_padding = 2
 
-        @pdf.font('Helvetica-Bold') if bold
+        pdf.font('Helvetica-Bold') if bold
 
-        @pdf.fill_color text_color
-        @pdf.text_box label_text,
+        pdf.fill_color text_color
+        pdf.text_box label_text,
                       at: [h_padding + text_h_padding, label_y + label_height - v_padding],
                       width: width - (h_padding * 2) - (text_h_padding * 2),
                       height: label_height - (v_padding * 2),
@@ -246,8 +278,8 @@ module BujoPdf
                       valign: :center,
                       overflow: :shrink_to_fit
 
-        @pdf.fill_color '000000'
-        @pdf.font('Helvetica')  # Reset font
+        pdf.fill_color '000000'
+        pdf.font('Helvetica')  # Reset font
       end
     end
   end
