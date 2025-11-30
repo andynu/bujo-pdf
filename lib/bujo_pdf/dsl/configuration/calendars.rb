@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require_relative 'calendar_integration/event'
-require_relative 'calendar_integration/config_loader'
-require_relative 'calendar_integration/ical_fetcher'
-require_relative 'calendar_integration/ical_parser'
-require_relative 'calendar_integration/recurring_event_expander'
-require_relative 'calendar_integration/event_store'
+require_relative 'calendars/event'
+require_relative 'calendars/config_loader'
+require_relative 'calendars/ical_fetcher'
+require_relative 'calendars/ical_parser'
+require_relative 'calendars/recurring_event_expander'
+require_relative 'calendars/event_store'
 
 module BujoPdf
   # CalendarIntegration provides iCal URL integration for event highlighting
