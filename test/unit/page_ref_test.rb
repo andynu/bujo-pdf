@@ -76,11 +76,11 @@ class TestPageRef < Minitest::Test
       page_type: :test
     )
 
-    ref.set_context = BujoPdf::PageSet::SetContext.new(
+    ref.set_context = BujoPdf::PageSetContext::Context.new(
       page: 1,
       total: 2,
       label: 'Test 1 of 2',
-      set_name: 'Test Set'
+      name: 'Test Set'
     )
 
     assert ref.in_set?
@@ -103,11 +103,11 @@ class TestPageRef < Minitest::Test
       page_type: :test
     )
 
-    ref.set_context = BujoPdf::PageSet::SetContext.new(
+    ref.set_context = BujoPdf::PageSetContext::Context.new(
       page: 1,
       total: 2,
       label: 'Index 1 of 2',
-      set_name: 'Index'
+      name: 'Index'
     )
 
     assert_equal 'Index 1 of 2', ref.outline_title
