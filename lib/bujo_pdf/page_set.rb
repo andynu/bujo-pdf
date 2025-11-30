@@ -1,135 +1,130 @@
 # frozen_string_literal: true
 
 module BujoPdf
-  # Represents a set of related pages with pagination context.
+  # Collection of related pages with pagination context.
   #
-  # PageSet is a simple data structure that provides page position and
-  # label information for multi-page spreads. It yields 0-based indices
-  # and produces Context objects with 1-based page numbers.
+  # PageSet holds PageRef objects and assigns set context to each page
+  # when added. This enables automatic "page X of Y" labeling and
+  # coordinated outline generation for multi-page spreads.
   #
-  # @example Basic usage
-  #   ps = PageSet.new(count: 2, label: "Index %page of %total")
-  #   ps[0].label  # => "Index 1 of 2"
-  #   ps[1].label  # => "Index 2 of 2"
+  # @example Creating a page set with pages
+  #   set = PageSet.new(name: 'Index', count: 2, label_pattern: 'Index %page of %total')
+  #   ref1 = PageRef.new(dest_name: 'index_1', title: 'Index', page_type: :index)
+  #   ref2 = PageRef.new(dest_name: 'index_2', title: 'Index', page_type: :index)
+  #   set.add(ref1)
+  #   set.add(ref2)
+  #   ref1.set_context.label  # => "Index 1 of 2"
+  #   ref1.set_context.first? # => true
   #
-  # @example Iteration
-  #   ps.each do |i|  # yields 0, 1
-  #     page_ctx = ps[i]
-  #     render_page(page_ctx.page, page_ctx.total)
-  #   end
+  # @example Iterating over pages
+  #   set.each { |page_ref| render(page_ref) }
   #
   class PageSet
     include Enumerable
 
-    attr_reader :count, :label_pattern, :name
+    attr_reader :name, :label_pattern, :count
 
     # Create a new PageSet.
     #
-    # @param count [Integer] Number of pages in this set
-    # @param label [String, nil] Label pattern with %page and %total placeholders
-    # @param name [String, nil] Set name (extracted from label if not provided)
-    def initialize(count:, label: nil, name: nil)
+    # @param name [String] Display name for the set (used in outlines)
+    # @param count [Integer] Expected number of pages in this set
+    # @param label_pattern [String, nil] Pattern with %page and %total placeholders
+    def initialize(name:, count:, label_pattern: nil)
+      @name = name
       @count = count
-      @label_pattern = label
-      @name = name || extract_name_from_label(label)
+      @label_pattern = label_pattern
+      @pages = []
     end
 
-    # Get the context for a specific page index.
+    # Add a page reference to this set.
     #
-    # @param index [Integer] 0-based page index
-    # @return [Context] Context object for that page
-    # @raise [IndexError] if index is out of bounds
-    def [](index)
-      raise IndexError, "index #{index} outside page set (0..#{count - 1})" if index < 0 || index >= count
-
-      Context.new(
-        page: index + 1,
-        total: count,
-        label: interpolate_label(index + 1),
-        name: name
+    # Assigns set context to the page with position information.
+    #
+    # @param page_ref [PageRef] The page to add
+    # @return [PageRef] The same page_ref (for chaining)
+    def add(page_ref)
+      position = @pages.length + 1
+      page_ref.set_context = SetContext.new(
+        page: position,
+        total: @count,
+        label: interpolate_label(position),
+        set_name: @name
       )
+      @pages << page_ref
+      page_ref
     end
 
-    # Iterate over page indices.
+    # Iterate over page references.
     #
-    # @yield [Integer] 0-based page index
+    # @yield [PageRef] Each page in the set
     # @return [Enumerator] if no block given
-    def each
-      return enum_for(:each) unless block_given?
-
-      count.times { |i| yield i }
+    def each(&block)
+      @pages.each(&block)
     end
 
-    # @return [Integer] Number of pages in this set
+    # Get a page by index.
+    #
+    # @param index [Integer] 0-based index
+    # @return [PageRef, nil] The page at that index
+    def [](index)
+      @pages[index]
+    end
+
+    # Get the first page in the set.
+    #
+    # @return [PageRef, nil]
+    def first
+      @pages.first
+    end
+
+    # Get the last page in the set.
+    #
+    # @return [PageRef, nil]
+    def last
+      @pages.last
+    end
+
+    # Get the number of pages currently in the set.
+    #
+    # @return [Integer]
     def size
-      count
+      @pages.length
+    end
+
+    # Get outline entry for PDF bookmarks.
+    #
+    # @return [Hash] Hash with :destination and :title keys
+    def outline_entry
+      { destination: first&.pdf_page_number, title: @name }
     end
 
     private
 
-    def interpolate_label(page_num)
+    def interpolate_label(position)
       return nil unless label_pattern
 
       label_pattern
-        .gsub('%page', page_num.to_s)
-        .gsub('%total', count.to_s)
+        .gsub('%page', position.to_s)
+        .gsub('%total', @count.to_s)
     end
 
-    def extract_name_from_label(label)
-      return nil unless label
-
-      # Remove %page, %total, digits, and common words to get the set name
-      label.gsub(/%page|%total|\d+|\bof\b/i, '').squeeze(' ').strip
-    end
-
-    # Context object representing a single page within a PageSet.
+    # Context assigned to each PageRef when added to a PageSet.
     #
-    # Attached to PageContext.set when inside a page_set block.
-    # Provides page position and label information.
-    class Context
-      attr_reader :page, :total, :label, :name
-
-      # @param page [Integer] 1-based page number within set
-      # @param total [Integer] Total pages in set
-      # @param label [String, nil] Interpolated label string
-      # @param name [String, nil] Set name (e.g., "Index", "Future Log")
-      def initialize(page:, total:, label:, name: nil)
-        @page = page
-        @total = total
-        @label = label
-        @name = name
-      end
-
-      # @return [Boolean] true if this is the first page in the set
+    # Provides position information and convenience methods for
+    # determining page position within the set.
+    SetContext = Data.define(:page, :total, :label, :set_name) do
+      # Check if this is the first page in the set.
+      #
+      # @return [Boolean]
       def first?
         page == 1
       end
 
-      # @return [Boolean] true if this is the last page in the set
+      # Check if this is the last page in the set.
+      #
+      # @return [Boolean]
       def last?
         page == total
-      end
-
-      # @return [Hash] Hash representation for context merging
-      def to_h
-        { set_page: page, set_total: total, set_label: label, set_name: name }
-      end
-    end
-
-    # Null object for when not inside a page_set block.
-    #
-    # Responds to all Context methods but returns nil/false.
-    # Allows pages to always call context.set.* without nil checks.
-    class NullContext
-      def page = nil
-      def total = nil
-      def label = nil
-      def name = nil
-      def first? = false
-      def last? = false
-
-      def to_h
-        {}
       end
     end
   end
