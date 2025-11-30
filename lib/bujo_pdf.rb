@@ -9,6 +9,9 @@ require_relative 'bujo_pdf/version'
 # Load themes (must be loaded before styling)
 require_relative 'bujo_pdf/themes/theme_registry'
 
+# Load Canvas value object (wraps pdf + grid)
+require_relative 'bujo_pdf/canvas'
+
 # Load utilities (no dependencies)
 require_relative 'bujo_pdf/utilities/styling'
 require_relative 'bujo_pdf/utilities/grid_system'
