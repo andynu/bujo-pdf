@@ -93,6 +93,10 @@ module BujoPdf
 
         set_destination("week_#{@week_num}")
 
+        # Set Future tab destination: weeks 1-26 → future_log_1, 27+ → future_log_2
+        future_dest = @week_num <= 26 ? :future_log_1 : :future_log_2
+        context[:sidebar_overrides]&.set(from: "week_#{@week_num}", tab: :future, to: future_dest)
+
         # Use StandardLayoutPage setup
         super
       end
