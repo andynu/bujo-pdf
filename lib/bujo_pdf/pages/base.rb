@@ -7,6 +7,7 @@ require_relative '../utilities/diagnostics'
 require_relative '../layout'
 require_relative '../render_context'
 require_relative '../components/all'
+require_relative 'page_registry'
 
 module BujoPdf
   module Pages
@@ -61,6 +62,7 @@ module BujoPdf
     #   end
     class Base
       include Components::All
+      include PageRegistry
 
       attr_reader :pdf, :context, :grid_system, :grid, :layout, :content_area, :new_layout
 

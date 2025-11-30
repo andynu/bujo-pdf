@@ -1,65 +1,25 @@
 # frozen_string_literal: true
 
-require_relative 'pages/base'
-require_relative 'pages/daily_wheel'
-require_relative 'pages/grid_showcase'
-require_relative 'pages/grids_overview'
-require_relative 'pages/grids/dot_grid_page'
-require_relative 'pages/grids/graph_grid_page'
-require_relative 'pages/grids/hexagon_grid_page'
-require_relative 'pages/grids/isometric_grid_page'
-require_relative 'pages/grids/lined_grid_page'
-require_relative 'pages/grids/perspective_grid_page'
-require_relative 'pages/index_pages'
-require_relative 'pages/future_log'
-require_relative 'pages/collection_page'
-require_relative 'pages/monthly_review'
-require_relative 'pages/quarterly_planning'
-require_relative 'pages/tracker_example'
-require_relative 'pages/reference_calibration'
-require_relative 'pages/seasonal_calendar'
-require_relative 'pages/year_at_glance_events'
-require_relative 'pages/year_at_glance_highlights'
-require_relative 'pages/year_wheel'
-require_relative 'pages/multi_year_overview'
-
 module BujoPdf
   # Factory for creating page instances.
   #
   # The PageFactory manages the registry of available page types and
   # provides methods for instantiating pages with the correct dependencies.
   #
+  # Page classes auto-register themselves via the PageRegistry mixin's
+  # `register_page` class method, which calls PageFactory.register.
+  #
   # Example:
-  #   page = PageFactory.create(:dots, pdf, { year: 2025 })
+  #   page = PageFactory.create(:weekly, pdf, context)
   #   page.generate
   #
-  #   # Register a custom page type
+  #   # Manual registration (usually not needed - use register_page in page class)
   #   PageFactory.register(:custom, MyCustomPage)
+  #
   class PageFactory
-    # Registry mapping page keys to page classes
-    @registry = {
-      daily_wheel: Pages::DailyWheel,
-      grid_showcase: Pages::GridShowcase,
-      grids_overview: Pages::GridsOverview,
-      grid_dot: Pages::Grids::DotGridPage,
-      grid_graph: Pages::Grids::GraphGridPage,
-      grid_hexagon: Pages::Grids::HexagonGridPage,
-      grid_isometric: Pages::Grids::IsometricGridPage,
-      grid_lined: Pages::Grids::LinedGridPage,
-      grid_perspective: Pages::Grids::PerspectiveGridPage,
-      index: Pages::IndexPage,
-      future_log: Pages::FutureLog,
-      collection: Pages::CollectionPage,
-      monthly_review: Pages::MonthlyReview,
-      quarterly_planning: Pages::QuarterlyPlanning,
-      tracker_example: Pages::TrackerExample,
-      reference: Pages::ReferenceCalibration,
-      seasonal: Pages::SeasonalCalendar,
-      year_events: Pages::YearAtGlanceEvents,
-      year_highlights: Pages::YearAtGlanceHighlights,
-      year_wheel: Pages::YearWheel,
-      multi_year: Pages::MultiYearOverview
-    }
+    # Registry mapping page keys to page classes.
+    # Starts empty - populated by page classes calling register_page.
+    @registry = {}
 
     class << self
       attr_reader :registry
@@ -78,18 +38,16 @@ module BujoPdf
         page_class.new(pdf, context)
       end
 
-      # Register a custom page type.
+      # Register a page type.
+      #
+      # Usually called automatically by PageRegistry.register_page.
+      # Can also be called manually for custom page types.
       #
       # @param page_key [Symbol] The page type key to register
-      # @param page_class [Class] The page class (must inherit from Pages::Base)
-      # @raise [ArgumentError] if the page class doesn't inherit from Pages::Base
+      # @param page_class [Class] The page class
       # @return [void]
       def register(page_key, page_class)
-        unless page_class < Pages::Base
-          raise ArgumentError, "Page class must inherit from Pages::Base"
-        end
-
-        @registry = registry.merge(page_key => page_class)
+        @registry = @registry.merge(page_key => page_class)
       end
 
       # Create a weekly page instance.

@@ -14,6 +14,10 @@ module BujoPdf
       #   page = Grids::IsometricGridPage.new(pdf, context)
       #   page.generate
       class IsometricGridPage < Base
+        register_page :grid_isometric,
+          title: "Isometric Grid",
+          dest: "grid_isometric"
+
         # Mixin providing isometric_grid_page verb for document builders.
         module Mixin
           include MixinSupport

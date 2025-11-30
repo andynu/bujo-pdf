@@ -19,6 +19,10 @@ module BujoPdf
     #   page = DailyWheel.new(pdf, { year: 2025 })
     #   page.generate
     class DailyWheel < Base
+      register_page :daily_wheel,
+        title: "Daily Wheel",
+        dest: "daily_wheel"
+
       # Mixin providing daily_wheel_page verb for document builders.
       module Mixin
         include MixinSupport

@@ -26,6 +26,10 @@ module BujoPdf
     #   page = QuarterlyPlanning.new(pdf, context)
     #   page.generate
     class QuarterlyPlanning < Base
+      register_page :quarterly_planning,
+        title: "Q%{quarter} Planning",
+        dest: "quarter_%{quarter}"
+
       # Mixin providing quarterly_planning_page and quarterly_planning_pages verbs.
       module Mixin
         include MixinSupport

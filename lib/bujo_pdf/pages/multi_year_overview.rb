@@ -26,6 +26,10 @@ module BujoPdf
     class MultiYearOverview < StandardLayoutPage
       include Styling::Colors
 
+      register_page :multi_year,
+        title: "Multi-Year Overview",
+        dest: "multi_year"
+
       # Mixin providing the multi_year_page verb for document builders.
       module Mixin
         include MixinSupport

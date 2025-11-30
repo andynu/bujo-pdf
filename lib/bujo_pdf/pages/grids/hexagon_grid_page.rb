@@ -14,6 +14,10 @@ module BujoPdf
       #   page = Grids::HexagonGridPage.new(pdf, context)
       #   page.generate
       class HexagonGridPage < Base
+        register_page :grid_hexagon,
+          title: "Hexagon Grid",
+          dest: "grid_hexagon"
+
         # Mixin providing hexagon_grid_page verb for document builders.
         module Mixin
           include MixinSupport

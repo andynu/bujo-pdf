@@ -18,6 +18,10 @@ module BujoPdf
     #   page = GridShowcase.new(pdf, { year: 2025 })
     #   page.generate
     class GridShowcase < Base
+      register_page :grid_showcase,
+        title: "Grid Types Showcase",
+        dest: "grid_showcase"
+
       # Mixin providing grid_showcase_page verb for document builders.
       module Mixin
         include MixinSupport

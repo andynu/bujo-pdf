@@ -26,6 +26,10 @@ module BujoPdf
     class ReferenceCalibration < Base
       include Styling::Grid
 
+      register_page :reference,
+        title: "Calibration & Reference",
+        dest: "reference"
+
       # Mixin providing reference_page verb for document builders.
       module Mixin
         include MixinSupport

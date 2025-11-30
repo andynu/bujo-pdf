@@ -35,6 +35,10 @@ module BujoPdf
       include Styling::Colors
       include Styling::Grid
 
+      register_page :weekly,
+        title: "Week %{week_num}",
+        dest: "week_%{week_num}"
+
       # Mixin providing weekly_page and weekly_pages verbs for document builders.
       module Mixin
         include MixinSupport
@@ -80,10 +84,12 @@ module BujoPdf
 
       def setup
         @week_num = context[:week_num]
-        @week_start = context[:week_start]
-        @week_end = context[:week_end]
         @year = context[:year]
         @total_weeks = context[:total_weeks] || Utilities::DateCalculator.total_weeks(@year)
+
+        # Compute week_start/week_end if not provided (new DSL support)
+        @week_start = context[:week_start] || Utilities::DateCalculator.week_start(@year, @week_num)
+        @week_end = context[:week_end] || Utilities::DateCalculator.week_end(@year, @week_num)
 
         set_destination("week_#{@week_num}")
 

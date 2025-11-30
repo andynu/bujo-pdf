@@ -14,6 +14,10 @@ module BujoPdf
       #   page = Grids::PerspectiveGridPage.new(pdf, context)
       #   page.generate
       class PerspectiveGridPage < Base
+        register_page :grid_perspective,
+          title: "Perspective Grid",
+          dest: "grid_perspective"
+
         # Mixin providing perspective_grid_page verb for document builders.
         module Mixin
           include MixinSupport
