@@ -326,6 +326,29 @@ module BujoPdf
         # Future: footer rendering
       end
 
+      # Draw page set label in the footer area.
+      #
+      # No-op when not inside a page_set block. When inside a set,
+      # renders the interpolated label (e.g., "Index 1 of 4").
+      #
+      # @param col [Integer] Column position (default: 2)
+      # @param row [Integer] Row position (default: 54, near bottom)
+      # @param width [Integer] Width in grid boxes (default: 39)
+      # @return [void]
+      #
+      # @example Default footer position
+      #   draw_set_label  # Renders "Index 1 of 4" centered at row 54
+      #
+      # @example Custom position
+      #   draw_set_label(col: 5, row: 53, width: 30)
+      def draw_set_label(col: 2, row: 54, width: 39)
+        return unless context.set?
+
+        text(col, row, context.set.label,
+             size: 9, color: '999999', width: width,
+             align: :center, position: :subscript)
+      end
+
       # Add a component to be rendered.
       #
       # Components are rendered in the order they are added, during the
