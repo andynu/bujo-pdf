@@ -21,7 +21,9 @@ module BujoPdf
     #   - Internal padding: 0.3 boxes on each side
     #
     # Example usage:
-    #   sidebar = WeekSidebar.new(pdf, grid_system,
+    #   canvas = Canvas.new(pdf, grid)
+    #   sidebar = WeekSidebar.new(
+    #     canvas: canvas,
     #     year: 2025,
     #     total_weeks: 52,
     #     current_week_num: 42  # Optional: highlights this week
@@ -35,13 +37,21 @@ module BujoPdf
       FONT_SIZE = 6
       NAV_COLOR = '888888'
 
+      def initialize(canvas:, year:, total_weeks:, current_week_num: nil, page_context: nil)
+        super(canvas: canvas)
+        @year = year
+        @total_weeks = total_weeks
+        @current_week_num = current_week_num
+        @page_context = page_context
+      end
+
       def render
         # Build week-to-month abbreviation mapping once
-        @week_months = Utilities::DateCalculator.week_to_month_abbrev_map(context[:year], char: 1)
+        @week_months = Utilities::DateCalculator.week_to_month_abbrev_map(@year, char: 1)
 
-        @pdf.font "Helvetica", size: FONT_SIZE
+        pdf.font "Helvetica", size: FONT_SIZE
 
-        context[:total_weeks].times do |i|
+        @total_weeks.times do |i|
           week = i + 1
           row = SIDEBAR_START_ROW + i
           draw_week_entry(week, row)
@@ -50,12 +60,8 @@ module BujoPdf
 
       private
 
-      def validate_configuration
-        require_options(:year, :total_weeks)
-      end
-
       def draw_week_entry(week, row)
-        week_box = @grid.rect(SIDEBAR_START_COL, row, SIDEBAR_WIDTH_BOXES, 1)
+        week_box = grid.rect(SIDEBAR_START_COL, row, SIDEBAR_WIDTH_BOXES, 1)
 
         # Get month abbreviation if this is the first week of a month
         month_abbrev = @week_months[week]
@@ -73,12 +79,12 @@ module BujoPdf
       end
 
       def current_week?(week)
-        # Use RenderContext's current_page? method if available
+        # Use page_context's current_page? method if available
         # Falls back to legacy current_week_num check for backward compatibility
-        if context.respond_to?(:current_page?)
-          context.current_page?("week_#{week}".to_sym)
+        if @page_context&.respond_to?(:current_page?)
+          @page_context.current_page?("week_#{week}".to_sym)
         else
-          context[:current_week_num] && context[:current_week_num] == week
+          @current_week_num && @current_week_num == week
         end
       end
 
@@ -91,7 +97,7 @@ module BujoPdf
         # Sidebar goes 0.25-2.25 boxes, content starts at 2.0 boxes
         # So we need to stop at 2.0 boxes minus 2px gap = 0.25 boxes overlap + 2px
         gap_vertical = 2
-        gap_right = @grid.width(0.25) + 2  # 0.25 box overlap + 2px visual gap
+        gap_right = grid.width(0.25) + 2  # 0.25 box overlap + 2px visual gap
 
         left = week_box[:x]
         width = week_box[:width] - gap_right  # Reduce width to stop before content area
@@ -100,28 +106,28 @@ module BujoPdf
 
         if is_current
           # Current week: stroked rectangle with border color
-          @pdf.stroke_color border_color
-          @pdf.stroke_rounded_rectangle([left, top], width, height, 2)
+          pdf.stroke_color border_color
+          pdf.stroke_rounded_rectangle([left, top], width, height, 2)
         else
           # Other weeks: filled rectangle with 20% opacity
-          @pdf.transparent(0.2) do
-            @pdf.fill_color border_color
-            @pdf.fill_rounded_rectangle([left, top], width, height, 2)
+          pdf.transparent(0.2) do
+            pdf.fill_color border_color
+            pdf.fill_rounded_rectangle([left, top], width, height, 2)
           end
         end
 
         # Reset colors to theme defaults (not hardcoded black)
         text_color = BujoPdf::Themes.current[:colors][:text_black]
-        @pdf.fill_color text_color
-        @pdf.stroke_color text_color
+        pdf.fill_color text_color
+        pdf.stroke_color text_color
       end
 
       def draw_current_week(week_box, month_abbrev, week_text)
         # Current week: both parts bold, theme text color, no link
         # Shift text box 5px left to keep text within beveled rectangle
         # Use standard padding calculation but adjust starting position
-        text_x = week_box[:x] + @grid.width(PADDING_BOXES) - 5
-        text_width = week_box[:width] - @grid.width(PADDING_BOXES * 2)
+        text_x = week_box[:x] + grid.width(PADDING_BOXES) - 5
+        text_width = week_box[:width] - grid.width(PADDING_BOXES * 2)
 
         # Use theme text color for current week
         require_relative '../themes/theme_registry'
@@ -132,7 +138,7 @@ module BujoPdf
             if month_abbrev
               # Render as combined text, right-aligned, both parts bold
               display_text = "#{month_abbrev} #{week_text}"
-              @pdf.text_box display_text,
+              pdf.text_box display_text,
                             at: [text_x, week_box[:y]],
                             width: text_width,
                             height: week_box[:height],
@@ -141,7 +147,7 @@ module BujoPdf
                             overflow: :shrink_to_fit
             else
               # Just week number, bold
-              @pdf.text_box week_text,
+              pdf.text_box week_text,
                             at: [text_x, week_box[:y]],
                             width: text_width,
                             height: week_box[:height],
@@ -157,8 +163,8 @@ module BujoPdf
         # Other weeks: gray text with link
         # Shift text box 5px left to keep text within beveled rectangle
         # Use standard padding calculation but adjust starting position
-        text_x = week_box[:x] + @grid.width(PADDING_BOXES) - 5
-        text_width = week_box[:width] - @grid.width(PADDING_BOXES * 2)
+        text_x = week_box[:x] + grid.width(PADDING_BOXES) - 5
+        text_width = week_box[:width] - grid.width(PADDING_BOXES * 2)
 
         # Use theme gray color for non-current weeks
         require_relative '../themes/theme_registry'
@@ -168,7 +174,7 @@ module BujoPdf
           if month_abbrev
             # Month abbreviation is bold, week number is regular weight
             # Use formatted_text_box for consistent right-alignment
-            @pdf.formatted_text_box [
+            pdf.formatted_text_box [
               { text: "#{month_abbrev} ", styles: [:bold], size: FONT_SIZE, color: nav_color },
               { text: week_text, size: FONT_SIZE, color: nav_color }
             ],
@@ -180,7 +186,7 @@ module BujoPdf
                           overflow: :shrink_to_fit
           else
             # Just week number, regular weight
-            @pdf.text_box week_text,
+            pdf.text_box week_text,
                           at: [text_x, week_box[:y]],
                           width: text_width,
                           height: week_box[:height],
@@ -195,7 +201,7 @@ module BujoPdf
           link_right = week_box[:x] + week_box[:width]
           link_top = week_box[:y]
 
-          @pdf.link_annotation([link_left, link_bottom, link_right, link_top],
+          pdf.link_annotation([link_left, link_bottom, link_right, link_top],
                               Dest: "week_#{week}",
                               Border: [0, 0, 0])
         end

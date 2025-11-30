@@ -120,9 +120,14 @@ module BujoPdf
 
       private
 
+      def canvas
+        @canvas ||= Canvas.new(@pdf, @grid_system)
+      end
+
       def draw_navigation
         # Use TopNavigation component
-        nav = Components::TopNavigation.new(@pdf, @grid_system,
+        nav = Components::TopNavigation.new(
+          canvas: canvas,
           year: @year,
           week_num: @week_num,
           total_weeks: @total_weeks,
@@ -136,7 +141,8 @@ module BujoPdf
 
       def draw_daily_section
         # Use DailySection component
-        section = Components::DailySection.new(@pdf, @grid_system,
+        section = Components::DailySection.new(
+          canvas: canvas,
           week_start: @week_start,
           content_start_col: 2,
           content_start_row: 2,
@@ -157,7 +163,8 @@ module BujoPdf
 
       def draw_cornell_notes
         # Use CornellNotes component
-        notes = Components::CornellNotes.new(@pdf, @grid_system,
+        notes = Components::CornellNotes.new(
+          canvas: canvas,
           content_start_col: 2,
           notes_start_row: 11,  # After daily section (rows 2-10)
           cues_cols: 10,

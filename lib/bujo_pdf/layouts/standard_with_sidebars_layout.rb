@@ -70,6 +70,10 @@ module BujoPdf
 
       private
 
+      def canvas
+        @canvas ||= Canvas.new(@pdf, @grid_system)
+      end
+
       # Render the left week sidebar.
       #
       # Shows a vertical list of all weeks in the year with month indicators.
@@ -83,11 +87,11 @@ module BujoPdf
         total_weeks = options[:total_weeks] || page.context[:total_weeks]
 
         sidebar = Components::WeekSidebar.new(
-          @pdf,
-          @grid_system,
+          canvas: canvas,
           year: year,
           total_weeks: total_weeks,
-          current_week_num: options[:current_week]
+          current_week_num: options[:current_week],
+          page_context: page.context
         )
         sidebar.render
       end
@@ -104,11 +108,10 @@ module BujoPdf
         top_tabs = build_top_tabs
 
         sidebar = Components::RightSidebar.new(
-          @pdf,
-          @grid_system,
+          canvas: canvas,
           top_tabs: top_tabs,
           bottom_tabs: [],
-          page_context: page.context  # Pass page context for current_page? detection
+          page_context: page.context
         )
         sidebar.render
       end
