@@ -107,12 +107,6 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
       end
     end
 
-    # Set Future tab destination based on which half of the year the week falls in
-    # Use week number: weeks 1-26 → future_log_1 (Jan-Jun), weeks 27+ → future_log_2 (Jul-Dec)
-    # This handles edge cases like week 1 starting in December of previous year
-    future_dest = week.number <= 26 ? :future_log_1 : :future_log_2
-    set_sidebar_dest from: :"week_#{week.number}", tab: :future, to: future_dest
-
     page :weekly, id: :"week_#{week.number}", week: week
   end
 
