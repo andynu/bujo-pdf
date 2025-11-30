@@ -32,11 +32,11 @@ module BujoPdf
 
         # Generate the seasonal calendar page.
         #
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def seasonal_calendar
-          start_new_page
-          context = build_context(page_key: :seasonal)
-          SeasonalCalendar.new(@pdf, context).generate
+          define_page(dest: 'seasonal', title: 'Seasonal Calendar', type: :seasonal) do |ctx|
+            SeasonalCalendar.new(@pdf, ctx).generate
+          end
         end
       end
 
