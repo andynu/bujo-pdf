@@ -19,6 +19,10 @@ module BujoPdf
     #   page = TrackerExample.new(pdf, context)
     #   page.generate
     class TrackerExample < Base
+      register_page :tracker_example,
+        title: "Tracker Ideas",
+        dest: "tracker_example"
+
       # Mixin providing tracker_example_page verb for document builders.
       module Mixin
         include MixinSupport

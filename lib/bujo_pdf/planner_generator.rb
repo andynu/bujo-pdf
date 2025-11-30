@@ -40,9 +40,9 @@ module BujoPdf
 
     # Generate the complete planner PDF.
     #
-    # Uses DocumentBuilder for automatic page tracking. All page verbs
-    # return PageRef objects during the define phase, which are then
-    # rendered in order with their page numbers captured automatically.
+    # Uses DocumentBuilder with the new `page` and `page_set` DSL for
+    # declarative document definition. Page classes auto-register their
+    # type, title, and destination patterns via `register_page`.
     #
     # @param filename [String] Output filename (default: planner_YEAR.pdf)
     # @return [DocumentBuilder] The builder instance with all page refs
@@ -58,22 +58,20 @@ module BujoPdf
         collections_config_path: @collections_config_path
       ) do
         # 1. Front matter: Seasonal calendar, Index, Future log
-        @seasonal = seasonal_calendar
+        @seasonal = page :seasonal
 
-        @index_pages = []
-        INDEX_PAGE_COUNT.times do |i|
-          @index_pages << index_page(num: i + 1, total: INDEX_PAGE_COUNT)
+        page_set :index, label: "Index %page of %total" do
+          INDEX_PAGE_COUNT.times { page :index }
         end
 
-        @future_log_pages = []
-        FUTURE_LOG_PAGE_COUNT.times do |i|
-          @future_log_pages << future_log_page(num: i + 1, total: FUTURE_LOG_PAGE_COUNT)
+        page_set :future_log, label: "Future Log %page of %total" do
+          FUTURE_LOG_PAGE_COUNT.times { page :future_log }
         end
 
         # 2. Year overview pages
-        @year_events = year_events_page
-        @year_highlights = year_highlights_page
-        @multi_year = multi_year_page
+        @year_events = page :year_events
+        @year_highlights = page :year_highlights
+        @multi_year = page :multi_year
 
         # 3. Weekly pages with interleaved monthly reviews and quarterly planning
         @week_pages = []
@@ -91,44 +89,45 @@ module BujoPdf
 
             # Quarterly planning at quarter boundaries
             unless generated_quarters.include?(quarter)
-              @quarterly_plans[quarter] = quarterly_planning_page(quarter: quarter)
+              @quarterly_plans[quarter] = page :quarterly_planning, quarter: quarter
               generated_quarters.add(quarter)
             end
 
             # Monthly review at month boundaries
             unless generated_months.include?(month)
-              @monthly_reviews[month] = monthly_review_page(month: month)
+              @monthly_reviews[month] = page :monthly_review, month: month
               generated_months.add(month)
             end
           end
 
-          @week_pages << weekly_page(week: week.number)
+          @week_pages << page(:weekly, week_num: week.number)
         end
 
-        # 4. Grid pages
-        @grid_showcase = grid_showcase_page
-        @grids_overview = grids_overview_page
-        @grid_dot = dot_grid_page
-        @grid_graph = graph_grid_page
-        @grid_lined = lined_grid_page
-        @grid_isometric = isometric_grid_page
-        @grid_perspective = perspective_grid_page
-        @grid_hexagon = hexagon_grid_page
+        # 4. Grid pages (with cycling navigation)
+        page_set :grids, cycle: true do
+          page :grid_showcase
+          page :grids_overview
+          page :grid_dot
+          page :grid_graph
+          page :grid_lined
+          page :grid_isometric
+          page :grid_perspective
+          page :grid_hexagon
+        end
 
         # 5. Template pages
-        @tracker_example = tracker_example_page
-        @reference = reference_page
-        @daily_wheel = daily_wheel_page
-        @year_wheel = year_wheel_page
+        @tracker_example = page :tracker_example
+        @reference = page :reference
+        @daily_wheel = page :daily_wheel
+        @year_wheel = page :year_wheel
 
         # 6. Collections
         @collection_pages = {}
         collections.each do |collection|
-          @collection_pages[collection[:id]] = collection_page(
-            id: collection[:id],
-            title: collection[:title],
-            subtitle: collection[:subtitle]
-          )
+          @collection_pages[collection[:id]] = page :collection,
+            collection_id: collection[:id],
+            collection_title: collection[:title],
+            collection_subtitle: collection[:subtitle]
         end
       end
     end

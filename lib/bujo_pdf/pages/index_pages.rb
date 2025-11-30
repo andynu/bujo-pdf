@@ -25,6 +25,10 @@ module BujoPdf
     #   page = IndexPage.new(pdf, context)
     #   page.generate
     class IndexPage < Base
+      register_page :index,
+        title: "Index",
+        dest: "index_%{_n}"
+
       # Mixin providing index_page and index_pages verbs for document builders.
       module Mixin
         include MixinSupport

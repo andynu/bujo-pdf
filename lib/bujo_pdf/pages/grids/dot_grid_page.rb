@@ -14,6 +14,10 @@ module BujoPdf
       #   page = Grids::DotGridPage.new(pdf, context)
       #   page.generate
       class DotGridPage < Base
+        register_page :grid_dot,
+          title: "Dot Grid (5mm)",
+          dest: "grid_dot"
+
         # Mixin providing dot_grid_page verb for document builders.
         module Mixin
           include MixinSupport

@@ -30,6 +30,10 @@ module BujoPdf
     #   page = CollectionPage.new(pdf, context)
     #   page.generate
     class CollectionPage < Base
+      register_page :collection,
+        title: "%{collection_title}",
+        dest: "collection_%{collection_id}"
+
       # Mixin providing collection_page verb for document builders.
       module Mixin
         include MixinSupport

@@ -27,6 +27,10 @@ module BujoPdf
     #   page = FutureLog.new(pdf, context)
     #   page.generate
     class FutureLog < Base
+      register_page :future_log,
+        title: "Future Log",
+        dest: "future_log_%{_n}"
+
       # Mixin providing future_log_page and future_log_pages verbs for document builders.
       module Mixin
         include MixinSupport

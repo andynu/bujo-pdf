@@ -13,6 +13,10 @@ module BujoPdf
     #   page = YearAtGlanceHighlights.new(pdf, { year: 2025 })
     #   page.generate
     class YearAtGlanceHighlights < YearAtGlanceBase
+      register_page :year_highlights,
+        title: "Year at a Glance - Highlights",
+        dest: "year_highlights"
+
       # Mixin providing the year_highlights_page verb for document builders.
       module Mixin
         include MixinSupport

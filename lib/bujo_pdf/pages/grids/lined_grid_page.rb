@@ -15,6 +15,10 @@ module BujoPdf
       #   page = Grids::LinedGridPage.new(pdf, context)
       #   page.generate
       class LinedGridPage < Base
+        register_page :grid_lined,
+          title: "Ruled Lines (10mm)",
+          dest: "grid_lined"
+
         # Mixin providing lined_grid_page verb for document builders.
         module Mixin
           include MixinSupport

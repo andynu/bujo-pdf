@@ -16,6 +16,10 @@ module BujoPdf
     #   page = GridsOverview.new(pdf, context)
     #   page.generate
     class GridsOverview < Base
+      register_page :grids_overview,
+        title: "Grids Overview",
+        dest: "grids_overview"
+
       # Mixin providing grids_overview_page verb for document builders.
       module Mixin
         include MixinSupport

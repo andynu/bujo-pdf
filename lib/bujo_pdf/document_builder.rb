@@ -3,6 +3,7 @@
 require 'prawn'
 require_relative 'page_ref'
 require_relative 'page_set'
+require_relative 'page_factory'
 require_relative 'utilities/dot_grid'
 require_relative 'pages/all'
 
@@ -17,22 +18,42 @@ module BujoPdf
   # 2. **Validate**: Verify all internal links resolve to valid pages
   # 3. **Render**: Generate the actual PDF with correct page numbers
   #
-  # @example Basic usage
+  # Two DSL styles are supported:
+  #
+  # 1. **New `page` DSL**: Declare pages by type with auto-registration
+  #    ```ruby
+  #    page :seasonal
+  #    page :weekly, week_num: 42
+  #    page_set :index do
+  #      2.times { page :index }
+  #    end
+  #    ```
+  #
+  # 2. **Legacy verb DSL**: Use page-specific methods (still supported)
+  #    ```ruby
+  #    seasonal_calendar
+  #    weekly_page(week: 42)
+  #    ```
+  #
+  # @example Using new page DSL
   #   DocumentBuilder.generate("planner.pdf", year: 2025) do
-  #     seasonal_calendar
-  #     year_events_page
-  #     52.times { |i| weekly_page(week: i + 1) }
+  #     page :seasonal
+  #     page :year_events
+  #     page_set :index, label: "Index %page of %total" do
+  #       2.times { page :index }
+  #     end
+  #     weeks_in.each { |week| page :weekly, week_num: week.number }
   #   end
   #
   # @example Capturing page references
   #   DocumentBuilder.generate("planner.pdf", year: 2025) do
-  #     @seasonal = seasonal_calendar  # Returns PageRef during define phase
+  #     @seasonal = page :seasonal  # Returns PageRef during define phase
   #   end
   #
   class DocumentBuilder
     include Pages::All
 
-    attr_reader :year, :output_path, :pages
+    attr_reader :year, :output_path, :pages, :page_sets
 
     # Generate a PDF document.
     #
@@ -65,7 +86,10 @@ module BujoPdf
       @calendars_config_path = calendars_config_path
       @collections_config_path = collections_config_path
       @pages = []
-      @links = []  # Registered links for validation
+      @page_sets = {}           # name -> PageSet
+      @links = []               # Registered links for validation
+      @type_sequences = Hash.new(0)  # Track sequence numbers per page type
+      @current_page_set = nil   # Active page_set during define phase
 
       # Phase tracking
       @defining = false
@@ -92,7 +116,104 @@ module BujoPdf
       @defining = true
       instance_eval(&block)
       @defining = false
+
+      # Finalize all page sets
+      @page_sets.each_value(&:finalize!)
     end
+
+    # ═══════════════════════════════════════════════════════════════════
+    # NEW PAGE DSL
+    # ═══════════════════════════════════════════════════════════════════
+
+    # Declare a page by type.
+    #
+    # Uses PageFactory registry to find the page class. Title and dest
+    # are generated from class defaults, but can be overridden.
+    #
+    # @param type [Symbol] Page type (:weekly, :seasonal, :index, etc.)
+    # @param dest [String, nil] Named destination (auto-generated if nil)
+    # @param title [String, nil] Display title (auto-generated if nil)
+    # @param params [Hash] Page-specific parameters
+    # @return [PageRef] The page reference
+    #
+    # @example Simple pages
+    #   page :seasonal
+    #   page :year_events
+    #
+    # @example Page with parameters
+    #   page :weekly, week_num: 42
+    #   page :monthly_review, month: 3
+    #
+    # @example Override defaults
+    #   page :collection, collection_id: :books, collection_title: "Books to Read"
+    #   page :grid_dot, title: "My Custom Dots"
+    def page(type, dest: nil, title: nil, **params)
+      page_class = PageFactory.registry[type]
+      raise ArgumentError, "Unknown page type: #{type}. Available: #{PageFactory.registry.keys.join(', ')}" unless page_class
+
+      # Track sequence for %{_n} interpolation
+      @type_sequences[type] += 1
+      sequence = @type_sequences[type]
+
+      # Use class defaults with fallback chain: explicit > class default > fallback
+      dest ||= page_class.generate_dest(params, sequence: sequence)
+      dest ||= "page_#{@pages.size + 1}"
+
+      title ||= page_class.generate_title(params)
+      title ||= type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+
+      ref = PageRef.new(
+        dest_name: dest,
+        title: title,
+        page_type: type,
+        metadata: params
+      )
+
+      # If inside a page_set block, add to current set
+      @current_page_set&.add(ref)
+
+      @pages << ref
+      ref
+    end
+
+    # Declare a group of related pages with automatic set context.
+    #
+    # Pages declared inside the block automatically receive PageSetContext
+    # with page number, total, and label information.
+    #
+    # @param name [Symbol] Set name (used for label generation)
+    # @param label [String, nil] Label pattern with %page/%total placeholders
+    # @param cycle [Boolean] Enable tab cycling navigation
+    # @yield Block containing page declarations
+    # @return [PageSet]
+    #
+    # @example Index pages with labels
+    #   page_set :index, label: "Index %page of %total" do
+    #     2.times { page :index }
+    #   end
+    #   # Results in pages with labels "Index 1 of 2", "Index 2 of 2"
+    #
+    # @example Grid pages with cycling
+    #   page_set :grids, cycle: true do
+    #     page :grid_showcase
+    #     page :grids_overview
+    #     page :grid_dot
+    #   end
+    def page_set(name, label: nil, cycle: false, &block)
+      set = PageSet.new(name: name, label_pattern: label, cycle: cycle)
+      @page_sets[name] = set
+
+      previous_set = @current_page_set
+      @current_page_set = set
+      instance_eval(&block)
+      @current_page_set = previous_set
+
+      set
+    end
+
+    # ═══════════════════════════════════════════════════════════════════
+    # VALIDATION PHASE
+    # ═══════════════════════════════════════════════════════════════════
 
     # Validate phase: Check all links resolve.
     #
@@ -113,9 +234,17 @@ module BujoPdf
       @validated = true
     end
 
+    # ═══════════════════════════════════════════════════════════════════
+    # RENDER PHASE
+    # ═══════════════════════════════════════════════════════════════════
+
     # Render phase: Generate the actual PDF.
     #
     # Creates the PDF document, rendering all declared pages in order.
+    # Pages may use either:
+    # - render_block (legacy verb DSL) - executed directly
+    # - PageFactory (new page DSL) - instantiated and generated
+    #
     # After rendering, PageRef objects have their pdf_page_number set.
     #
     # @return [void]
@@ -132,12 +261,22 @@ module BujoPdf
         @pdf = pdf
         DotGrid.create_stamp(@pdf, "page_dots")
 
-        @pages.each do |page_ref|
-          # Execute the stored render block
-          page_ref.render
+        @pages.each_with_index do |page_ref, index|
+          # Start new page for all but first
+          pdf.start_new_page if index > 0
+
+          if page_ref.render_block
+            # Legacy: execute stored render block
+            page_ref.render
+          else
+            # New: use PageFactory to create and generate
+            ctx = build_render_context(page_ref, index)
+            page_instance = PageFactory.create(page_ref.page_type, pdf, ctx)
+            page_instance.generate
+          end
 
           # Record actual page number
-          page_ref.pdf_page_number = @pdf.page_number
+          page_ref.pdf_page_number = pdf.page_number
         end
 
         build_outline
@@ -208,6 +347,31 @@ module BujoPdf
     # Check if a destination exists in the pages list.
     def valid_destination?(dest_name)
       @pages.any? { |p| p.dest_name.to_s == dest_name.to_s }
+    end
+
+    # Build a RenderContext for a page.
+    #
+    # @param page_ref [PageRef] The page reference
+    # @param index [Integer] 0-based page index
+    # @return [RenderContext] Context for rendering
+    def build_render_context(page_ref, index)
+      ctx = RenderContext.new(
+        page_key: page_ref.dest_name.to_sym,
+        page_number: index + 1,
+        year: @year,
+        total_weeks: total_weeks,
+        total_pages: @total_pages,
+        date_config: @date_config,
+        event_store: @event_store,
+        **page_ref.metadata
+      )
+
+      # Attach page set context if this page has one
+      if page_ref.set_context
+        ctx.set = page_ref.set_context
+      end
+
+      ctx
     end
 
     def build_outline

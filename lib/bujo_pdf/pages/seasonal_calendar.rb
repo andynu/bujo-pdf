@@ -26,6 +26,10 @@ module BujoPdf
       include Styling::Colors
       include Styling::Grid
 
+      register_page :seasonal,
+        title: "Seasonal Calendar",
+        dest: "seasonal"
+
       # Mixin providing the seasonal_calendar verb for document builders.
       module Mixin
         include MixinSupport

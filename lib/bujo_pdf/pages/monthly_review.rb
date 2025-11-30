@@ -26,6 +26,10 @@ module BujoPdf
     #   page = MonthlyReview.new(pdf, context)
     #   page.generate
     class MonthlyReview < Base
+      register_page :monthly_review,
+        title: ->(p) { Date::MONTHNAMES[p[:review_month] || p[:month]] },
+        dest: "review_%{month}"
+
       # Mixin providing monthly_review_page and monthly_review_pages verbs.
       module Mixin
         include MixinSupport

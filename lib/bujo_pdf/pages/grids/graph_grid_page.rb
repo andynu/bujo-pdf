@@ -14,6 +14,10 @@ module BujoPdf
       #   page = Grids::GraphGridPage.new(pdf, context)
       #   page.generate
       class GraphGridPage < Base
+        register_page :grid_graph,
+          title: "Graph Grid (5mm)",
+          dest: "grid_graph"
+
         # Mixin providing graph_grid_page verb for document builders.
         module Mixin
           include MixinSupport
