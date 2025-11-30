@@ -38,6 +38,7 @@ module BujoPdf
 
         # Use full page layout (no sidebars)
         def setup
+          set_destination('grid_lined')
           use_layout :full_page
         end
 
