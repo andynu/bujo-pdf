@@ -58,6 +58,13 @@ module BujoPdf
         end
       end
 
+      # Check if this is an inline page declaration.
+      #
+      # @return [Boolean] false for standard PageDeclaration
+      def inline?
+        false
+      end
+
       # Check if this declaration matches a destination.
       #
       # @param dest_type [Symbol] The destination page type
