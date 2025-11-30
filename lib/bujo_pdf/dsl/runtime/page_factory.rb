@@ -60,8 +60,8 @@ module BujoPdf
       # @param context [Hash] Base rendering context (must include :year)
       # @return [Pages::Base] A weekly page instance ready to generate
       def create_weekly_page(week_num, pdf, context)
-        require_relative 'utilities/date_calculator'
-        require_relative 'pages/weekly_page'
+        require_relative '../../utilities/date_calculator'
+        require_relative '../../pages/weekly_page'
 
         year = context[:year]
         context_with_week = context.merge(
@@ -84,7 +84,7 @@ module BujoPdf
       # @param context [Hash] Base rendering context
       # @return [Pages::Base] An index page instance ready to generate
       def create_index_page(index_page_num, index_page_count, pdf, context)
-        require_relative 'pages/index_pages'
+        require_relative '../../pages/index_pages'
         require_relative 'render_context'
 
         context_with_index = context.is_a?(RenderContext) ? context.to_h : context

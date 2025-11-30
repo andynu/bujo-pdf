@@ -17,12 +17,12 @@ require_relative 'bujo_pdf/utilities/diagnostics'
 require_relative 'bujo_pdf/utilities/date_calculator'
 
 # Load shared infrastructure
-require_relative 'bujo_pdf/page_ref'
-require_relative 'bujo_pdf/page_set'
-require_relative 'bujo_pdf/page_set_context'
+require_relative 'bujo_pdf/dsl/runtime/page_ref'
+require_relative 'bujo_pdf/dsl/runtime/page_set'
+require_relative 'bujo_pdf/dsl/runtime/page_set_context'
 require_relative 'bujo_pdf/week'
-require_relative 'bujo_pdf/render_context'
-require_relative 'bujo_pdf/component_context'
+require_relative 'bujo_pdf/dsl/runtime/render_context'
+require_relative 'bujo_pdf/dsl/runtime/component_context'
 require_relative 'bujo_pdf/collections_configuration'
 require_relative 'bujo_pdf/date_configuration'
 require_relative 'bujo_pdf/calendar_integration'
@@ -69,7 +69,7 @@ require_relative 'bujo_pdf/pages/standard_layout_page'
 require_relative 'bujo_pdf/pages/mixin_support'  # Shared helpers for page mixins
 
 # Load page factory
-require_relative 'bujo_pdf/page_factory'
+require_relative 'bujo_pdf/dsl/runtime/page_factory'
 
 # Load concrete page classes
 require_relative 'bujo_pdf/pages/seasonal_calendar'
