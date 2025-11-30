@@ -8,8 +8,8 @@ Column = Struct.new(:col, :width, keyword_init: true)
 # Simple struct representing a row's position and height in grid boxes
 Row = Struct.new(:row, :height, keyword_init: true)
 
-# Simple struct representing a grid cell's position and dimensions in grid boxes
-Cell = Struct.new(:col, :row, :width, :height, keyword_init: true)
+# Cell is now an alias for GridRect for backwards compatibility
+Cell = BujoPdf::GridRect
 
 # GridSystem provides a coordinate conversion system for grid-based layout
 #
@@ -372,11 +372,11 @@ class GridSystem
       bottom = bottom.zero? ? all : bottom
     end
 
-    Cell.new(
-      col: col + left,
-      row: row + top,
-      width: width - left - right,
-      height: height - top - bottom
+    BujoPdf::GridRect.new(
+      col + left,
+      row + top,
+      width - left - right,
+      height - top - bottom
     )
   end
 
@@ -495,14 +495,14 @@ class GridSystem
       # Row-major: left→right, top→bottom
       row_divs.each do |r|
         columns.each do |c|
-          cells << Cell.new(col: c.col, row: r.row, width: c.width, height: r.height)
+          cells << BujoPdf::GridRect.new(c.col, r.row, c.width, r.height)
         end
       end
     when :down
       # Column-major: top→bottom, left→right
       columns.each do |c|
         row_divs.each do |r|
-          cells << Cell.new(col: c.col, row: r.row, width: c.width, height: r.height)
+          cells << BujoPdf::GridRect.new(c.col, r.row, c.width, r.height)
         end
       end
     else
