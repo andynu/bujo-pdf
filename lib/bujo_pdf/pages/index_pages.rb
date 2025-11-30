@@ -47,11 +47,14 @@ module BujoPdf
 
         # Generate multiple index pages.
         #
+        # Uses page_set DSL to automatically populate context.set with
+        # page position and label information.
+        #
         # @param count [Integer] Number of index pages (default: 2)
         # @return [void]
         def index_pages(count: 2)
-          count.times do |i|
-            index_page(num: i + 1, total: count)
+          page_set(count, "Index %page of %total") do
+            index_page(num: @current_page_set_index + 1, total: count)
           end
         end
       end
@@ -71,8 +74,9 @@ module BujoPdf
 
       # Setup with full page layout (no sidebars for index)
       def setup
-        @index_page_num = context[:index_page_num] || 1
-        @index_page_count = context[:index_page_count] || 2
+        # Get page position from context.set (page_set DSL) or legacy context
+        @index_page_num = context.set? ? context.set.page : (context[:index_page_num] || 1)
+        @index_page_count = context.set? ? context.set.total : (context[:index_page_count] || 2)
 
         # Set named destination for this index page
         set_destination("index_#{@index_page_num}")
@@ -87,7 +91,7 @@ module BujoPdf
         draw_column_divider
         @grid.redraw_dots(col: 0, row: 0, width: @grid.cols, height: @grid.rows)
         # Footer drawn after dots so text appears clean
-        draw_page_indicator
+        draw_set_label(col: LEFT_MARGIN, width: content_width)
       end
 
       private
@@ -128,18 +132,6 @@ module BujoPdf
         divider_height = LINES_PER_COLUMN * 2  # 2 rows per entry
 
         vline(divider_col, CONTENT_START_ROW, divider_height, color: 'E5E5E5')
-      end
-
-      # Draw page indicator at bottom (last row)
-      #
-      # @return [void]
-      def draw_page_indicator
-        text(LEFT_MARGIN, 54, "Index #{@index_page_num} of #{@index_page_count}",
-             size: 9,
-             color: '999999',
-             width: content_width,
-             align: :center,
-             position: :subscript)
       end
 
       # Calculate content width (usable area between margins)
