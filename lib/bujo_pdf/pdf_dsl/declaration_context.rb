@@ -2,6 +2,7 @@
 
 require_relative 'page_declaration'
 require_relative 'metadata_builder'
+require_relative 'outline_declaration'
 require_relative 'week'
 
 module BujoPdf
@@ -25,7 +26,7 @@ module BujoPdf
     #   end
     #
     class DeclarationContext
-      attr_reader :pages, :groups, :metadata_builder, :theme_name
+      attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries
 
       # Initialize a new declaration context.
       def initialize
@@ -34,51 +35,90 @@ module BujoPdf
         @metadata_builder = nil
         @theme_name = nil
         @current_group = nil
+        @outline_entries = []
+        @current_section = nil
       end
 
       # Declare a page.
       #
       # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       # @param id [Symbol, nil] Optional explicit page ID
+      # @param outline [String, nil] Optional outline entry title
       # @param params [Hash] Parameters for the page
       # @return [PageDeclaration] The created declaration
       #
-      # @example
+      # @example Simple page
       #   page :seasonal_calendar, year: 2025
-      #   page :weekly, week: week, id: :custom_id
-      def page(type, id: nil, **params)
-        decl = PageDeclaration.new(type, id: id, **params)
+      #
+      # @example With outline entry
+      #   page :seasonal, id: :seasonal, outline: 'Seasonal Calendar'
+      #
+      # @example No outline entry (omitted)
+      #   page :index, id: :index_2  # No outline
+      def page(type, id: nil, outline: nil, **params)
+        decl = PageDeclaration.new(type, id: id, outline: outline, **params)
 
         if @current_group
           @current_group.add_page(decl)
         end
 
         @pages << decl
+
+        # Add outline entry if specified
+        if outline
+          add_outline_entry(OutlineDeclaration.new(title: outline, dest: id || type))
+        end
+
         decl
       end
 
       # Declare a group of related pages.
       #
       # @param name [Symbol] The group name
+      # @param outline [String, nil] Optional outline entry title for the group
       # @param options [Hash] Group options
       # @option options [Boolean] :cycle Enable cycling through pages
       # @yield Block containing page declarations for this group
       # @return [GroupDeclaration] The created group
       #
-      # @example
+      # @example Simple group
       #   group :grids, cycle: true do
       #     page :dot_grid
       #     page :graph_grid
       #   end
-      def group(name, **options, &block)
-        group_decl = GroupDeclaration.new(name, **options)
+      #
+      # @example Group with outline entry
+      #   group :grids, cycle: true, outline: 'Grid Types Showcase' do
+      #     page :grid_showcase, id: :grid_showcase
+      #     page :grid_dot, id: :grid_dot
+      #   end
+      def group(name, outline: nil, **options, &block)
+        group_decl = GroupDeclaration.new(name, outline: outline, **options)
         @groups << group_decl
+
+        # Track where to insert the group's outline entry
+        # We'll determine the first page destination after evaluating the block
+        outline_placeholder_index = nil
+        if outline
+          outline_placeholder_index = @outline_entries.length
+        end
 
         if block_given?
           previous_group = @current_group
           @current_group = group_decl
           instance_eval(&block)
           @current_group = previous_group
+        end
+
+        # Add outline entry for the group if specified
+        # Insert at the recorded position (before any pages added during block eval)
+        if outline && group_decl.pages.any?
+          first_page = group_decl.pages.first
+          entry = OutlineDeclaration.new(
+            title: outline,
+            dest: first_page.id || first_page.type
+          )
+          @outline_entries.insert(outline_placeholder_index, entry)
         end
 
         group_decl
@@ -202,6 +242,99 @@ module BujoPdf
 
         # Evaluate the included recipe's block in this context
         recipe.evaluate(self, **params)
+      end
+
+      # Add an outline entry for a specific destination.
+      #
+      # Use this for conditional or computed outline entries that don't
+      # correspond directly to a page declaration with outline: param.
+      #
+      # @param dest [Symbol] The destination page ID
+      # @param title [String] The outline entry title
+      # @return [OutlineDeclaration] The created entry
+      #
+      # @example Month header pointing to first week
+      #   weeks_in(year).each do |week|
+      #     page :weekly, id: :"week_#{week.number}", week: week
+      #
+      #     if week.first_of_month?
+      #       outline_entry :"week_#{week.number}", "#{week.month_name} #{year}"
+      #     end
+      #   end
+      def outline_entry(dest, title)
+        entry = OutlineDeclaration.new(title: title, dest: dest)
+        add_outline_entry(entry)
+        entry
+      end
+
+      # Create an outline section with nested entries.
+      #
+      # Pages declared inside an outline_section block inherit that section
+      # context - their outline entries become children of the section.
+      #
+      # @param title [String] The section title in the outline
+      # @param dest [Symbol, :first, nil] The destination when clicking the section header
+      #   - Symbol: Link to that specific destination
+      #   - :first: Link to the first child's destination
+      #   - nil: Section header is not clickable (just expands)
+      # @yield Block containing page declarations for this section
+      # @return [OutlineDeclaration] The created section
+      #
+      # @example Section with explicit destination
+      #   outline_section 'Grids', dest: :grid_showcase do
+      #     page :grid_showcase, id: :grid_showcase, outline: 'Grid Showcase'
+      #     page :grid_dot, id: :grid_dot, outline: 'Dot Grid'
+      #   end
+      #
+      # @example Section linked to first child
+      #   outline_section 'January', dest: :first do
+      #     page :monthly_review, id: :review_1, outline: 'Monthly Review'
+      #     page :weekly, id: :week_1, outline: 'Week 1'
+      #   end
+      #
+      # @example Non-clickable section header
+      #   outline_section 'Reference Pages' do
+      #     page :reference, id: :reference, outline: 'Calibration'
+      #     page :tracker_example, id: :tracker_example, outline: 'Tracker Ideas'
+      #   end
+      def outline_section(title, dest: nil, &block)
+        section = OutlineDeclaration.new(title: title, dest: dest == :first ? nil : dest)
+
+        # Push section context and evaluate block
+        previous_section = @current_section
+        @current_section = section
+        instance_eval(&block) if block_given?
+        @current_section = previous_section
+
+        # Handle dest: :first - link to first child's destination
+        if dest == :first && section.children.any?
+          section.instance_variable_set(:@dest, section.children.first.dest)
+        end
+
+        # Add section to parent (or root)
+        if previous_section
+          previous_section.add_child(section)
+        else
+          @outline_entries << section
+        end
+
+        section
+      end
+
+      private
+
+      # Add an outline entry to the current context.
+      #
+      # If inside an outline_section, adds as child of that section.
+      # Otherwise adds to the root outline entries.
+      #
+      # @param entry [OutlineDeclaration] The entry to add
+      def add_outline_entry(entry)
+        if @current_section
+          @current_section.add_child(entry)
+        else
+          @outline_entries << entry
+        end
       end
     end
   end

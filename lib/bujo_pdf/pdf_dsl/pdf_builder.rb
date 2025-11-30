@@ -56,7 +56,7 @@ module BujoPdf
         render_pages(pdf, context.pages, base_context)
 
         # Build PDF outline/bookmarks
-        build_outline(pdf, context.pages, base_context)
+        build_outline(pdf, context.pages, base_context, context.outline_entries)
 
         # Output
         if output
@@ -227,22 +227,66 @@ module BujoPdf
 
       # Build PDF outline/bookmarks for navigation.
       #
-      # Creates a hierarchical outline matching the document structure:
-      # - Front matter (Seasonal, Index, Future Log)
-      # - Year overview (Events, Highlights, Multi-Year)
-      # - Planning pages (Quarterly, Monthly Reviews)
-      # - Months (linked to first week of each month)
-      # - Grid pages
-      # - Templates
-      # - Collections
+      # Uses declarative outline entries collected during definition evaluation.
+      # Falls back to hardcoded structure if no outline entries are declared.
       #
       # @param pdf [Prawn::Document] The PDF document
       # @param pages [Array<PageDeclaration>] All page declarations
       # @param base_context [Hash] Base render context with year info
-      def build_outline(pdf, pages, base_context)
+      # @param outline_entries [Array<OutlineDeclaration>] Declared outline entries
+      def build_outline(pdf, pages, base_context, outline_entries = [])
         pages_by_dest = build_pages_by_dest(pages)
-        year = base_context[:year]
 
+        if outline_entries.any?
+          build_declarative_outline(pdf, outline_entries, pages_by_dest)
+        else
+          build_legacy_outline(pdf, pages_by_dest, base_context[:year])
+        end
+      end
+
+      # Build outline from declarative entries.
+      #
+      # @param pdf [Prawn::Document] The PDF document
+      # @param entries [Array<OutlineDeclaration>] Outline entries
+      # @param pages_by_dest [Hash<String, Hash>] Map of dest key to page info
+      def build_declarative_outline(pdf, entries, pages_by_dest)
+        # Define a recursive renderer that works within Prawn's outline DSL scope
+        render_entry = nil
+        render_entry = ->(entry, outline_scope) do
+          dest_key = entry.dest.to_s if entry.dest
+          page_info = pages_by_dest[dest_key] if dest_key
+
+          if entry.section?
+            # Section with children
+            if page_info
+              outline_scope.section entry.title, destination: page_info[:page_number] do
+                entry.children.each { |child| render_entry.call(child, outline_scope) }
+              end
+            else
+              outline_scope.section entry.title do
+                entry.children.each { |child| render_entry.call(child, outline_scope) }
+              end
+            end
+          elsif page_info
+            # Simple page entry
+            outline_scope.page destination: page_info[:page_number], title: entry.title
+          end
+          # Skip entries without valid destinations
+        end
+
+        pdf.outline.define do
+          entries.each do |entry|
+            render_entry.call(entry, self)
+          end
+        end
+      end
+
+      # Build legacy hardcoded outline for backward compatibility.
+      #
+      # @param pdf [Prawn::Document] The PDF document
+      # @param pages_by_dest [Hash<String, Hash>] Map of dest key to page info
+      # @param year [Integer] The planner year
+      def build_legacy_outline(pdf, pages_by_dest, year)
         pdf.outline.define do
           # Front matter
           if (p = pages_by_dest['seasonal'])

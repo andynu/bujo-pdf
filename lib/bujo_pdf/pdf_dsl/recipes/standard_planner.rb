@@ -35,14 +35,15 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   theme theme if theme
 
   # 1. Front matter: Seasonal calendar, Index, Future log
-  page :seasonal, id: :seasonal, year: year
+  page :seasonal, id: :seasonal, year: year, outline: 'Seasonal Calendar'
 
   # Index pages (2 pages with numbered lines for TOC entries)
   2.times do |i|
     page :index, id: :"index_#{i + 1}",
          index_page_num: i + 1,
          index_page_count: 2,
-         year: year
+         year: year,
+         outline: i.zero? ? 'Index' : nil
   end
 
   # Future log pages (2 pages covering 12 months)
@@ -51,16 +52,31 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
          future_log_page: i + 1,
          future_log_page_count: 2,
          future_log_start_month: (i * 6) + 1,
-         year: year
+         year: year,
+         outline: i.zero? ? 'Future Log' : nil
   end
 
   # 2. Year overview pages
-  page :year_events, id: :year_events, year: year
-  page :year_highlights, id: :year_highlights, year: year
-  page :multi_year, id: :multi_year, year: year, year_count: 4
+  page :year_events, id: :year_events, year: year, outline: 'Year at a Glance - Events'
+  page :year_highlights, id: :year_highlights, year: year, outline: 'Year at a Glance - Highlights'
+  page :multi_year, id: :multi_year, year: year, year_count: 4, outline: 'Multi-Year Overview'
 
   # 3. Weekly pages with interleaved monthly reviews and quarterly planning
   generated_months = []
+
+  # First outline entry for Quarterly Planning (links to first quarter)
+  outline_entry :quarter_1, 'Quarterly Planning'
+  # First outline entry for Monthly Reviews (links to first month)
+  outline_entry :review_1, 'Monthly Reviews'
+
+  # Pre-calculate first week of each month for outline entries
+  first_week_of_month = {}
+  weeks_in(year).each do |week|
+    if week.in_year?
+      month = week.month
+      first_week_of_month[month] ||= week.number
+    end
+  end
 
   weeks_in(year).each do |week|
     # Insert interleaved pages for weeks that start in the target year
@@ -82,6 +98,11 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
              review_month: month,
              year: year
 
+        # Add month outline entry linking to first week of the month
+        month_name = Date::MONTHNAMES[month]
+        first_week = first_week_of_month[month]
+        outline_entry :"week_#{first_week}", "#{month_name} #{year}"
+
         generated_months << month
       end
     end
@@ -90,22 +111,23 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   end
 
   # 4. Grid pages group with cycling navigation
-  group :grids, cycle: true do
+  # Group's outline entry is inserted before any page outline entries from within the block
+  group :grids, cycle: true, outline: 'Grid Types Showcase' do
     page :grid_showcase, id: :grid_showcase
-    page :grids_overview, id: :grids_overview
-    page :grid_dot, id: :grid_dot
-    page :grid_graph, id: :grid_graph
-    page :grid_lined, id: :grid_lined
-    page :grid_isometric, id: :grid_isometric
-    page :grid_perspective, id: :grid_perspective
-    page :grid_hexagon, id: :grid_hexagon
+    page :grids_overview, id: :grids_overview, outline: '  - Basic Grids Overview'
+    page :grid_dot, id: :grid_dot, outline: '  - Dot Grid (5mm)'
+    page :grid_graph, id: :grid_graph, outline: '  - Graph Grid (5mm)'
+    page :grid_lined, id: :grid_lined, outline: '  - Ruled Lines (10mm)'
+    page :grid_isometric, id: :grid_isometric, outline: '  - Isometric Grid'
+    page :grid_perspective, id: :grid_perspective, outline: '  - Perspective Grid'
+    page :grid_hexagon, id: :grid_hexagon, outline: '  - Hexagon Grid'
   end
 
   # 5. Template pages
-  page :tracker_example, id: :tracker_example
-  page :reference, id: :reference
-  page :daily_wheel, id: :daily_wheel
-  page :year_wheel, id: :year_wheel
+  page :tracker_example, id: :tracker_example, outline: 'Tracker Ideas'
+  page :reference, id: :reference, outline: 'Calibration & Reference'
+  page :daily_wheel, id: :daily_wheel, outline: 'Daily Wheel'
+  page :year_wheel, id: :year_wheel, outline: 'Year Wheel'
 
   # 6. Collections (user-configured via config/collections.yml)
   # Load collections configuration if available
@@ -125,7 +147,8 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
            collection_id: id,
            collection_title: title,
            collection_subtitle: subtitle,
-           year: year
+           year: year,
+           outline: title
     end
   end
 end
