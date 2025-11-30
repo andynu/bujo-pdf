@@ -28,6 +28,33 @@ module BujoPdf
     class Fieldset < SubComponentBase
       include Text::Mixin
 
+      # Mixin providing the fieldset verb for pages and components
+      module Mixin
+        # Render a fieldset (bordered box with legend) at grid coordinates
+        #
+        # @param col [Integer] Starting column (left edge)
+        # @param row [Integer] Starting row (top edge)
+        # @param width [Integer] Width in grid boxes
+        # @param height [Integer] Height in grid boxes
+        # @param legend [String] Legend text (required)
+        # @param position [Symbol] Legend position (default: :top_left)
+        # @param legend_padding [Integer] Padding inside legend box (default: 5)
+        # @param font_size [Integer] Legend font size (default: 12)
+        # @param border_color [String, nil] Border color (default: theme border)
+        # @param text_color [String, nil] Text color (default: theme text)
+        # @param inset_boxes [Float] Border inset from edge in grid boxes (default: 0.5)
+        # @param legend_offset_x [Integer] Fine-tuning X offset (default: 0)
+        # @param legend_offset_y [Integer] Fine-tuning Y offset (default: 0)
+        # @return [void]
+        def fieldset(col, row, width, height, legend:, position: :top_left, **options)
+          Fieldset.new(@pdf, @grid,
+            legend: legend,
+            position: position,
+            **options
+          ).render_at(col, row, width, height)
+        end
+      end
+
       # Default configuration values
       DEFAULTS = {
         position: :top_left,          # :top_left, :top_center, :top_right, :bottom_left, :bottom_right
