@@ -53,7 +53,7 @@ module BujoPdf
       #     future_log_page
       #   end
       def page_set(count, label = nil, name: nil)
-        set = PageSet.new(count: count, label: label, name: name)
+        set = PageSetContext.new(count: count, label: label, name: name)
         return set unless block_given?
 
         set.each do |i|

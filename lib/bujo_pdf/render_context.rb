@@ -63,7 +63,7 @@ module BujoPdf
     # @return [Hash] Additional context data
     attr_reader :data
 
-    # @return [PageSet::Context, PageSet::NullContext] Page set context when inside page_set block
+    # @return [PageSetContext::Context, PageSetContext::NullContext] Page set context when inside page_set block
     attr_accessor :set
 
     # Initialize a new RenderContext.
@@ -93,7 +93,7 @@ module BujoPdf
       @date_config = date_config
       @event_store = event_store
       @data = data
-      @set = PageSet::NullContext.new
+      @set = PageSetContext::NullContext.new
     end
 
     # Check if currently rendering a specific page.
@@ -124,8 +124,8 @@ module BujoPdf
 
     # Check if currently rendering within a page set.
     #
-    # Returns true when @set contains a PageSet::Context (real context),
-    # false when it contains a PageSet::NullContext.
+    # Returns true when @set contains a PageSetContext::Context (real context),
+    # false when it contains a PageSetContext::NullContext.
     #
     # @return [Boolean] True if inside a page_set block
     #
@@ -134,7 +134,7 @@ module BujoPdf
     #   # Inside page_set block:
     #   context.set?  # => true
     def set?
-      !@set.is_a?(PageSet::NullContext)
+      !@set.is_a?(PageSetContext::NullContext)
     end
 
     # Get the destination key for this page.
