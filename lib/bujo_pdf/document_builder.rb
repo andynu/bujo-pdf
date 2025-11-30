@@ -112,6 +112,21 @@ module BujoPdf
       @pages.find { |p| p.dest_name.to_s == dest_name.to_s }
     end
 
+    # Get all weeks for a year.
+    #
+    # @param target_year [Integer] Year to get weeks for (default: @year)
+    # @return [Array<Week>] All weeks in the year
+    def weeks_in(target_year = nil)
+      Week.all_in(target_year || @year)
+    end
+
+    # Get total weeks in the year.
+    #
+    # @return [Integer]
+    def total_weeks
+      Utilities::DateCalculator.total_weeks(@year)
+    end
+
     private
 
     def build_outline
