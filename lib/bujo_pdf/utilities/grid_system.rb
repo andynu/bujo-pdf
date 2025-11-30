@@ -2,6 +2,12 @@
 
 require_relative 'styling'
 
+# Simple struct representing a column's position and width in grid boxes
+Column = Struct.new(:col, :width, keyword_init: true)
+
+# Simple struct representing a row's position and height in grid boxes
+Row = Struct.new(:row, :height, keyword_init: true)
+
 # GridSystem provides a coordinate conversion system for grid-based layout
 #
 # The grid system uses a top-left origin (0,0) where:
@@ -317,5 +323,72 @@ class GridSystem
   # @see #grid_dots
   def redraw_dots(col:, row:, width:, height:, color: nil)
     grid_dots(col: col, row: row, width: width, height: height, color: color).render
+  end
+
+  # Divide a width into equal columns with optional gaps
+  #
+  # Returns an array of Column structs that can be destructured or indexed.
+  # Each Column has :col (starting position) and :width attributes.
+  #
+  # @param col [Integer] Starting column position
+  # @param width [Integer] Total width to divide (in grid boxes)
+  # @param count [Integer] Number of columns
+  # @param gap [Integer] Gap between columns in grid boxes (default: 0)
+  # @return [Array<Column>] Array of Column structs
+  #
+  # @example Two equal columns with a 1-box gap
+  #   left, right = @grid.divide_columns(col: 2, width: 39, count: 2, gap: 1)
+  #   left.col    # => 2
+  #   left.width  # => 19
+  #   right.col   # => 22
+  #   right.width # => 19
+  #
+  # @example Three columns, access by index
+  #   cols = @grid.divide_columns(col: 0, width: 43, count: 3, gap: 1)
+  #   cols[0].col   # => 0
+  #   cols[1].col   # => 15
+  #   cols[2].col   # => 30
+  def divide_columns(col:, width:, count:, gap: 0)
+    total_gap = gap * (count - 1)
+    col_width = (width - total_gap) / count
+
+    count.times.map do |i|
+      Column.new(
+        col: col + (i * (col_width + gap)),
+        width: col_width
+      )
+    end
+  end
+
+  # Divide a height into equal rows with optional gaps
+  #
+  # Returns an array of Row structs that can be destructured or indexed.
+  # Each Row has :row (starting position) and :height attributes.
+  #
+  # @param row [Integer] Starting row position
+  # @param height [Integer] Total height to divide (in grid boxes)
+  # @param count [Integer] Number of rows
+  # @param gap [Integer] Gap between rows in grid boxes (default: 0)
+  # @return [Array<Row>] Array of Row structs
+  #
+  # @example Three equal rows for month sections
+  #   top, middle, bottom = @grid.divide_rows(row: 4, height: 50, count: 3)
+  #   top.row      # => 4
+  #   top.height   # => 16
+  #   middle.row   # => 20
+  #   bottom.row   # => 36
+  #
+  # @example With gaps
+  #   rows = @grid.divide_rows(row: 0, height: 55, count: 5, gap: 1)
+  def divide_rows(row:, height:, count:, gap: 0)
+    total_gap = gap * (count - 1)
+    row_height = (height - total_gap) / count
+
+    count.times.map do |i|
+      Row.new(
+        row: row + (i * (row_height + gap)),
+        height: row_height
+      )
+    end
   end
 end

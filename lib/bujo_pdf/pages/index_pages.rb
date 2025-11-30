@@ -72,19 +72,18 @@ module BujoPdf
       #
       # @return [void]
       def draw_two_column_layout
-        col_width = (content_width - COLUMN_GAP) / 2
+        left, right = @grid.divide_columns(col: LEFT_MARGIN, width: content_width, count: 2, gap: COLUMN_GAP)
 
         # Starting entry number for this page
         base_entry = (@index_page_num - 1) * ENTRIES_PER_PAGE
 
         # Draw left column
-        ruled_list(LEFT_MARGIN, CONTENT_START_ROW, col_width,
+        ruled_list(left.col, CONTENT_START_ROW, left.width,
                    entries: LINES_PER_COLUMN,
                    start_num: base_entry + 1)
 
         # Draw right column
-        right_col_start = LEFT_MARGIN + col_width + COLUMN_GAP
-        ruled_list(right_col_start, CONTENT_START_ROW, col_width,
+        ruled_list(right.col, CONTENT_START_ROW, right.width,
                    entries: LINES_PER_COLUMN,
                    start_num: base_entry + LINES_PER_COLUMN + 1)
       end
@@ -93,8 +92,8 @@ module BujoPdf
       #
       # @return [void]
       def draw_column_divider
-        col_width = (content_width - COLUMN_GAP) / 2
-        divider_col = LEFT_MARGIN + col_width
+        left, _right = @grid.divide_columns(col: LEFT_MARGIN, width: content_width, count: 2, gap: COLUMN_GAP)
+        divider_col = left.col + left.width
         divider_height = LINES_PER_COLUMN * 2  # 2 rows per entry
 
         vline(divider_col, CONTENT_START_ROW, divider_height, color: 'E5E5E5')

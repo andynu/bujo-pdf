@@ -72,26 +72,17 @@ module BujoPdf
       #
       # @return [void]
       def draw_two_column_layout
-        # Calculate column dimensions
-        col_width = (content_width - COLUMN_GAP) / 2
-
-        # Available height for month sections (rows 4-53 = 50 rows)
-        available_rows = 50
-        section_height = available_rows / MONTHS_PER_COLUMN  # ~16 rows per month
+        left_col, right_col = @grid.divide_columns(col: LEFT_MARGIN, width: content_width, count: 2, gap: COLUMN_GAP)
+        month_rows = @grid.divide_rows(row: CONTENT_START_ROW, height: 50, count: MONTHS_PER_COLUMN)
 
         # Draw left column (first 3 months)
-        MONTHS_PER_COLUMN.times do |i|
-          month_num = @start_month + i
-          row = CONTENT_START_ROW + (i * section_height)
-          draw_month_section(month_num, LEFT_MARGIN, row, col_width, section_height)
+        month_rows.each_with_index do |section, i|
+          draw_month_section(@start_month + i, left_col.col, section.row, left_col.width, section.height)
         end
 
         # Draw right column (next 3 months)
-        right_col_start = LEFT_MARGIN + col_width + COLUMN_GAP
-        MONTHS_PER_COLUMN.times do |i|
-          month_num = @start_month + MONTHS_PER_COLUMN + i
-          row = CONTENT_START_ROW + (i * section_height)
-          draw_month_section(month_num, right_col_start, row, col_width, section_height)
+        month_rows.each_with_index do |section, i|
+          draw_month_section(@start_month + MONTHS_PER_COLUMN + i, right_col.col, section.row, right_col.width, section.height)
         end
       end
 
@@ -109,14 +100,12 @@ module BujoPdf
         draw_month_header(month_num, col, start_row, width)
 
         # Split the month width into two columns of entry lines
-        entry_col_width = (width - ENTRY_COLUMN_GAP) / 2
-        entry_col1 = col
-        entry_col2 = col + entry_col_width + ENTRY_COLUMN_GAP
+        left, right = @grid.divide_columns(col: col, width: width, count: 2, gap: ENTRY_COLUMN_GAP)
 
         # Draw entry lines starting 2 rows below the header
         row = start_row + 2
-        draw_entry_lines(entry_col1, row, entry_col_width, height - 2)
-        draw_entry_lines(entry_col2, row, entry_col_width, height - 2)
+        draw_entry_lines(left.col, row, left.width, height - 2)
+        draw_entry_lines(right.col, row, right.width, height - 2)
       end
 
       # Draw month header with divider line
