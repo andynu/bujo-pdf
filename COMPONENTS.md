@@ -1,155 +1,241 @@
 # Component Documentation
 
-This document describes the reusable layout components in the planner generator.
+This document describes the component architecture in the BujoPdf planner generator.
 
-## Right Sidebar Component
+## Component Verb Pattern
 
-**Location**: `draw_right_sidebar` and `draw_right_sidebar_tabs` (gen.rb:1276-1339)
+Components in BujoPdf use a **verb pattern** where pages call methods directly rather than instantiating component classes. This creates a declarative, readable API.
 
-### Overview
-
-The right sidebar displays rotated navigation tabs along the right edge of the page. It consists of:
-- **Top tabs**: Left-aligned (Year, Events, Highlights) linking to overview pages
-- **Bottom tab**: Right-aligned (Dots) linking to the blank dot grid template
-
-### Grid-Based Layout
-
-- **Position**: Column 43 (at right edge, beyond last grid column), 1 box wide
-- **Tab height**: 3 boxes per tab (quantized/uniform)
-- **Top tabs**: Start at row 3 (provides clearance from top edge)
-- **Bottom tab**: Positioned 4 boxes from bottom (reserves space for footer + margin)
-
-### API
-
-#### `draw_right_sidebar()`
-
-Main method that draws the complete right sidebar with default tabs.
-
-**Default tabs:**
-```ruby
-Top (left-aligned):
-  - "Year" → seasonal calendar page
-  - "Events" → year at a glance events page
-  - "Highlights" → year at a glance highlights page
-
-Bottom (right-aligned):
-  - "Dots" → blank dot grid template page
-```
-
-**Usage:**
-```ruby
-draw_right_sidebar()  # Call on any page to add right sidebar
-```
-
-#### `draw_right_sidebar_tabs(tabs, start_row:, align:)`
-
-Helper method to draw a list of tabs at a specific grid position.
-
-**Parameters:**
-- `tabs`: Array of `{label:, dest:}` hashes
-  - `label`: String to display (rotated -90°)
-  - `dest`: Named destination to link to
-- `start_row`: Grid row to start from (integer)
-- `align`: Text alignment (`:left` or `:right`)
-
-**Example:**
-```ruby
-# Draw custom tabs starting at row 10, left-aligned
-custom_tabs = [
-  { label: "Custom", dest: "custom_page" },
-  { label: "Extra", dest: "extra_page" }
-]
-draw_right_sidebar_tabs(custom_tabs, start_row: 10, align: :left)
-```
-
-### Visual Design
-
-- **Text rotation**: -90° (clockwise) - text reads top-to-bottom when page is upright
-- **Font**: Helvetica, 8pt, gray (#888888)
-- **Clickable area**: Entire 3-box region per tab (not just text)
-- **Text alignment**:
-  - Top tabs: `:left` (text starts at top when rotated)
-  - Bottom tabs: `:right` (text ends at bottom when rotated)
-
-### Layout Calculations
+### Architecture
 
 ```ruby
-# Each tab occupies exactly 3 boxes vertically
-tab_height_boxes = 3
+# Each component defines a Mixin module
+module BujoPdf::Components
+  class H1
+    module Mixin
+      def h1(col, row, text, **opts)
+        H1.new(pdf: @pdf, grid: @grid_system, col: col, row: row, text: text, **opts).render
+      end
+    end
 
-# Position at right edge (beyond last grid column)
-sidebar_col = GRID_COLS  # 43
+    def initialize(pdf:, grid:, col:, row:, text:, **opts)
+      @pdf = pdf
+      @grid = grid
+      @col = col
+      @row = row
+      @text = text
+      @opts = opts
+    end
 
-# Top tabs start at row 3 (gives clearance from top)
-top_start_row = 3
-
-# Bottom tab positioned from bottom
-# GRID_ROWS (55) - footer (3 boxes) - margin (1 box) - tab height (3 boxes) = 48
-bottom_start_row = GRID_ROWS - 4 - 3
-```
-
-### Link Behavior
-
-Each tab is fully clickable across its entire 3-box region:
-```ruby
-grid_link(sidebar_col, row, 1, tab_height_boxes, tab[:dest])
-```
-
-Users can click anywhere in the tab's vertical space, not just on the text.
-
-### Customization
-
-To add more tabs:
-
-```ruby
-def draw_right_sidebar
-  # Top section
-  top_tabs = [
-    { label: "Year", dest: "seasonal" },
-    { label: "Events", dest: "year_events" },
-    { label: "Highlights", dest: "year_highlights" },
-    { label: "Custom", dest: "custom_page" }  # New tab!
-  ]
-
-  draw_right_sidebar_tabs(top_tabs, start_row: 2, align: :left)
-
-  # Bottom section (unchanged)
-  # ...
+    def render
+      # Drawing operations
+    end
+  end
 end
 ```
 
-Each additional tab will automatically stack 3 boxes below the previous one.
+### Component Aggregation
 
-### Coordinate System Notes
+`Components::All` aggregates all component mixins:
 
-**Text positioning with rotation:**
-- Text is rotated -90° around the top-left corner of the tab region
-- After rotation, the text box extends downward (in page coordinates)
-- The `at:` parameter is adjusted to `[tab_x - tab_width_pt, tab_y]` to position text correctly within rotated space
-
-**Why height becomes width:**
 ```ruby
-tab_width_pt = grid_height(tab_height_boxes)  # Rotated: 3 boxes tall → horizontal width
+module Components::All
+  def self.included(base)
+    base.include GridDots::Mixin
+    base.include RuledLines::Mixin
+    base.include Text::Mixin
+    base.include H1::Mixin
+    base.include H2::Mixin
+    base.include Box::Mixin
+    base.include HLine::Mixin
+    base.include VLine::Mixin
+    base.include Fieldset::Mixin
+    base.include MiniMonth::Mixin
+    base.include RuledList::Mixin
+    # ...
+  end
+end
 ```
 
-After -90° rotation, vertical height becomes horizontal width in the rotated coordinate space.
-
-## Future Components
-
-Additional components to be documented:
-- Left week sidebar
-- Fieldset with legend
-- Cornell notes layout
-- Seasonal calendar grid
-- Year-at-a-glance grid
+`Pages::Base` includes `Components::All`, giving all pages access to verbs.
 
 ---
 
-## Component Design Principles
+## Content Verbs
+
+### `h1(col, row, text, **opts)`
+Large heading text.
+
+**Location**: `lib/bujo_pdf/components/h1.rb`
+
+**Options:**
+- `width:` - Width in grid boxes (default: auto)
+- `align:` - Text alignment `:left`, `:center`, `:right`
+- `color:` - Text color (hex string)
+
+### `h2(col, row, text, **opts)`
+Medium heading text.
+
+**Location**: `lib/bujo_pdf/components/h2.rb`
+
+### `text(col, row, content, **opts)`
+Text at grid position with styling options.
+
+**Location**: `lib/bujo_pdf/components/text.rb`
+
+**Options:**
+- `width:`, `height:` - Dimensions in grid boxes
+- `size:` - Font size in points
+- `style:` - Font style `:normal`, `:bold`, `:italic`
+- `align:`, `valign:` - Alignment options
+- `color:` - Text color
+- `rotation:` - Rotation angle in degrees
+
+### `ruled_lines(col, row, width, height, **opts)`
+Horizontal ruled lines for writing.
+
+**Location**: `lib/bujo_pdf/components/ruled_lines.rb`
+
+**Options:**
+- `spacing:` - Line spacing in grid boxes (default: 1)
+- `color:` - Line color
+- `stroke:` - Line thickness
+
+### `ruled_list(col, row, width, height, **opts)`
+Numbered or bulleted list with ruled lines.
+
+**Location**: `lib/bujo_pdf/components/ruled_list.rb`
+
+**Options:**
+- `style:` - `:numbered`, `:bulleted`, `:checkbox`
+- `start:` - Starting number (for numbered lists)
+
+### `mini_month(col, row, year, month, **opts)`
+Compact month calendar.
+
+**Location**: `lib/bujo_pdf/components/mini_month.rb`
+
+**Options:**
+- `highlight_day:` - Day to highlight
+- `first_day:` - Week start `:monday` or `:sunday`
+- `link_days:` - Enable day links to weekly pages
+
+### `fieldset(position:, legend:, **opts)`
+HTML-like bordered section with legend label.
+
+**Location**: `lib/bujo_pdf/components/fieldset.rb`
+
+**Parameters:**
+- `position:` - `:top_left`, `:top_right`, `:bottom_left`, `:bottom_right`
+- `legend:` - Legend text
+
+**Options:**
+- `inset:` - Border inset from position bounds
+- `legend_offset:` - Fine-tune legend position
+
+---
+
+## Drawing Verbs
+
+### `box(col, row, width, height, **opts)`
+Rectangle outline or fill.
+
+**Location**: `lib/bujo_pdf/components/box.rb`
+
+**Options:**
+- `stroke:` - Draw outline (default: true)
+- `fill:` - Fill color (hex string or nil)
+- `stroke_color:` - Outline color
+- `stroke_width:` - Line thickness
+
+### `hline(col, row, width, **opts)`
+Horizontal line.
+
+**Location**: `lib/bujo_pdf/components/hline.rb`
+
+**Options:**
+- `color:` - Line color
+- `stroke:` - Line thickness
+- `dash:` - Dash pattern (array or nil for solid)
+
+### `vline(col, row, height, **opts)`
+Vertical line.
+
+**Location**: `lib/bujo_pdf/components/vline.rb`
+
+### `grid_dots(col, row, width, height, **opts)`
+Dot grid overlay (for z-index layering).
+
+**Location**: `lib/bujo_pdf/components/grid_dots.rb`
+
+**Options:**
+- `color:` - Dot color (default: theme dot color)
+- `spacing:` - Dot spacing
+
+### `erase_dots(col, row, width, height)`
+White rectangle to hide underlying dots.
+
+**Location**: `lib/bujo_pdf/components/erase_dots.rb`
+
+---
+
+## Navigation Components
+
+These components are used by layouts, not via the verb pattern.
+
+### WeekSidebar
+**Location**: `lib/bujo_pdf/components/week_sidebar.rb`
+
+Renders vertical week list (1-53) with month labels on the left edge.
+
+**Used by**: `StandardWithSidebarsLayout`
+
+### RightSidebar
+**Location**: `lib/bujo_pdf/components/right_sidebar.rb`
+
+Renders rotated tabs for year overview and grid pages on the right edge. Supports multi-tap cycling through related pages.
+
+**Tabs:**
+- Year (seasonal, events, highlights, multi-year)
+- Grids (showcase, overview, dot, graph, lined, isometric, perspective, hexagon)
+- Templates (tracker, daily wheel, year wheel)
+
+### TopNavigation
+**Location**: `lib/bujo_pdf/components/top_navigation.rb`
+
+Renders previous/next week navigation buttons.
+
+---
+
+## Specialized Components
+
+### CornellNotes
+**Location**: `lib/bujo_pdf/components/cornell_notes.rb`
+
+Cornell notes layout with cues, notes, and summary sections.
+
+### DailySection
+**Location**: `lib/bujo_pdf/components/daily_section.rb`
+
+7-day section for weekly pages with day headers and ruled lines.
+
+### WeekGrid
+**Location**: `lib/bujo_pdf/components/week_grid.rb`
+
+7-column grid for week-based displays. Supports quantization for grid alignment.
+
+### TodoList
+**Location**: `lib/bujo_pdf/components/todo_list.rb`
+
+Checkbox list with configurable styling.
+
+---
+
+## Design Principles
 
 1. **Grid-based positioning**: All components use grid coordinates (col, row, boxes)
-2. **Quantized dimensions**: Heights/widths in whole or fractional boxes (e.g., 3 boxes per tab)
-3. **Composable**: Components can be mixed and matched on any page
-4. **Configurable**: Accept parameters for customization while maintaining defaults
-5. **Self-contained**: Each component manages its own styling (colors, fonts, etc.)
-6. **Named destinations**: All navigation uses semantic destination names, not page numbers
+2. **Verb pattern**: Pages call verbs directly, not component classes
+3. **Mixin aggregation**: Single include point via `Components::All`
+4. **Composable**: Components can be mixed freely on any page
+5. **Theme-aware**: Components respect theme colors via context
+6. **Self-contained**: Each component manages its own styling defaults

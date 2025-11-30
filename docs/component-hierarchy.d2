@@ -1,6 +1,6 @@
 direction: down
 
-title: Component Architecture {
+title: Component Architecture (Verb Pattern) {
   near: top-center
   shape: text
   style: {
@@ -9,13 +9,23 @@ title: Component Architecture {
   }
 }
 
-# Base components
-components_module: Components Module {
+# Component verb system
+verb_system: Component Verb System {
   shape: package
   style: {
-    fill: "#e8f5e9"
-    stroke: "#388e3c"
+    fill: "#e3f2fd"
+    stroke: "#1976d2"
     stroke-width: 2
+  }
+
+  all_module: "Components::All" {
+    desc: "Aggregates all component mixins.\nSingle include point for Pages::Base."
+  }
+
+  pattern: Mixin Pattern {
+    mixin: "Each component defines Mixin module"
+    verb: "Mixin provides verb method(s)"
+    include: "Pages call verbs directly"
   }
 }
 
@@ -36,96 +46,96 @@ grid_system: GridSystem Utilities {
   }
 }
 
-# Individual components
-week_sidebar: WeekSidebar {
-  shape: rectangle
-  style.fill: "#c8e6c9"
+# Navigation Components
+nav_components: Navigation Components {
+  shape: package
+  style.fill: "#e8f5e9"
 
-  purpose: Renders vertical week list\nwith month indicators {
-    shape: callout
-    style.fill: "#fff9c4"
+  week_sidebar: WeekSidebar {
+    verb: "Used by layouts (not verb)"
+    renders: "Week list 1-53 with month labels"
   }
 
-  inputs: Inputs {
-    year: year
-    total_weeks: total_weeks
-    current_week: current_week (highlight)
+  right_sidebar: RightSidebar {
+    verb: "Used by layouts (not verb)"
+    renders: "Rotated year/grid page tabs"
   }
 
-  renders: Renders {
-    week_numbers: "Week number boxes (1-53)"
-    month_labels: "Month name labels"
-    links: "Clickable links to week pages"
-    highlight: "Current week highlighting"
+  top_nav: TopNavigation {
+    verb: "Used by layouts (not verb)"
+    renders: "Prev/next week buttons"
   }
 }
 
-nav_tabs: NavigationTabs {
-  shape: rectangle
+# Content Components (with verbs)
+content_components: Content Components (Verbs) {
+  shape: package
   style.fill: "#c8e6c9"
 
-  purpose: Renders rotated year page tabs {
-    shape: callout
-    style.fill: "#fff9c4"
+  text_comp: Text {
+    verb: "text(col, row, content, **opts)"
+    renders: "Text at grid position"
   }
 
-  inputs: Inputs {
-    year: year
-    highlight_tab: highlight_tab (which to highlight)
+  h1_comp: H1 {
+    verb: "h1(col, row, content, **opts)"
+    renders: "Large heading text"
   }
 
-  renders: Renders {
-    seasonal_tab: "Seasonal calendar tab"
-    events_tab: "Year events tab"
-    highlights_tab: "Year highlights tab"
-    rotation: "90° rotation for vertical text"
-    links: "Clickable links to year pages"
-    highlight: "Current tab highlighting"
+  h2_comp: H2 {
+    verb: "h2(col, row, content, **opts)"
+    renders: "Medium heading text"
+  }
+
+  fieldset_comp: Fieldset {
+    verb: "fieldset(position:, legend:, **opts)"
+    renders: "Bordered section with legend"
+  }
+
+  ruled_lines_comp: RuledLines {
+    verb: "ruled_lines(col, row, w, h, **opts)"
+    renders: "Horizontal ruled lines"
+  }
+
+  ruled_list_comp: RuledList {
+    verb: "ruled_list(col, row, w, h, **opts)"
+    renders: "Numbered/bulleted list"
+  }
+
+  mini_month_comp: MiniMonth {
+    verb: "mini_month(col, row, year, month)"
+    renders: "Compact month calendar"
   }
 }
 
-fieldset: Fieldset {
-  shape: rectangle
-  style.fill: "#c8e6c9"
+# Drawing Components (with verbs)
+drawing_components: Drawing Components (Verbs) {
+  shape: package
+  style.fill: "#b2dfdb"
 
-  purpose: Creates bordered sections\nwith legend labels {
-    shape: callout
-    style.fill: "#fff9c4"
+  box_comp: Box {
+    verb: "box(col, row, w, h, **opts)"
+    renders: "Rectangle outline/fill"
   }
 
-  inputs: Inputs {
-    position: :top_left, :top_right,\n:bottom_left, :bottom_right
-    legend: legend text
-    inset: border inset (grid boxes)
-    rotation: text rotation angle
+  hline_comp: HLine {
+    verb: "hline(col, row, width, **opts)"
+    renders: "Horizontal line"
   }
 
-  renders: Renders {
-    border: "Stroked rectangle border"
-    legend: "Legend text at position"
-    gap: "Gap in border for legend"
-  }
-}
-
-dot_grid: DotGrid {
-  shape: rectangle
-  style.fill: "#c8e6c9"
-
-  purpose: Draws dot grid background {
-    shape: callout
-    style.fill: "#fff9c4"
+  vline_comp: VLine {
+    verb: "vline(col, row, height, **opts)"
+    renders: "Vertical line"
   }
 
-  inputs: Inputs {
-    width_pts: "width in points"
-    height_pts: "height in points"
-    spacing: "dot spacing (14.17pt)"
+  grid_dots_comp: GridDots {
+    verb: "grid_dots(col, row, w, h, **opts)"
+    renders: "Dot grid overlay"
   }
 
-  renders: Renders {
-    dots: "Light gray dots at intersections"
-    spacing: "5mm (14.17pt) grid spacing"
-    color_code: "#CCCCCC (light gray)"
+  erase_dots_comp: EraseDots {
+    verb: "erase_dots(col, row, w, h)"
+    renders: "White rectangle to hide dots"
   }
 }
 
@@ -138,45 +148,44 @@ prawn: Prawn PDF {
   }
 }
 
-# Pages using components
+# Pages using verbs
 pages: Page Classes {
   shape: package
-  style.fill: "#e3f2fd"
+  style.fill: "#fff3e0"
 
-  seasonal: SeasonalCalendar
-  year_pages: Year-at-a-glance
-  weekly: WeeklyPage
+  base: "Pages::Base" {
+    includes: "includes Components::All"
+  }
+
+  example_usage: |ruby
+    def render
+      h1(5, 2, "Title")
+      ruled_lines(5, 5, 30, 20)
+      fieldset(position: :top_left,
+               legend: "Notes")
+    end
+  |
 }
 
-# Component usage relationships
-components_module -> week_sidebar: provides
-components_module -> nav_tabs: provides
-components_module -> fieldset: provides
-components_module -> dot_grid: provides
+# Verb system flow
+verb_system.all_module -> content_components: includes mixins from
+verb_system.all_module -> drawing_components: includes mixins from
+pages.base -> verb_system.all_module: includes
 
 # Grid coordinate usage
-week_sidebar -> grid_system: uses for positioning
-nav_tabs -> grid_system: uses for positioning
-fieldset -> grid_system: uses for positioning
-dot_grid -> grid_system: uses for spacing
+content_components -> grid_system: uses for positioning
+drawing_components -> grid_system: uses for positioning
+nav_components -> grid_system: uses for positioning
 
 # Prawn drawing operations
-week_sidebar -> prawn: text_box, stroke_rectangle,\nlink_annotation
-nav_tabs -> prawn: rotate, text_box,\nlink_annotation
-fieldset -> prawn: stroke_bounds, text_box,\nline operations
-dot_grid -> prawn: fill_circle at grid points
+content_components -> prawn: text_box, stroke operations
+drawing_components -> prawn: line, rect, fill operations
+nav_components -> prawn: text_box, link_annotation
 
-# Pages using components
-pages.seasonal -> fieldset: season sections
-pages.seasonal -> dot_grid: background
-pages.year_pages -> dot_grid: background
-pages.weekly -> dot_grid: background
-
-# Layout system using components
+# Layout system using nav components
 layouts: StandardWithSidebarsLayout {
   shape: hexagon
   style.fill: "#f3e5f5"
 }
 
-layouts -> week_sidebar: renders left sidebar
-layouts -> nav_tabs: renders right sidebar
+layouts -> nav_components: renders sidebars

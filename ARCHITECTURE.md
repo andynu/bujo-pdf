@@ -4,13 +4,15 @@ This document describes the technical architecture of the BujoPdf planner genera
 
 ## Overview
 
-BujoPdf uses a component-based architecture built on top of the [Prawn PDF library](https://github.com/prawnpdf/prawn). The system is organized into five main layers:
+BujoPdf uses a component-based architecture built on top of the [Prawn PDF library](https://github.com/prawnpdf/prawn). The system is organized into seven main layers:
 
-1. **Generator** - Orchestrates PDF creation and page ordering
-2. **Pages** - Individual page types (seasonal calendar, weekly pages, etc.)
-3. **Layouts** - Declarative layout system with automatic sidebar management
-4. **Components** - Reusable UI elements (sidebars, fieldsets, headers)
-5. **Utilities** - Core helpers (grid system, date calculations, dot grids)
+1. **DSL** - Declarative planner definition with configuration and runtime support
+2. **PDFs (Recipes)** - Complete planner recipe definitions
+3. **Pages** - Individual page types (seasonal calendar, weekly pages, etc.)
+4. **Layouts** - Declarative layout system with automatic sidebar management
+5. **Components** - Reusable UI elements with verb-based API
+6. **Themes** - Color scheme definitions (light, earth, dark)
+7. **Utilities** - Core helpers (grid system, date calculations, dot grids)
 
 ![System Overview](docs/system-overview.svg)
 
@@ -67,16 +69,49 @@ Layouts automatically:
 
 ![Layout System](docs/layout-system.svg)
 
-### Component Architecture
+### Component Verb System
 
-Reusable components encapsulate UI patterns:
+Components provide **verb methods** that pages can call directly for common rendering tasks. This creates a clean, declarative API where pages describe what to render rather than how.
 
+**Architecture:**
+- Each component defines a `Mixin` module with its verb method(s)
+- `Components::All` aggregates all mixins
+- `Pages::Base` includes `Components::All`, giving all pages access to verbs
+
+**Available verbs:**
+```ruby
+# Content components
+h1(col, row, content, **opts)           # Large heading
+h2(col, row, content, **opts)           # Medium heading
+text(col, row, content, **opts)         # Text at grid position
+ruled_lines(col, row, w, h, **opts)     # Horizontal ruled lines
+ruled_list(col, row, w, h, **opts)      # Numbered/bulleted list
+mini_month(col, row, year, month)       # Compact month calendar
+fieldset(position:, legend:, **opts)    # Bordered section with legend
+
+# Drawing components
+box(col, row, w, h, **opts)             # Rectangle outline/fill
+hline(col, row, width, **opts)          # Horizontal line
+vline(col, row, height, **opts)         # Vertical line
+grid_dots(col, row, w, h, **opts)       # Dot grid overlay
+erase_dots(col, row, w, h)              # White rectangle to hide dots
+```
+
+**Usage in pages:**
+```ruby
+class MyPage < Pages::Base
+  def render
+    h1(5, 2, "Title")
+    ruled_lines(5, 5, 30, 20)
+    fieldset(position: :top_left, legend: "Notes")
+  end
+end
+```
+
+**Navigation components** (used by layouts, not verbs):
 - **WeekSidebar** - Vertical week list with month indicators
-- **NavigationTabs** - Rotated tabs for year pages
-- **Fieldset** - HTML-like `<fieldset>` boxes with legend labels
-- **SeasonLabel** - Rotated text labels for seasonal sections
-
-Components receive a `RenderContext` with PDF object, coordinates, and page state.
+- **RightSidebar** - Rotated tabs for year/grid pages
+- **TopNavigation** - Previous/next week buttons
 
 ![Component Hierarchy](docs/component-hierarchy.svg)
 
@@ -84,43 +119,39 @@ Components receive a `RenderContext` with PDF object, coordinates, and page stat
 
 ![Page Generation Flow](docs/page-generation-flow.svg)
 
-### PlannerGenerator (`lib/bujo_pdf/planner_generator.rb`)
+### DSL Classes (`lib/bujo_pdf/dsl/`)
 
-**Responsibility**: Generate a complete planner PDF for a specified year
+**Builder** (`builder.rb`)
+- Entry point for defining planners
+- Creates Context and manages PDF generation lifecycle
+- Loads configuration (dates, calendars, collections)
 
-**Main flow** (`generate` method):
-1. Create reusable dot grid stamp (reduces file size ~90%)
-2. Generate overview pages (seasonal, year events, year highlights, multi-year)
-3. Generate weekly pages (52-53 depending on year)
-4. Generate template pages (reference, blank dots)
-5. Build PDF outline/bookmarks
+**Context** (`context.rb`)
+- Runtime state container (pdf, year, theme, grid_system)
+- Provides component instantiation methods
+- Manages current page state during rendering
 
-### PageFactory (`lib/bujo_pdf/page_factory.rb`)
+**PageRegistry** (`registry.rb`)
+- Tracks all pages and their named destinations
+- Supports page grouping for outline generation
+- Enables `outline: true` flag for automatic bookmark inclusion
 
-**Responsibility**: Create page instances with dependency injection
+**Configuration** (`dsl/configuration/`)
+- `Dates` - Load dates.yml for special dates
+- `Calendars` - Load calendars.yml and fetch iCal events
+- `Collections` - Load collections.yml for custom collection pages
 
-Maps page types to classes:
-- `:seasonal` → `Pages::SeasonalCalendar`
-- `:year_events` → `Pages::YearEvents`
-- `:year_highlights` → `Pages::YearHighlights`
-- `:weekly` → `Pages::WeeklyPage`
-- `:reference` → `Pages::ReferencePage`
-- `:dots` → `Pages::BlankDots`
+**Runtime** (`dsl/runtime/`)
+- `PageFactory` - Create page instances with dependency injection
+- `RenderContext` - Immutable context passed to renderers
+- `ComponentContext` - Context for component instantiation
 
-### RenderContext (`lib/bujo_pdf/render_context.rb`)
+### PDFs (Recipes) (`lib/bujo_pdf/pdfs/`)
 
-**Responsibility**: Immutable context object passed to all renderers
-
-Contains:
-- PDF object
-- Year and week information
-- Page tracking (current page, total pages)
-- Destination/navigation info
-
-Provides helper methods:
-- `current_page?(type)` - Check if on a specific page type
-- `weekly_page?` - Check if on a weekly page
-- `destination(type)` - Get named destination string
+**StandardPlanner** (`standard_planner.rb`)
+- Complete planner recipe defining all pages
+- Page ordering and grouping for outline
+- Configuration of index pages, future log, reviews, etc.
 
 ### DateCalculator (`lib/bujo_pdf/utilities/date_calculator.rb`)
 
@@ -158,47 +189,96 @@ Draws dots at every grid intersection (43×55 = 2,365 dots per page).
 
 ## Page Types
 
-### Seasonal Calendar (`lib/bujo_pdf/pages/seasonal_calendar.rb`)
+### Front Matter Pages
 
+**Index Pages** (`index_pages.rb`)
+- Numbered blank pages for hand-built table of contents
+- Ruled entry lines with page number boxes
+- Named destinations: `index_1`, `index_2`, etc.
+
+**Future Log** (`future_log.rb`)
+- 6-month spread for events beyond current planning horizon
+- 3 months per page (2 pages default)
+- Named destinations: `future_log_1`, `future_log_2`
+
+**Collection Pages** (`collection_page.rb`)
+- User-configured titled pages for custom collections
+- Examples: "Books to Read", "Project Ideas"
+- Configured via `config/collections.yml`
+- Named destinations: `collection_<id>`
+
+**Monthly Review** (`monthly_review.rb`)
+- Prompt-based templates for monthly reflection
+- Three sections: What Worked, What Didn't, Focus for Next Month
+- One page per month (12 pages total)
+- Named destinations: `review_1` through `review_12`
+
+**Quarterly Planning** (`quarterly_planning.rb`)
+- 12-week planning cycles inspired by "12 Week Year"
+- Goals section with numbered prompts
+- 12-week grid with links to weekly pages
+- Named destinations: `quarter_1` through `quarter_4`
+
+### Year Overview Pages
+
+**Seasonal Calendar** (`seasonal_calendar.rb`)
 - Four seasons in quadrants with fieldset borders
 - Mini month calendars with clickable dates
 - Each date links to its corresponding weekly page
-- Rotated season labels
 
-### Year-at-a-Glance (`lib/bujo_pdf/pages/year_events.rb`, `year_highlights.rb`)
-
-- 12 columns (months) × 31 rows (days)
+**Year-at-a-Glance** (`year_events.rb`, `year_highlights.rb`)
+- 12 columns (months) x 31 rows (days)
 - Day numbers with day-of-week abbreviations
 - Each cell links to corresponding weekly page
-- Uses standard layout with navigation tabs
 
-### Multi-Year Overview (`lib/bujo_pdf/pages/multi_year_overview.rb`)
-
+**Multi-Year Overview** (`multi_year_overview.rb`)
 - Spans multiple years with monthly groupings
-- Color-coded or formatted for long-term planning
 - Provides context beyond the current year
 
-### Weekly Pages (`lib/bujo_pdf/pages/weekly_page.rb`)
+**Tracker Example** (`tracker_example.rb`)
+- "Show, don't prescribe" example of grid usage
+- Habit tracker with 31-day grid
+- Mood/energy log examples
 
-- **Daily section** (17.5% of usable height): 7 columns for Mon-Sun
+### Weekly Pages (`weekly_page.rb`)
+
+- **Daily section** (17.5%): 7 columns for Mon-Sun
 - **Cornell notes section** (82.5%):
   - Cues column (25%)
   - Notes column (75%)
-  - Summary area (20% of section)
+  - Summary area (20%)
 - Navigation: previous/next week, back to year overview
-- Time period labels (AM/PM/EVE) on Monday column
+- Time period labels (AM/PM/EVE)
 
-### Reference Page (`lib/bujo_pdf/pages/reference_page.rb`)
+### Grid Template Pages (`pages/grids/`)
+
+**Grid Showcase** (`grid_showcase.rb`)
+- All grid types in quadrants (entry point)
+
+**Grids Overview** (`grids_overview.rb`)
+- Clickable samples of basic grids
+
+**Individual Grid Pages:**
+- `dot_grid_page.rb` - Full-page 5mm dot grid
+- `graph_grid_page.rb` - Full-page 5mm square grid
+- `lined_grid_page.rb` - Full-page 10mm ruled lines
+- `isometric_grid_page.rb` - 30-60-90 degree diamond grid
+- `perspective_grid_page.rb` - 1-point perspective with guides
+- `hexagon_grid_page.rb` - Tessellating flat-top hexagons
+
+### Wheel Pages
+
+**Daily Wheel** (`daily_wheel.rb`)
+- Circular daily planning template
+
+**Year Wheel** (`year_wheel.rb`)
+- Circular year-at-a-glance visualization
+
+### Reference Page (`reference_calibration.rb`)
 
 - Grid calibration with measurements
 - Centimeter markings along edges
-- Grid system documentation
 - Coordinate system reference
-
-### Blank Dots (`lib/bujo_pdf/pages/blank_dots.rb`)
-
-- Simple full-page dot grid template
-- No chrome or navigation
 
 ## Navigation System
 
@@ -236,34 +316,118 @@ grid_link(col, row, width_boxes, height_boxes, "week_1")
 
 ```
 lib/bujo_pdf/
-├── planner_generator.rb      # Main orchestrator
-├── page_factory.rb            # Page creation with DI
-├── render_context.rb          # Immutable context object
 ├── constants.rb               # Layout constants
+│
+├── dsl/                       # DSL for planner definition
+│   ├── builder.rb             # Entry point for planners
+│   ├── context.rb             # Runtime state container
+│   ├── registry.rb            # Page registration and destinations
+│   ├── definition.rb          # Base planner definition
+│   ├── metadata.rb            # PDF metadata
+│   ├── outline.rb             # PDF outline/bookmarks
+│   ├── page_declaration.rb    # Page declaration helpers
+│   ├── week.rb                # Week-related DSL methods
+│   ├── inline_page.rb         # Inline page definitions
+│   ├── configuration/         # Config file loaders
+│   │   ├── dates.rb           # dates.yml loader
+│   │   ├── collections.rb     # collections.yml loader
+│   │   ├── calendars.rb       # calendars.yml loader
+│   │   └── calendars/         # iCal integration
+│   │       ├── config_loader.rb
+│   │       ├── event.rb
+│   │       ├── event_store.rb
+│   │       ├── ical_fetcher.rb
+│   │       ├── ical_parser.rb
+│   │       └── recurring_event_expander.rb
+│   └── runtime/               # Execution-time support
+│       ├── component_context.rb
+│       ├── page_factory.rb
+│       ├── page_ref.rb
+│       ├── page_set.rb
+│       ├── page_set_context.rb
+│       └── render_context.rb
+│
+├── pdfs/                      # Planner recipes
+│   └── standard_planner.rb    # Standard planner recipe
+│
+├── base/                      # User extension points
+│   ├── component.rb           # Base component class
+│   └── layout.rb              # Base layout class
+│
 ├── pages/                     # Page implementations
 │   ├── base.rb
+│   ├── all.rb                 # Page class aggregator
 │   ├── seasonal_calendar.rb
 │   ├── year_events.rb
 │   ├── year_highlights.rb
 │   ├── multi_year_overview.rb
 │   ├── weekly_page.rb
-│   ├── reference_page.rb
-│   └── blank_dots.rb
+│   ├── index_pages.rb
+│   ├── future_log.rb
+│   ├── collection_page.rb
+│   ├── monthly_review.rb
+│   ├── quarterly_planning.rb
+│   ├── tracker_example.rb
+│   ├── grid_showcase.rb
+│   ├── grids_overview.rb
+│   ├── daily_wheel.rb
+│   ├── year_wheel.rb
+│   ├── reference_calibration.rb
+│   └── grids/                 # Grid template pages
+│       ├── dot_grid_page.rb
+│       ├── graph_grid_page.rb
+│       ├── lined_grid_page.rb
+│       ├── isometric_grid_page.rb
+│       ├── perspective_grid_page.rb
+│       └── hexagon_grid_page.rb
+│
 ├── layouts/                   # Layout system
 │   ├── base_layout.rb
 │   ├── full_page_layout.rb
 │   ├── standard_with_sidebars_layout.rb
 │   └── layout_factory.rb
-├── components/                # Reusable UI components
+│
+├── components/                # Reusable UI components (verb pattern)
+│   ├── all.rb                 # Mixin aggregator
+│   ├── sub_component_base.rb  # Base for sub-components
+│   │                          # Navigation (used by layouts)
 │   ├── week_sidebar.rb
-│   ├── navigation_tabs.rb
+│   ├── right_sidebar.rb
+│   ├── top_navigation.rb
+│   │                          # Content verbs
+│   ├── text.rb
+│   ├── h1.rb
+│   ├── h2.rb
 │   ├── fieldset.rb
-│   └── season_label.rb
+│   ├── ruled_lines.rb
+│   ├── ruled_list.rb
+│   ├── mini_month.rb
+│   │                          # Drawing verbs
+│   ├── box.rb
+│   ├── hline.rb
+│   ├── vline.rb
+│   ├── grid_dots.rb
+│   ├── erase_dots.rb
+│   │                          # Specialized
+│   ├── cornell_notes.rb
+│   ├── daily_section.rb
+│   ├── day_header.rb
+│   ├── week_column.rb
+│   ├── week_grid.rb
+│   ├── grid_ruler.rb
+│   ├── todo_list.rb
+│   └── layout_helpers.rb
+│
+├── themes/                    # Color themes
+│   ├── theme_registry.rb
+│   ├── light.rb
+│   ├── earth.rb
+│   └── dark.rb
+│
 └── utilities/                 # Core helpers
     ├── grid_system.rb
     ├── date_calculator.rb
-    ├── dot_grid.rb
-    └── style_helpers.rb
+    └── grid_renderers/        # Specialized grid renderers
 ```
 
 ## Design Principles
@@ -335,29 +499,93 @@ Links use absolute coordinates calculated once, no repeated conversions.
 
 Uses PDF built-in fonts (Helvetica) to reduce file size.
 
+## Themes System
+
+The themes system provides color scheme definitions:
+
+```ruby
+# lib/bujo_pdf/themes/
+├── theme_registry.rb  # Registry for theme lookup
+├── light.rb           # Light theme (default)
+├── earth.rb           # Earth-toned theme
+└── dark.rb            # Dark theme
+```
+
+**Theme structure:**
+```ruby
+module BujoPdf::Themes
+  class Light
+    DOT_COLOR = 'CCCCCC'
+    BORDER_COLOR = 'E5E5E5'
+    TEXT_COLOR = '333333'
+    WEEKEND_BG = 'FAFAFA'
+    # ...
+  end
+end
+```
+
+**Usage:**
+```ruby
+BujoPdf::DSL::Builder.build(year: 2025, theme: :earth) do
+  # planner definition
+end
+```
+
 ## Extension Points
 
 ### Adding New Page Types
 
 1. Create page class in `lib/bujo_pdf/pages/`
 2. Inherit from `Pages::Base`
-3. Implement `render(content_area)` method
-4. Register in `PageFactory`
-5. Add to generator flow
+3. Implement `render` method using component verbs
+4. Add to planner recipe in `lib/bujo_pdf/pdfs/`
+5. Register named destination in DSL definition
 
 ### Creating New Layouts
 
 1. Create layout class in `lib/bujo_pdf/layouts/`
-2. Inherit from `BaseLayout`
+2. Inherit from `BaseLayout` (or `Base::Layout`)
 3. Implement `calculate_content_area` and `render_chrome` methods
 4. Register symbol in `LayoutFactory`
 
-### Adding Components
+### Adding Components (Verb Pattern)
 
 1. Create component class in `lib/bujo_pdf/components/`
-2. Implement `render(context)` method
-3. Mix in `Utilities::GridSystem` if needed
-4. Use from pages or layouts
+2. Define a `Mixin` module with verb method(s)
+3. Implement `render` method in the main class
+4. Add mixin to `Components::All`
+5. Verb becomes available to all pages
+
+```ruby
+# Example: Adding a new component
+module BujoPdf::Components
+  class MyComponent
+    module Mixin
+      def my_verb(col, row, **opts)
+        MyComponent.new(pdf: @pdf, grid: @grid_system, **opts).render
+      end
+    end
+
+    def initialize(pdf:, grid:, **opts)
+      @pdf = pdf
+      @grid = grid
+    end
+
+    def render
+      # drawing operations
+    end
+  end
+end
+
+# In components/all.rb:
+base.include MyComponent::Mixin
+```
+
+### Creating Custom Themes
+
+1. Create theme class in `lib/bujo_pdf/themes/`
+2. Define color constants matching existing themes
+3. Register in `ThemeRegistry`
 
 ## Debug Mode
 

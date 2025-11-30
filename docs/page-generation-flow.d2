@@ -1,6 +1,6 @@
 direction: down
 
-title: PDF Generation Flow {
+title: PDF Generation Flow (DSL-Based) {
   near: top-center
   shape: text
   style: {
@@ -10,10 +10,32 @@ title: PDF Generation Flow {
 }
 
 user: User {shape: person}
-cli: gen.rb {shape: rectangle}
-generator: PlannerGenerator {
-  shape: hexagon
+cli: bin/bujo-pdf {shape: rectangle}
+
+# DSL Layer
+dsl: DSL Layer {
+  shape: package
   style.fill: "#e3f2fd"
+
+  builder: Builder {
+    desc: "Entry point for planner definition"
+  }
+  context: Context {
+    desc: "Runtime state (pdf, year, theme)"
+  }
+  registry: PageRegistry {
+    desc: "Tracks all pages & destinations"
+  }
+}
+
+# Configuration
+config: Configuration {
+  shape: package
+  style.fill: "#fff9c4"
+
+  dates: dates.yml {shape: document}
+  calendars: calendars.yml {shape: document}
+  collections: collections.yml {shape: document}
 }
 
 pdf_doc: PDF Document {
@@ -21,36 +43,39 @@ pdf_doc: PDF Document {
   style.fill: "#fff3e0"
 }
 
-# Generation steps
-step1: 1. Set up named destinations {
+# Page Generation Phases
+phase1: Phase 1: Front Matter {
+  shape: step
+  style.fill: "#e8f5e9"
+
+  pages: |md
+    - Index Pages (4)
+    - Future Log (2)
+    - Collection Pages
+    - Monthly Reviews (12)
+    - Quarterly Planning (4)
+  |
+}
+
+phase2: Phase 2: Year Overview {
+  shape: step
+  style.fill: "#e8f5e9"
+
+  pages: |md
+    - Seasonal Calendar
+    - Year Events
+    - Year Highlights
+    - Multi-Year Overview
+    - Tracker Example
+  |
+}
+
+phase3: Phase 3: Weekly Pages {
   shape: step
   style.fill: "#e8f5e9"
 }
 
-step2: 2. Generate seasonal calendar {
-  shape: step
-  style.fill: "#e8f5e9"
-}
-
-step3: 3. Generate year-at-a-glance {
-  shape: step
-  style.fill: "#e8f5e9"
-}
-
-step3a: Events grid {shape: rectangle}
-step3b: Highlights grid {shape: rectangle}
-
-step4: 4. Generate reference page {
-  shape: step
-  style.fill: "#e8f5e9"
-}
-
-step5: 5. Generate weekly pages {
-  shape: step
-  style.fill: "#e8f5e9"
-}
-
-step5_detail: Loop 52-53 times {
+phase3_loop: "Loop 52-53 weeks" {
   shape: rectangle
   style: {
     stroke-dash: 3
@@ -58,14 +83,38 @@ step5_detail: Loop 52-53 times {
   }
 }
 
-step6: 6. Generate blank dots {
+phase4: Phase 4: Grid Templates {
   shape: step
   style.fill: "#e8f5e9"
+
+  pages: |md
+    - Grid Showcase
+    - Grids Overview
+    - Dot Grid
+    - Graph Grid
+    - Lined Grid
+    - Isometric Grid
+    - Perspective Grid
+    - Hexagon Grid
+  |
 }
 
-step7: 7. Build PDF outline {
+phase5: Phase 5: Wheels & Templates {
   shape: step
   style.fill: "#e8f5e9"
+
+  pages: |md
+    - Daily Wheel
+    - Year Wheel
+    - Reference Page
+  |
+}
+
+outline: Build PDF Outline {
+  shape: step
+  style.fill: "#f3e5f5"
+
+  desc: "Nested bookmarks from\nPageRegistry with outline: true"
 }
 
 output: planner_YYYY.pdf {
@@ -87,25 +136,25 @@ success: Generation complete {
 }
 
 # Flow connections
-user -> cli: ruby gen.rb 2025
-cli -> generator: PlannerGenerator.new(2025)
-generator -> pdf_doc: create PDF document
+user -> cli: bin/bujo-pdf 2025
+cli -> dsl.builder: load planner recipe
 
-pdf_doc -> step1: add named destinations\n(seasonal, year_events, week_N, etc)
-step1 -> step2: start page generation
+config.dates -> dsl.builder: load dates
+config.calendars -> dsl.builder: load calendar events
+config.collections -> dsl.builder: load collection pages
 
-step2 -> step3: seasonal calendar page complete
-step3 -> step3a: generate events page
-step3 -> step3b: generate highlights page
-step3a -> step4: year pages complete
-step3b -> step4: year pages complete
+dsl.builder -> dsl.context: create context (pdf, year, theme)
+dsl.builder -> dsl.registry: register all pages
+dsl.context -> pdf_doc: create PDF document
 
-step4 -> step5: reference page complete
-step5 -> step5_detail: for each week in year
-step5_detail -> step5_detail: create WeeklyPage\nwith navigation links
-step5_detail -> step6: all weeks complete
+pdf_doc -> phase1: generate front matter
+phase1 -> phase2: front matter complete
+phase2 -> phase3: year overview complete
+phase3 -> phase3_loop: for each week in year
+phase3_loop -> phase4: all weeks complete
+phase4 -> phase5: grid templates complete
+phase5 -> outline: wheels/templates complete
 
-step6 -> step7: blank dots template complete
-step7 -> output: add bookmarks\nsave to disk
+outline -> output: add bookmarks\nsave to disk
 output -> success: file written
 success -> user: planner ready
