@@ -35,7 +35,7 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   theme theme if theme
 
   # 1. Front matter: Seasonal calendar, Index, Future log
-  page :seasonal, id: :seasonal, year: year, outline: 'Seasonal Calendar'
+  page :seasonal, id: :seasonal, year: year, outline: true
 
   # Index pages (2 pages with numbered lines for TOC entries)
   2.times do |i|
@@ -43,7 +43,7 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
          index_page_num: i + 1,
          index_page_count: 2,
          year: year,
-         outline: i.zero? ? 'Index' : nil
+         outline: i.zero?  # Only first page gets outline entry
   end
 
   # Future log pages (2 pages covering 12 months)
@@ -53,13 +53,13 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
          future_log_page_count: 2,
          future_log_start_month: (i * 6) + 1,
          year: year,
-         outline: i.zero? ? 'Future Log' : nil
+         outline: i.zero?  # Only first page gets outline entry
   end
 
   # 2. Year overview pages
-  page :year_events, id: :year_events, year: year, outline: 'Year at a Glance - Events'
-  page :year_highlights, id: :year_highlights, year: year, outline: 'Year at a Glance - Highlights'
-  page :multi_year, id: :multi_year, year: year, year_count: 4, outline: 'Multi-Year Overview'
+  page :year_events, id: :year_events, year: year, outline: true
+  page :year_highlights, id: :year_highlights, year: year, outline: true
+  page :multi_year, id: :multi_year, year: year, year_count: 4, outline: true
 
   # 3. Weekly pages with interleaved monthly reviews and quarterly planning
   generated_months = []

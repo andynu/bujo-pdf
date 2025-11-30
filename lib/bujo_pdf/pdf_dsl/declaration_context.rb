@@ -43,20 +43,42 @@ module BujoPdf
       #
       # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       # @param id [Symbol, nil] Optional explicit page ID
-      # @param outline [String, nil] Optional outline entry title
+      # @param outline [String, Boolean, nil] Outline entry:
+      #   - String: Use as the outline entry title
+      #   - true: Auto-derive title from page class's registered title
+      #   - nil/false: No outline entry
       # @param params [Hash] Parameters for the page
       # @return [PageDeclaration] The created declaration
       #
       # @example Simple page
       #   page :seasonal_calendar, year: 2025
       #
-      # @example With outline entry
+      # @example With explicit outline title
       #   page :seasonal, id: :seasonal, outline: 'Seasonal Calendar'
+      #
+      # @example Auto-derive outline title from page registration
+      #   page :seasonal, id: :seasonal, outline: true
+      #   # Uses the title from: register_page :seasonal, title: "Seasonal Calendar"
       #
       # @example No outline entry (omitted)
       #   page :index, id: :index_2  # No outline
       def page(type, id: nil, outline: nil, **params)
-        decl = PageDeclaration.new(type, id: id, outline: outline, **params)
+        # Resolve outline: true to the page class's registered title
+        outline_title = case outline
+        when true
+          page_class = PageFactory.registry[type]
+          if page_class&.respond_to?(:generate_title)
+            page_class.generate_title(params) || type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+          else
+            type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+          end
+        when String
+          outline
+        else
+          nil
+        end
+
+        decl = PageDeclaration.new(type, id: id, outline: outline_title, **params)
 
         if @current_group
           @current_group.add_page(decl)
@@ -65,8 +87,8 @@ module BujoPdf
         @pages << decl
 
         # Add outline entry if specified
-        if outline
-          add_outline_entry(OutlineDeclaration.new(title: outline, dest: id || type))
+        if outline_title
+          add_outline_entry(OutlineDeclaration.new(title: outline_title, dest: id || type))
         end
 
         decl
