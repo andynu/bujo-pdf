@@ -52,18 +52,18 @@ class TestWeek < Minitest::Test
   end
 
   def test_quarter_calculation
-    # Q1: Jan-Mar
-    assert_equal 1, BujoPdf::Week.new(year: 2025, number: 2).quarter  # January
-    assert_equal 1, BujoPdf::Week.new(year: 2025, number: 10).quarter # March
+    # Q1: Jan-Mar (weeks starting in those months)
+    assert_equal 1, BujoPdf::Week.new(year: 2025, number: 2).quarter   # Jan 6
+    assert_equal 1, BujoPdf::Week.new(year: 2025, number: 10).quarter  # Mar 3
 
     # Q2: Apr-Jun
-    assert_equal 2, BujoPdf::Week.new(year: 2025, number: 14).quarter # April
+    assert_equal 2, BujoPdf::Week.new(year: 2025, number: 15).quarter  # Apr 7
 
     # Q3: Jul-Sep
-    assert_equal 3, BujoPdf::Week.new(year: 2025, number: 27).quarter # July
+    assert_equal 3, BujoPdf::Week.new(year: 2025, number: 28).quarter  # Jul 7
 
     # Q4: Oct-Dec
-    assert_equal 4, BujoPdf::Week.new(year: 2025, number: 40).quarter # October
+    assert_equal 4, BujoPdf::Week.new(year: 2025, number: 41).quarter  # Oct 6
   end
 
   def test_month_name
