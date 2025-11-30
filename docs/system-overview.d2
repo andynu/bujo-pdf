@@ -9,30 +9,65 @@ title: BujoPDF System Architecture {
   }
 }
 
-# Main orchestrator
-generator: PlannerGenerator {
-  shape: hexagon
+# DSL Layer - Entry point for defining planners
+dsl: DSL Module {
+  shape: package
   style: {
     fill: "#e3f2fd"
     stroke: "#1976d2"
     stroke-width: 2
   }
+
+  builder: Builder
+  context: Context
+  registry: PageRegistry
+
+  configuration: Configuration {
+    calendars: Calendars
+    dates: Dates
+    collections: Collections
+  }
+
+  runtime: Runtime {
+    component_ctx: ComponentContext
+    page_factory: PageFactory
+    render_ctx: RenderContext
+  }
 }
 
-# Core modules
+# Recipes - Complete planner definitions
+pdfs: PDFs (Recipes) {
+  shape: package
+  style.fill: "#e1f5fe"
+
+  standard: StandardPlanner
+}
+
+# Pages Module
 pages: Pages Module {
   shape: package
   style.fill: "#fff3e0"
 
+  base: Base
   seasonal: SeasonalCalendar
   year_events: YearEvents
   year_highlights: YearHighlights
   weekly: WeeklyPage
-  reference: ReferencePage
-  blank: BlankDotsPage
-  base: Base
+  index: IndexPages
+  future_log: FutureLog
+  collection: CollectionPage
+  review: MonthlyReview
+  quarterly: QuarterlyPlanning
+
+  grids: Grids Namespace {
+    dot: DotGridPage
+    graph: GraphGridPage
+    lined: LinedGridPage
+    iso: IsometricGridPage
+  }
 }
 
+# Layouts Module
 layouts: Layouts Module {
   shape: package
   style.fill: "#f3e5f5"
@@ -43,22 +78,66 @@ layouts: Layouts Module {
   factory: LayoutFactory
 }
 
+# Components Module - with verb pattern
 components: Components Module {
   shape: package
   style.fill: "#e8f5e9"
 
-  week_sidebar: WeekSidebar
-  nav_tabs: NavigationTabs
-  fieldset: Fieldset
-  dot_grid: DotGrid
+  all: "All (Mixin aggregator)"
+
+  navigation: Navigation {
+    week_sidebar: WeekSidebar
+    right_sidebar: RightSidebar
+    top_nav: TopNavigation
+  }
+
+  content: Content {
+    fieldset: Fieldset
+    text: Text
+    h1: H1
+    h2: H2
+    ruled_lines: RuledLines
+    ruled_list: RuledList
+    mini_month: MiniMonth
+  }
+
+  drawing: Drawing {
+    box: Box
+    hline: HLine
+    vline: VLine
+    grid_dots: GridDots
+    erase_dots: EraseDots
+  }
 }
 
-utilities: Utilities Module {
+# Base Module - User extension points
+base: Base Module {
   shape: package
   style.fill: "#fce4ec"
 
+  component: Component (base class)
+  layout: Layout (base class)
+}
+
+# Themes Module
+themes: Themes Module {
+  shape: package
+  style.fill: "#fff9c4"
+
+  registry: ThemeRegistry
+  light: Light
+  earth: Earth
+  dark: Dark
+}
+
+# Utilities Module
+utilities: Utilities Module {
+  shape: package
+  style.fill: "#f3e5f5"
+
   grid_system: GridSystem
   date_calc: DateCalculator
+  grid_renderers: GridRenderers
 }
 
 prawn: Prawn PDF Library {
@@ -77,44 +156,43 @@ output: planner_YYYY.pdf {
   }
 }
 
-# Main orchestration flow
-generator -> pages: creates pages
-generator -> layouts.factory: requests layouts
-generator -> prawn: generates PDF
-generator -> output: saves file
+# DSL orchestrates everything
+pdfs.standard -> dsl.builder: defines planner
+dsl.builder -> dsl.context: creates context
+dsl.builder -> dsl.registry: registers pages
+dsl.configuration -> dsl.builder: provides config
+dsl.runtime -> pages: creates pages
 
-# Page dependencies
+# Pages use components via verbs
+pages.base -> components.all: includes verb mixins
+components.all -> components.content: aggregates mixins
+components.all -> components.drawing: aggregates mixins
+components.all -> components.navigation: aggregates mixins
+
+# Page/Layout relationships
 pages.base -> layouts.base_layout: uses layout system
-pages.seasonal -> components: uses components
-pages.year_events -> components: uses components
-pages.year_highlights -> components: uses components
-pages.weekly -> components: uses components
-pages.reference -> utilities.grid_system: visualizes grid
-pages.blank -> components.dot_grid: renders dots
-
-# Layout relationships
 layouts.factory -> layouts.full_page: creates
 layouts.factory -> layouts.standard_sidebars: creates
-layouts.base_layout <- layouts.full_page: inherits
-layouts.base_layout <- layouts.standard_sidebars: inherits
-layouts.standard_sidebars -> components.week_sidebar: renders
-layouts.standard_sidebars -> components.nav_tabs: renders
+layouts.standard_sidebars -> components.navigation: renders sidebars
 
-# Component dependencies
-components.week_sidebar -> utilities.grid_system: positioning
-components.nav_tabs -> utilities.grid_system: positioning
-components.fieldset -> utilities.grid_system: positioning
-components.dot_grid -> utilities.grid_system: positioning
+# Base module provides extension points
+base.component -> components: subclassed by
+base.layout -> layouts: subclassed by
 
-# Utility usage
-pages.base -> utilities.grid_system: coordinate calculations
-pages.base -> utilities.date_calc: week/date logic
-generator -> utilities.date_calc: year structure
+# Theme integration
+themes.registry -> dsl.context: provides colors
+themes.registry -> components: provides styling
+
+# Utilities used throughout
+pages.base -> utilities.grid_system: coordinates
+pages.base -> utilities.date_calc: date logic
+components -> utilities.grid_system: positioning
 
 # Prawn integration
-pages.base -> prawn: drawing operations
-layouts.base_layout -> prawn: drawing operations
-components.week_sidebar -> prawn: drawing operations
-components.nav_tabs -> prawn: drawing operations
-components.fieldset -> prawn: drawing operations
-components.dot_grid -> prawn: drawing operations
+dsl.runtime -> prawn: PDF operations
+pages.base -> prawn: drawing
+layouts.base_layout -> prawn: drawing
+components -> prawn: drawing
+
+# Output
+dsl.builder -> output: saves file

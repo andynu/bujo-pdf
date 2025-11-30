@@ -9,43 +9,63 @@ This document provides a comprehensive overview of the bujo-pdf planner generato
 3. [Layout System](#layout-system)
 4. [Component Hierarchy](#component-hierarchy)
 5. [Grid System](#grid-system)
-6. [Design Principles](#design-principles)
-7. [Key Patterns](#key-patterns)
+6. [Themes System](#themes-system)
+7. [Design Principles](#design-principles)
+8. [Key Patterns](#key-patterns)
 
 ---
 
 ## System Overview
 
-The bujo-pdf generator is built on a modular architecture with clear separation of concerns across five main modules.
+The bujo-pdf generator is built on a modular architecture with clear separation of concerns across seven main modules.
 
 ![System Overview](system-overview.svg)
 
 ### Core Modules
 
-**PlannerGenerator** - Central orchestrator that coordinates the entire PDF generation process. Manages the Prawn PDF document, sets up named destinations, and delegates to specialized page generators.
+**DSL Module** - Declarative planner definition system:
+- `Builder` - Entry point for defining planners
+- `Context` - Runtime state container (pdf, year, theme, grid)
+- `Registry` - Page registration and named destinations
+- `Configuration` - Config file loaders (dates, calendars, collections)
+- `Runtime` - Execution-time support (page factory, render context)
 
-**Pages Module** - Contains specialized page classes, each responsible for rendering a specific page type:
-- `SeasonalCalendar` - Four-season calendar overview with mini month calendars
-- `YearEvents` / `YearHighlights` - 12×31 grids for tracking events and highlights
-- `WeeklyPage` - Weekly spread with daily sections and Cornell notes
-- `ReferencePage` - Grid calibration and system documentation
-- `BlankDotsPage` - Template page with dot grid
+**PDFs (Recipes)** - Complete planner definitions:
+- `StandardPlanner` - Default planner recipe with all page types
 
-**Layouts Module** - Declarative layout system that handles page chrome (sidebars, navigation):
+**Pages Module** - Specialized page classes:
+- Front Matter: `IndexPages`, `FutureLog`, `CollectionPage`, `MonthlyReview`, `QuarterlyPlanning`
+- Year Overview: `SeasonalCalendar`, `YearEvents`, `YearHighlights`, `MultiYearOverview`, `TrackerExample`
+- Weekly: `WeeklyPage` with Cornell notes layout
+- Grids: `GridShowcase`, `GridsOverview`, `DotGridPage`, `GraphGridPage`, `LinedGridPage`, `IsometricGridPage`, `PerspectiveGridPage`, `HexagonGridPage`
+- Wheels: `DailyWheel`, `YearWheel`
+- Reference: `ReferenceCalibration`
+
+**Layouts Module** - Declarative layout system:
 - `BaseLayout` - Abstract base with lifecycle hooks
 - `FullPageLayout` - No sidebars, full page content
 - `StandardWithSidebarsLayout` - Week sidebar + navigation tabs
 - `LayoutFactory` - Creates layout instances by symbol name
 
-**Components Module** - Reusable UI components:
-- `WeekSidebar` - Vertical week list with month indicators and click targets
-- `NavigationTabs` - Rotated tabs for year overview pages
-- `Fieldset` - Bordered sections with legend labels (HTML-like `<fieldset>`)
-- `DotGrid` - Dot grid background renderer
+**Components Module** - Reusable UI components with verb pattern:
+- `All` - Mixin aggregator for all component verbs
+- Navigation: `WeekSidebar`, `RightSidebar`, `TopNavigation`
+- Content verbs: `Text`, `H1`, `H2`, `Fieldset`, `RuledLines`, `RuledList`, `MiniMonth`
+- Drawing verbs: `Box`, `HLine`, `VLine`, `GridDots`, `EraseDots`
+- Specialized: `CornellNotes`, `DailySection`, `WeekGrid`, `TodoList`
 
-**Utilities Module** - Helper classes providing cross-cutting functionality:
+**Themes Module** - Color scheme definitions:
+- `ThemeRegistry` - Theme lookup by symbol
+- `Light`, `Earth`, `Dark` - Built-in themes
+
+**Base Module** - User extension points:
+- `Component` - Base class for custom components
+- `Layout` - Base class for custom layouts
+
+**Utilities Module** - Helper classes:
 - `GridSystem` - Grid-based coordinate system (43×55 grid)
 - `DateCalculator` - Week numbering and date calculations
+- `GridRenderers` - Specialized grid rendering utilities
 
 ---
 
@@ -133,56 +153,84 @@ end
 
 ## Component Hierarchy
 
-Components provide reusable rendering functionality that can be composed by layouts and pages.
+Components provide reusable rendering functionality using a **verb pattern**. Pages call verb methods directly instead of instantiating component classes.
 
 ![Component Hierarchy](component-hierarchy.svg)
 
-### Component Contracts
+### Verb Pattern Architecture
 
-Each component has a clear input/output contract:
-
-**WeekSidebar**
-- Inputs: `year`, `total_weeks`, `current_week` (highlight)
-- Outputs: Renders vertical week list with month labels and click targets
-- Grid usage: 3 columns wide, full height
-- Link targets: `week_N` named destinations
-
-**NavigationTabs**
-- Inputs: `highlight_tab` (`:year_events`, `:year_highlights`, or `nil`)
-- Outputs: Renders three rotated tabs for year overview pages
-- Grid usage: 1 column wide, divided into three sections
-- Link targets: `year_events`, `year_highlights`, `seasonal` destinations
-
-**Fieldset**
-- Inputs: `position`, `legend`, `border_inset`, `legend_offset`
-- Outputs: Renders HTML-like `<fieldset>` with legend label
-- Grid usage: Variable, specified by position bounds
-- Styling: Configurable rotation, stroke color, insets
-
-**DotGrid**
-- Inputs: `width`, `height` (in points)
-- Outputs: Renders dot grid at 5mm spacing
-- Grid usage: Fills specified area
-- Styling: Light gray dots (`COLOR_DOT_GRID`)
-
-### Component Composition
-
-Layouts compose components:
 ```ruby
-# StandardWithSidebarsLayout rendering sidebars
-WeekSidebar.new(@pdf, @grid).render(year: @year, total_weeks: @total_weeks, current_week: current_week)
-NavigationTabs.new(@pdf, @grid).render(highlight_tab: highlight_tab)
+# Components::All aggregates all mixins
+module Components::All
+  def self.included(base)
+    base.include GridDots::Mixin
+    base.include RuledLines::Mixin
+    base.include Text::Mixin
+    base.include H1::Mixin
+    # ... more mixins
+  end
+end
+
+# Pages::Base includes Components::All
+class Pages::Base
+  include Components::All
+  # Now pages can call verbs directly
+end
 ```
 
-Pages can also use components directly:
+### Content Verbs
+
+| Verb | Signature | Renders |
+|------|-----------|---------|
+| `h1` | `h1(col, row, text, **opts)` | Large heading |
+| `h2` | `h2(col, row, text, **opts)` | Medium heading |
+| `text` | `text(col, row, text, **opts)` | Text at position |
+| `ruled_lines` | `ruled_lines(col, row, w, h, **opts)` | Horizontal lines |
+| `ruled_list` | `ruled_list(col, row, w, h, **opts)` | Numbered list |
+| `mini_month` | `mini_month(col, row, year, month)` | Compact calendar |
+| `fieldset` | `fieldset(position:, legend:, **opts)` | Bordered section |
+
+### Drawing Verbs
+
+| Verb | Signature | Renders |
+|------|-----------|---------|
+| `box` | `box(col, row, w, h, **opts)` | Rectangle |
+| `hline` | `hline(col, row, width, **opts)` | Horizontal line |
+| `vline` | `vline(col, row, height, **opts)` | Vertical line |
+| `grid_dots` | `grid_dots(col, row, w, h, **opts)` | Dot overlay |
+| `erase_dots` | `erase_dots(col, row, w, h)` | White fill |
+
+### Navigation Components (Layout-managed)
+
+These components are used by layouts, not via verbs:
+
+**WeekSidebar**
+- Renders vertical week list with month labels
+- Links to `week_N` destinations
+- Highlights current week
+
+**RightSidebar**
+- Renders rotated tabs for year/grid pages
+- Supports multi-tap cycling through related pages
+
+**TopNavigation**
+- Renders prev/next week navigation buttons
+
+### Usage Example
+
 ```ruby
-# SeasonalCalendar using Fieldset
-Fieldset.new(@pdf, @grid).render(
-  position: :top_left,
-  legend: 'Winter',
-  border_inset: 0.5,
-  legend_offset: {col: 0.5, row: -0.3}
-)
+class MyPage < Pages::Base
+  def render
+    # Content verbs
+    h1(5, 2, "My Page Title")
+    ruled_lines(5, 5, 30, 20)
+    fieldset(position: :top_left, legend: "Notes")
+
+    # Drawing verbs
+    box(10, 25, 20, 10, stroke: true)
+    hline(5, 40, 30)
+  end
+end
 ```
 
 ---
@@ -260,6 +308,52 @@ Enable `DEBUG_GRID = true` in `lib/bujo_pdf/planner_generator.rb` to overlay dia
 - Red dots at grid intersections
 - Dashed red lines every 5 boxes
 - Coordinate labels showing `(col, row)`
+
+---
+
+## Themes System
+
+The themes module provides color scheme definitions that can be applied to planners:
+
+```ruby
+# Available themes
+:light  # Default - light gray dots, subtle borders
+:earth  # Warm earth tones
+:dark   # Dark theme for OLED-friendly viewing
+```
+
+### Theme Structure
+
+Each theme defines color constants:
+
+```ruby
+module BujoPdf::Themes
+  class Light
+    DOT_COLOR = 'CCCCCC'
+    BORDER_COLOR = 'E5E5E5'
+    TEXT_COLOR = '333333'
+    HEADER_COLOR = 'AAAAAA'
+    WEEKEND_BG = 'FAFAFA'
+  end
+end
+```
+
+### Theme Registry
+
+Themes are looked up via `ThemeRegistry`:
+
+```ruby
+theme = BujoPdf::Themes::ThemeRegistry.get(:earth)
+# => BujoPdf::Themes::Earth
+```
+
+### Usage
+
+```ruby
+BujoPdf::DSL::Builder.build(year: 2025, theme: :dark) do
+  # planner definition uses dark theme colors
+end
+```
 
 ---
 
@@ -363,29 +457,67 @@ use_layout :standard_with_sidebars  # Sidebar strategy
 
 ```
 lib/bujo_pdf/
-├── planner_generator.rb       # Main orchestrator
-├── pages/                      # Page classes
+├── constants.rb                 # Layout constants
+│
+├── dsl/                         # DSL for planner definition
+│   ├── builder.rb               # Entry point
+│   ├── context.rb               # Runtime state
+│   ├── registry.rb              # Page registration
+│   ├── configuration/           # Config loaders
+│   │   ├── dates.rb
+│   │   ├── collections.rb
+│   │   └── calendars/           # iCal integration
+│   └── runtime/                 # Execution support
+│       ├── component_context.rb
+│       ├── page_factory.rb
+│       └── render_context.rb
+│
+├── pdfs/                        # Planner recipes
+│   └── standard_planner.rb
+│
+├── base/                        # User extension points
+│   ├── component.rb
+│   └── layout.rb
+│
+├── pages/                       # Page classes
 │   ├── base.rb
+│   ├── all.rb                   # Aggregator
 │   ├── seasonal_calendar.rb
 │   ├── year_events.rb
-│   ├── year_highlights.rb
 │   ├── weekly_page.rb
-│   ├── reference_page.rb
-│   └── blank_dots_page.rb
-├── layouts/                    # Layout classes
+│   ├── index_pages.rb
+│   ├── future_log.rb
+│   ├── collection_page.rb
+│   ├── monthly_review.rb
+│   ├── quarterly_planning.rb
+│   └── grids/                   # Grid templates
+│       ├── dot_grid_page.rb
+│       ├── graph_grid_page.rb
+│       └── ...
+│
+├── layouts/                     # Layout classes
 │   ├── base_layout.rb
 │   ├── full_page_layout.rb
 │   ├── standard_with_sidebars_layout.rb
 │   └── layout_factory.rb
-├── components/                 # Reusable components
-│   ├── week_sidebar.rb
-│   ├── navigation_tabs.rb
-│   ├── fieldset.rb
-│   └── dot_grid.rb
-├── utilities/                  # Helper classes
-│   ├── grid_system.rb
-│   └── date_calculator.rb
-└── constants.rb               # Layout constants
+│
+├── components/                  # Components (verb pattern)
+│   ├── all.rb                   # Mixin aggregator
+│   ├── text.rb, h1.rb, h2.rb    # Content verbs
+│   ├── box.rb, hline.rb, vline.rb  # Drawing verbs
+│   ├── week_sidebar.rb          # Navigation
+│   └── ...
+│
+├── themes/                      # Color themes
+│   ├── theme_registry.rb
+│   ├── light.rb
+│   ├── earth.rb
+│   └── dark.rb
+│
+└── utilities/                   # Helper classes
+    ├── grid_system.rb
+    ├── date_calculator.rb
+    └── grid_renderers/
 ```
 
 ---
