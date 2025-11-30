@@ -31,13 +31,11 @@ require_relative 'bujo_pdf/calendar_integration'
 require_relative 'bujo_pdf/component'
 require_relative 'bujo_pdf/layout'
 
-# Load sub-components (used by components)
-require_relative 'bujo_pdf/sub_components/base'
-require_relative 'bujo_pdf/sub_components/fieldset'
-require_relative 'bujo_pdf/sub_components/week_column'
-require_relative 'bujo_pdf/sub_components/day_header'
-
-# Load components
+# Load components (including sub-component base and position-based components)
+require_relative 'bujo_pdf/components/sub_component_base'
+require_relative 'bujo_pdf/components/fieldset'
+require_relative 'bujo_pdf/components/week_column'
+require_relative 'bujo_pdf/components/day_header'
 require_relative 'bujo_pdf/components/top_navigation'
 require_relative 'bujo_pdf/components/week_sidebar'
 require_relative 'bujo_pdf/components/right_sidebar'

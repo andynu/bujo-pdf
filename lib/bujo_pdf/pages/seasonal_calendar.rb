@@ -3,7 +3,6 @@
 require_relative 'base'
 require_relative '../utilities/date_calculator'
 require_relative '../utilities/styling'
-require_relative '../sub_components/fieldset'
 
 module BujoPdf
   module Pages
