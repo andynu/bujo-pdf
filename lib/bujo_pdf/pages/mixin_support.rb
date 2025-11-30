@@ -31,6 +31,59 @@ module BujoPdf
     module MixinSupport
       private
 
+      # Define a page with explicit metadata.
+      #
+      # During the define phase (when @defining is true), this creates a PageRef
+      # with the provided metadata and stores the render block for later execution.
+      # During the render phase, it simply executes the render block.
+      #
+      # @param dest [String] Named destination for PDF linking
+      # @param title [String] Display title for the page
+      # @param type [Symbol] Type identifier (e.g., :index, :weekly, :seasonal)
+      # @param metadata [Hash] Optional additional metadata
+      # @yield Block containing the page rendering logic
+      # @return [PageRef, nil] The PageRef during define phase, nil during render
+      #
+      # @example Simple page
+      #   def seasonal_calendar
+      #     define_page(dest: 'seasonal', title: 'Seasonal Calendar', type: :seasonal) do
+      #       start_new_page
+      #       context = build_context(page_key: :seasonal)
+      #       SeasonalCalendar.new(@pdf, context).generate
+      #     end
+      #   end
+      #
+      # @example Parameterized page
+      #   def weekly_page(week:)
+      #     define_page(dest: "week_#{week}", title: "Week #{week}", type: :weekly) do
+      #       start_new_page
+      #       context = build_context(page_key: "week_#{week}".to_sym, week_num: week)
+      #       WeeklyPage.new(@pdf, context).generate
+      #     end
+      #   end
+      def define_page(dest:, title:, type:, **metadata, &render_block)
+        if @defining
+          # Define phase: create PageRef with stored render block
+          ref = PageRef.new(
+            dest_name: dest,
+            title: title,
+            page_type: type,
+            metadata: metadata,
+            render_block: render_block
+          )
+
+          # Add to current page set if active
+          @current_builder_page_set&.add(ref)
+
+          @pages << ref
+          ref
+        else
+          # Render phase: just execute the block
+          render_block.call
+          nil
+        end
+      end
+
       # Create a page set and iterate over its pages.
       #
       # The page_set DSL allows builders to declare multi-page spreads.
