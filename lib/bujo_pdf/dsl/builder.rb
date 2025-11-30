@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'declaration_context'
-require_relative 'pdf_definition'
-require_relative 'link_registry'
+require_relative 'context'
+require_relative 'definition'
+require_relative 'registry'
 
 module BujoPdf
   module PdfDSL

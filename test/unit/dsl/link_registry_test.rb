@@ -3,7 +3,7 @@
 
 require_relative '../../test_helper'
 require 'bujo_pdf/pdf_dsl'
-require 'bujo_pdf/pdf_dsl/link_registry'
+require 'bujo_pdf/dsl/registry'
 
 class TestLinkRegistry < Minitest::Test
   def setup

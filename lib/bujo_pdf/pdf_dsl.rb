@@ -45,13 +45,13 @@
 module BujoPdf
   module PdfDSL
     # Load all PDF DSL components
-    require_relative 'pdf_dsl/pdf_definition'
-    require_relative 'pdf_dsl/declaration_context'
-    require_relative 'pdf_dsl/page_declaration'
-    require_relative 'pdf_dsl/metadata_builder'
-    require_relative 'pdf_dsl/week'
-    require_relative 'pdf_dsl/pdf_builder'
-    require_relative 'pdf_dsl/link_registry'
+    require_relative 'dsl/definition'
+    require_relative 'dsl/context'
+    require_relative 'dsl/page_declaration'
+    require_relative 'dsl/metadata'
+    require_relative 'dsl/week'
+    require_relative 'dsl/builder'
+    require_relative 'dsl/registry'
 
     # Recipe registry (Phase 3)
     @recipes = {}

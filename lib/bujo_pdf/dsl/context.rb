@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require_relative 'page_declaration'
-require_relative 'inline_page_declaration'
-require_relative 'inline_page_context'
-require_relative 'metadata_builder'
-require_relative 'outline_declaration'
+require_relative 'inline_page'
+require_relative 'metadata'
+require_relative 'outline'
 require_relative 'week'
 
 module BujoPdf
