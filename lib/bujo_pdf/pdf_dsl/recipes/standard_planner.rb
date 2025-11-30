@@ -111,16 +111,16 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   end
 
   # 4. Grid pages group with cycling navigation
-  # Group's outline entry is inserted before any page outline entries from within the block
+  # Group's outline entry links to first page; individual pages use registered titles
   group :grids, cycle: true, outline: 'Grid Types Showcase' do
     page :grid_showcase, id: :grid_showcase
-    page :grids_overview, id: :grids_overview, outline: '  - Basic Grids Overview'
-    page :grid_dot, id: :grid_dot, outline: '  - Dot Grid (5mm)'
-    page :grid_graph, id: :grid_graph, outline: '  - Graph Grid (5mm)'
-    page :grid_lined, id: :grid_lined, outline: '  - Ruled Lines (10mm)'
-    page :grid_isometric, id: :grid_isometric, outline: '  - Isometric Grid'
-    page :grid_perspective, id: :grid_perspective, outline: '  - Perspective Grid'
-    page :grid_hexagon, id: :grid_hexagon, outline: '  - Hexagon Grid'
+    page :grids_overview, id: :grids_overview, outline: true
+    page :grid_dot, id: :grid_dot, outline: true
+    page :grid_graph, id: :grid_graph, outline: true
+    page :grid_lined, id: :grid_lined, outline: true
+    page :grid_isometric, id: :grid_isometric, outline: true
+    page :grid_perspective, id: :grid_perspective, outline: true
+    page :grid_hexagon, id: :grid_hexagon, outline: true
   end
 
   # 5. Template pages - use outline: true to pull from registered page titles
