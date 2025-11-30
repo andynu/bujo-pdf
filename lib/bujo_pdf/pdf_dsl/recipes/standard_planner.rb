@@ -123,11 +123,11 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
     page :grid_hexagon, id: :grid_hexagon, outline: '  - Hexagon Grid'
   end
 
-  # 5. Template pages
-  page :tracker_example, id: :tracker_example, outline: 'Tracker Ideas'
-  page :reference, id: :reference, outline: 'Calibration & Reference'
-  page :daily_wheel, id: :daily_wheel, outline: 'Daily Wheel'
-  page :year_wheel, id: :year_wheel, outline: 'Year Wheel'
+  # 5. Template pages - use outline: true to pull from registered page titles
+  page :tracker_example, id: :tracker_example, outline: true
+  page :reference, id: :reference, outline: true
+  page :daily_wheel, id: :daily_wheel, outline: true
+  page :year_wheel, id: :year_wheel, outline: true
 
   # 6. Collections (user-configured via config/collections.yml)
   # Load collections configuration if available
