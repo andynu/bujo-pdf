@@ -18,7 +18,9 @@ module BujoPdf
     #   - Content area
     #
     # Example usage:
-    #   notes = CornellNotes.new(pdf, grid_system,
+    #   canvas = Canvas.new(pdf, grid)
+    #   notes = CornellNotes.new(
+    #     canvas: canvas,
     #     content_start_col: 3,
     #     notes_start_row: 11,
     #     cues_cols: 10,
@@ -34,6 +36,17 @@ module BujoPdf
       LABEL_FONT_SIZE = 8
       HEADER_PADDING = 5
 
+      def initialize(canvas:, content_start_col:, notes_start_row:, cues_cols:,
+                     notes_cols:, notes_main_rows:, summary_rows:)
+        super(canvas: canvas)
+        @content_start_col = content_start_col
+        @notes_start_row = notes_start_row
+        @cues_cols = cues_cols
+        @notes_cols = notes_cols
+        @notes_main_rows = notes_main_rows
+        @summary_rows = summary_rows
+      end
+
       def render
         draw_cues_section
         draw_notes_section
@@ -41,11 +54,6 @@ module BujoPdf
       end
 
       private
-
-      def validate_configuration
-        require_options(:content_start_col, :notes_start_row, :cues_cols,
-                       :notes_cols, :notes_main_rows, :summary_rows)
-      end
 
       # Draw a labeled section with border and header.
       #
@@ -57,19 +65,19 @@ module BujoPdf
       # @param label_size [Integer] Font size for label (optional)
       # @return [void]
       def draw_labeled_section(col, row, width_boxes, height_boxes, label, label_size: LABEL_FONT_SIZE)
-        section_box = @grid.rect(col, row, width_boxes, height_boxes)
+        section_box = grid.rect(col, row, width_boxes, height_boxes)
 
-        @pdf.bounding_box([section_box[:x], section_box[:y]],
+        pdf.bounding_box([section_box[:x], section_box[:y]],
                          width: section_box[:width],
                          height: section_box[:height]) do
           with_stroke_color(Styling::Colors.BORDERS) do
-            @pdf.stroke_bounds
+            pdf.stroke_bounds
           end
 
           with_font("Helvetica-Bold", HEADER_FONT_SIZE) do
-            @pdf.move_down HEADER_PADDING
+            pdf.move_down HEADER_PADDING
             with_fill_color(Styling::Colors.SECTION_HEADERS) do
-              @pdf.text label, align: :center, size: label_size
+              pdf.text label, align: :center, size: label_size
             end
           end
         end
@@ -77,30 +85,30 @@ module BujoPdf
 
       def draw_cues_section
         draw_labeled_section(
-          context[:content_start_col],
-          context[:notes_start_row],
-          context[:cues_cols],
-          context[:notes_main_rows],
+          @content_start_col,
+          @notes_start_row,
+          @cues_cols,
+          @notes_main_rows,
           "Cues/Questions"
         )
       end
 
       def draw_notes_section
         draw_labeled_section(
-          context[:content_start_col] + context[:cues_cols],
-          context[:notes_start_row],
-          context[:notes_cols],
-          context[:notes_main_rows],
+          @content_start_col + @cues_cols,
+          @notes_start_row,
+          @notes_cols,
+          @notes_main_rows,
           "Notes"
         )
       end
 
       def draw_summary_section
         draw_labeled_section(
-          context[:content_start_col],
-          context[:notes_start_row] + context[:notes_main_rows],
-          context[:cues_cols] + context[:notes_cols],
-          context[:summary_rows],
+          @content_start_col,
+          @notes_start_row + @notes_main_rows,
+          @cues_cols + @notes_cols,
+          @summary_rows,
           "Summary"
         )
       end
