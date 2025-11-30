@@ -66,14 +66,22 @@ module BujoPdf
         @current_page_set_index = nil
       end
 
-      # Start a new page, but no-op if this is the first page.
+      # Start a new page, but no-op if on the initial blank page.
       #
-      # This allows verbs to always call start_new_page without checking
+      # Prawn documents start with page_count=1 (an initial blank page).
+      # This method only adds a new page if content has been rendered,
+      # allowing verbs to always call start_new_page without checking
       # whether they're generating the first page of the document.
       #
       # @return [void]
       def start_new_page
-        @pdf.start_new_page if @pdf.page_count > 0
+        # page_count > 1 means we've started additional pages beyond the initial
+        # We track first page usage via @first_page_used instance variable
+        if @first_page_used
+          @pdf.start_new_page
+        else
+          @first_page_used = true
+        end
       end
 
       # Build a RenderContext with common fields pre-filled.
