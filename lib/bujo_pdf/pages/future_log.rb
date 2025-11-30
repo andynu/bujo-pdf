@@ -51,11 +51,14 @@ module BujoPdf
 
         # Generate multiple future log pages.
         #
+        # Uses page_set DSL to automatically populate context.set with
+        # page position and label information.
+        #
         # @param count [Integer] Number of future log pages (default: 2)
         # @return [void]
         def future_log_pages(count: 2)
-          count.times do |i|
-            future_log_page(num: i + 1, total: count)
+          page_set(count, "Future Log %page of %total") do
+            future_log_page(num: @current_page_set_index + 1, total: count)
           end
         end
       end
@@ -73,8 +76,9 @@ module BujoPdf
       MONTHS_PER_COLUMN = 3
 
       def setup
-        @future_log_page = context[:future_log_page] || 1
-        @future_log_page_count = context[:future_log_page_count] || 2
+        # Get page position from context.set (page_set DSL) or legacy context
+        @future_log_page = context.set? ? context.set.page : (context[:future_log_page] || 1)
+        @future_log_page_count = context.set? ? context.set.total : (context[:future_log_page_count] || 2)
         @start_month = context[:future_log_start_month] || ((@future_log_page - 1) * MONTHS_PER_PAGE + 1)
         @year = context[:year]
 
@@ -89,7 +93,7 @@ module BujoPdf
         # Components::GridRuler.new(@pdf, @grid_system).render
         draw_header
         draw_two_column_layout
-        draw_page_indicator
+        draw_set_label(col: LEFT_MARGIN, width: content_width)
       end
 
       private
@@ -188,18 +192,6 @@ module BujoPdf
       # @return [Integer] Width in grid boxes
       def content_width
         RIGHT_MARGIN - LEFT_MARGIN
-      end
-
-      # Draw page indicator at bottom
-      #
-      # @return [void]
-      def draw_page_indicator
-        text(LEFT_MARGIN, 54, "Future Log #{@future_log_page} of #{@future_log_page_count}",
-             size: 9,
-             color: '999999',
-             width: content_width,
-             align: :center,
-             position: :subscript)
       end
     end
   end
