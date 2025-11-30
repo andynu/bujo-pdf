@@ -35,6 +35,37 @@ module BujoPdf
       include Styling::Colors
       include Styling::Grid
 
+      # Mixin providing weekly_page and weekly_pages verbs for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate a single weekly page.
+        #
+        # @param week [Integer] Week number (1-53)
+        # @return [void]
+        def weekly_page(week:)
+          start_new_page
+          week_start = Utilities::DateCalculator.week_start(@year, week)
+          week_end = Utilities::DateCalculator.week_end(@year, week)
+          context = build_context(
+            page_key: "week_#{week}".to_sym,
+            week_num: week,
+            week_start: week_start,
+            week_end: week_end
+          )
+          WeeklyPage.new(@pdf, context).generate
+        end
+
+        # Generate all weekly pages for the year.
+        #
+        # @return [void]
+        def weekly_pages
+          total_weeks.times do |i|
+            weekly_page(week: i + 1)
+          end
+        end
+      end
+
       # Weekly page layout constants
       WEEKLY_TITLE_FONT_SIZE = 14
       WEEKLY_DAY_HEADER_FONT_SIZE = 9

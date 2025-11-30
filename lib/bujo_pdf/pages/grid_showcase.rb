@@ -18,6 +18,20 @@ module BujoPdf
     #   page = GridShowcase.new(pdf, { year: 2025 })
     #   page.generate
     class GridShowcase < Base
+      # Mixin providing grid_showcase_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the grid showcase page.
+        #
+        # @return [void]
+        def grid_showcase_page
+          start_new_page
+          context = build_context(page_key: :grid_showcase)
+          GridShowcase.new(@pdf, context).generate
+        end
+      end
+
       GRID_TYPES = [
         { type: :dots, label: 'Dot Grid', position: :top_left },
         { type: :isometric, label: 'Isometric Grid', position: :top_right },

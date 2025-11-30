@@ -25,6 +25,37 @@ module BujoPdf
     #   page = IndexPage.new(pdf, context)
     #   page.generate
     class IndexPage < Base
+      # Mixin providing index_page and index_pages verbs for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate a single index page.
+        #
+        # @param num [Integer] Which index page (1, 2, etc.)
+        # @param total [Integer, nil] Total index pages (defaults to num)
+        # @return [void]
+        def index_page(num:, total: nil)
+          start_new_page
+          count = total || num
+          context = build_context(
+            page_key: "index_#{num}".to_sym,
+            index_page_num: num,
+            index_page_count: count
+          )
+          IndexPage.new(@pdf, context).generate
+        end
+
+        # Generate multiple index pages.
+        #
+        # @param count [Integer] Number of index pages (default: 2)
+        # @return [void]
+        def index_pages(count: 2)
+          count.times do |i|
+            index_page(num: i + 1, total: count)
+          end
+        end
+      end
+
       # Layout constants
       LEFT_MARGIN = 2
       RIGHT_MARGIN = 41

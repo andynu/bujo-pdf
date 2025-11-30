@@ -15,6 +15,20 @@ module BujoPdf
       #   page = Grids::LinedGridPage.new(pdf, context)
       #   page.generate
       class LinedGridPage < Base
+        # Mixin providing lined_grid_page verb for document builders.
+        module Mixin
+          include MixinSupport
+
+          # Generate the lined grid page.
+          #
+          # @return [void]
+          def lined_grid_page
+            start_new_page
+            context = build_context(page_key: :grid_lined)
+            Grids::LinedGridPage.new(@pdf, context).generate
+          end
+        end
+
         LINE_SPACING_BOXES = 2  # Lines every 2 boxes (~10mm)
         MARGIN_COL = 3          # Left margin at column 3 (matching sidebar width)
 

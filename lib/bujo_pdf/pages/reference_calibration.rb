@@ -26,6 +26,20 @@ module BujoPdf
     class ReferenceCalibration < Base
       include Styling::Grid
 
+      # Mixin providing reference_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the reference/calibration page.
+        #
+        # @return [void]
+        def reference_page
+          start_new_page
+          context = build_context(page_key: :reference)
+          ReferenceCalibration.new(@pdf, context).generate
+        end
+      end
+
       def setup
         set_destination('reference')
         use_layout :full_page  # Explicit: no sidebars for reference page

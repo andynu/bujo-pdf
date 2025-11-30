@@ -14,6 +14,20 @@ module BujoPdf
       #   page = Grids::PerspectiveGridPage.new(pdf, context)
       #   page.generate
       class PerspectiveGridPage < Base
+        # Mixin providing perspective_grid_page verb for document builders.
+        module Mixin
+          include MixinSupport
+
+          # Generate the perspective grid page.
+          #
+          # @return [void]
+          def perspective_grid_page
+            start_new_page
+            context = build_context(page_key: :grid_perspective)
+            Grids::PerspectiveGridPage.new(@pdf, context).generate
+          end
+        end
+
         # Use full page layout (no sidebars)
         def setup
           use_layout :full_page

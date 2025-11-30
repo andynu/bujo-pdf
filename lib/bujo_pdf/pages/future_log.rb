@@ -27,6 +27,39 @@ module BujoPdf
     #   page = FutureLog.new(pdf, context)
     #   page.generate
     class FutureLog < Base
+      # Mixin providing future_log_page and future_log_pages verbs for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate a single future log page.
+        #
+        # @param num [Integer] Which future log page (1, 2, etc.)
+        # @param total [Integer, nil] Total future log pages (defaults to num)
+        # @return [void]
+        def future_log_page(num:, total: nil)
+          start_new_page
+          count = total || num
+          start_month = (num - 1) * 6 + 1  # Page 1 = months 1-6, Page 2 = months 7-12
+          context = build_context(
+            page_key: "future_log_#{num}".to_sym,
+            future_log_page: num,
+            future_log_page_count: count,
+            future_log_start_month: start_month
+          )
+          FutureLog.new(@pdf, context).generate
+        end
+
+        # Generate multiple future log pages.
+        #
+        # @param count [Integer] Number of future log pages (default: 2)
+        # @return [void]
+        def future_log_pages(count: 2)
+          count.times do |i|
+            future_log_page(num: i + 1, total: count)
+          end
+        end
+      end
+
       # Number of months per page (2 columns x 3 rows)
       MONTHS_PER_PAGE = 6
 

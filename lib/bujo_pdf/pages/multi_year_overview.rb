@@ -26,6 +26,21 @@ module BujoPdf
     class MultiYearOverview < StandardLayoutPage
       include Styling::Colors
 
+      # Mixin providing the multi_year_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the Multi-Year Overview page.
+        #
+        # @param year_count [Integer] Number of years to display (default: 4)
+        # @return [void]
+        def multi_year_page(year_count: 4)
+          start_new_page
+          context = build_context(page_key: :multi_year, year_count: year_count)
+          MultiYearOverview.new(@pdf, context).generate
+        end
+      end
+
       MONTH_NAMES = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec].freeze
       MONTH_HEIGHT_BOXES = 4
       MONTH_LABEL_WIDTH = 3

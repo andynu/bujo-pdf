@@ -14,6 +14,20 @@ module BujoPdf
       #   page = Grids::IsometricGridPage.new(pdf, context)
       #   page.generate
       class IsometricGridPage < Base
+        # Mixin providing isometric_grid_page verb for document builders.
+        module Mixin
+          include MixinSupport
+
+          # Generate the isometric grid page.
+          #
+          # @return [void]
+          def isometric_grid_page
+            start_new_page
+            context = build_context(page_key: :grid_isometric)
+            Grids::IsometricGridPage.new(@pdf, context).generate
+          end
+        end
+
         # Use full page layout (no sidebars)
         def setup
           use_layout :full_page

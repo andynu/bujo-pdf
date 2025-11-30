@@ -16,6 +16,20 @@ module BujoPdf
     #   page = GridsOverview.new(pdf, context)
     #   page.generate
     class GridsOverview < Base
+      # Mixin providing grids_overview_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the grids overview page.
+        #
+        # @return [void]
+        def grids_overview_page
+          start_new_page
+          context = build_context(page_key: :grids_overview)
+          GridsOverview.new(@pdf, context).generate
+        end
+      end
+
       GRID_SAMPLES = [
         { label: 'Dot Grid', dest: 'grid_dot', description: '5mm dot spacing for flexible layouts' },
         { label: 'Graph Grid', dest: 'grid_graph', description: '5mm square grid for precise drawings' },
