@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../component'
+require_relative '../base/component'
 require_relative 'week_column'
 require_relative '../utilities/styling'
 
