@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../base/component'
 require_relative '../utilities/styling'
 require_relative 'erase_dots'
 
@@ -15,7 +16,7 @@ module BujoPdf
     #   vline(10, 2, 20)                              # Default gray line
     #   vline(10, 2, 20, color: '333333', stroke: 1)  # Thick dark line
     #
-    class VLine
+    class VLine < Component
       include EraseDots::Mixin
 
       # Mixin providing the vline verb for pages and components
@@ -29,9 +30,9 @@ module BujoPdf
         # @param stroke [Float] Line width in points (default: 0.5)
         # @return [void]
         def vline(col, row, height, color: 'CCCCCC', stroke: 0.5)
+          c = @canvas || Canvas.new(@pdf, @grid)
           VLine.new(
-            pdf: @pdf,
-            grid: @grid,
+            canvas: c,
             col: col,
             row: row,
             height: height,
@@ -43,16 +44,14 @@ module BujoPdf
 
       # Initialize a new VLine component
       #
-      # @param pdf [Prawn::Document] The PDF document to render into
-      # @param grid [GridSystem] The grid system for coordinate conversion
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
       # @param col [Integer] Column position
       # @param row [Integer] Starting row (top edge)
       # @param height [Integer] Height in grid boxes
       # @param color [String] Line color as hex string
       # @param stroke [Float] Line width in points
-      def initialize(pdf:, grid:, col:, row:, height:, color: 'CCCCCC', stroke: 0.5)
-        @pdf = pdf
-        @grid = grid
+      def initialize(canvas:, col:, row:, height:, color: 'CCCCCC', stroke: 0.5)
+        super(canvas: canvas)
         @col = col
         @row = row
         @height = height
@@ -68,17 +67,17 @@ module BujoPdf
         erase_dots(@col, @row, 0, @height)
 
         # Draw the line
-        x = @grid.x(@col)
-        y_start = @grid.y(@row)
-        y_end = @grid.y(@row + @height)
+        x = grid.x(@col)
+        y_start = grid.y(@row)
+        y_end = grid.y(@row + @height)
 
-        @pdf.stroke_color @color
-        @pdf.line_width @stroke
-        @pdf.stroke_line [x, y_start], [x, y_end]
+        pdf.stroke_color @color
+        pdf.line_width @stroke
+        pdf.stroke_line [x, y_start], [x, y_end]
 
         # Restore defaults
-        @pdf.stroke_color '000000'
-        @pdf.line_width 0.5
+        pdf.stroke_color '000000'
+        pdf.line_width 0.5
       end
     end
   end

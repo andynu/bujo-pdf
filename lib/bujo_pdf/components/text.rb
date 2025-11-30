@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../base/component'
 require_relative 'hline'
 
 module BujoPdf
@@ -16,7 +17,7 @@ module BujoPdf
     #   text(2, 52, "Page 1 of 2", size: 9, align: :center, width: 39)
     #   text(2, 5, "Note", size: 12, style: :bold)
     #
-    class Text
+    class Text < Component
       include HLine::Mixin
 
       # Default font size
@@ -39,9 +40,9 @@ module BujoPdf
         # @param rotation [Integer] Rotation in degrees: 0, 90, -90 (default: 0)
         # @return [void]
         def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
+          c = @canvas || Canvas.new(@pdf, @grid)
           Text.new(
-            pdf: @pdf,
-            grid: @grid,
+            canvas: c,
             col: col,
             row: row,
             content: content,
@@ -59,8 +60,7 @@ module BujoPdf
 
       # Initialize a new Text component
       #
-      # @param pdf [Prawn::Document] The PDF document to render into
-      # @param grid [GridSystem] The grid system for coordinate conversion
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
       # @param col [Integer] Column position (left edge)
       # @param row [Integer] Row position (top edge)
       # @param content [String] Text to render
@@ -72,9 +72,8 @@ module BujoPdf
       # @param align [Symbol] Text alignment :left, :center, :right
       # @param width [Integer, nil] Width in grid boxes
       # @param rotation [Integer] Rotation in degrees: 0, 90, -90
-      def initialize(pdf:, grid:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
-        @pdf = pdf
-        @grid = grid
+      def initialize(canvas:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
+        super(canvas: canvas)
         @col = col
         @row = row
         @content = content
@@ -97,7 +96,7 @@ module BujoPdf
         text_color = @color || BujoPdf::Themes.current[:colors][:text_black]
         bg_color = BujoPdf::Themes.current[:colors][:background]
 
-        @pdf.font 'Helvetica', style: @style, size: @size
+        pdf.font 'Helvetica', style: @style, size: @size
 
         if @rotation != 0
           render_rotated(text_color)
@@ -106,8 +105,8 @@ module BujoPdf
         end
 
         # Reset to defaults
-        @pdf.font 'Helvetica', style: :normal
-        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+        pdf.font 'Helvetica', style: :normal
+        pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
       end
 
       private
@@ -119,8 +118,8 @@ module BujoPdf
       # @return [void]
       def render_normal(text_color, bg_color)
         # Calculate text width for erasure (round to nearest, not ceil)
-        text_width_pt = @pdf.width_of(@content)
-        text_width_boxes = (text_width_pt / @grid.dot_spacing).round
+        text_width_pt = pdf.width_of(@content)
+        text_width_boxes = (text_width_pt / grid.dot_spacing).round
 
         # Determine render width (explicit or auto)
         render_width_boxes = @width || 40
@@ -130,11 +129,11 @@ module BujoPdf
         erase_dots_if_needed(text_width_boxes, bg_color)
 
         # Draw the text
-        @pdf.fill_color text_color
-        @pdf.text_box @content,
-                      at: [@grid.x(@col), @grid.y(@row) + y_offset],
-                      width: @grid.width(render_width_boxes),
-                      height: @grid.height(@height),
+        pdf.fill_color text_color
+        pdf.text_box @content,
+                      at: [grid.x(@col), grid.y(@row) + y_offset],
+                      width: grid.width(render_width_boxes),
+                      height: grid.height(@height),
                       size: @size,
                       align: @align,
                       valign: :center,
@@ -150,18 +149,18 @@ module BujoPdf
       # @return [void]
       def render_rotated(text_color)
         # Calculate text box dimensions in points
-        box_width = @grid.width(@width || 1)
-        box_height = @grid.height(@height)
+        box_width = grid.width(@width || 1)
+        box_height = grid.height(@height)
 
         # Calculate the center point of the text box for rotation origin
-        box_x = @grid.x(@col)
-        box_y = @grid.y(@row) - box_height
+        box_x = grid.x(@col)
+        box_y = grid.y(@row) - box_height
         center_x = box_x + (box_width / 2.0)
         center_y = box_y + (box_height / 2.0)
 
-        @pdf.fill_color text_color
-        @pdf.rotate(@rotation, origin: [center_x, center_y]) do
-          @pdf.text_box @content,
+        pdf.fill_color text_color
+        pdf.rotate(@rotation, origin: [center_x, center_y]) do
+          pdf.text_box @content,
                         at: [box_x, box_y + box_height],
                         width: box_width,
                         height: box_height,
@@ -176,7 +175,7 @@ module BujoPdf
       #
       # @return [Float] Y offset in points
       def calculate_y_offset
-        half_box = @grid.height(0.5)
+        half_box = grid.height(0.5)
         case @position
         when :superscript
           half_box

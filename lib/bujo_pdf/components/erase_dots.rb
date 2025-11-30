@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../base/component'
 require_relative '../utilities/styling'
 
 module BujoPdf
@@ -14,7 +15,7 @@ module BujoPdf
     #   erase_dots(2, 5, 10)      # Erase single row of dots
     #   erase_dots(2, 5, 10, 3)   # Erase multiple rows
     #
-    class EraseDots
+    class EraseDots < Component
       # Mixin providing the erase_dots verb for pages and components
       #
       # Include via Components::All in Pages::Base, or directly in components.
@@ -27,9 +28,9 @@ module BujoPdf
         # @param height [Integer] Height in grid boxes (default: 0 for single row)
         # @return [void]
         def erase_dots(col, row, width, height = 0)
+          c = @canvas || Canvas.new(@pdf, @grid)
           EraseDots.new(
-            pdf: @pdf,
-            grid: @grid,
+            canvas: c,
             col: col,
             row: row,
             width: width,
@@ -40,15 +41,13 @@ module BujoPdf
 
       # Initialize a new EraseDots component
       #
-      # @param pdf [Prawn::Document] The PDF document to render into
-      # @param grid [GridSystem] The grid system for coordinate conversion
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
       # @param col [Integer] Starting column (left edge)
       # @param row [Integer] Starting row (top edge)
       # @param width [Integer] Width in grid boxes
       # @param height [Integer] Height in grid boxes (default: 0 for single row)
-      def initialize(pdf:, grid:, col:, row:, width:, height: 0)
-        @pdf = pdf
-        @grid = grid
+      def initialize(canvas:, col:, row:, width:, height: 0)
+        super(canvas: canvas)
         @col = col
         @row = row
         @width = width
@@ -64,18 +63,18 @@ module BujoPdf
         bg_color = BujoPdf::Themes.current[:colors][:background]
         radius = Styling::Grid::DOT_RADIUS + 0.5 # Slightly larger to fully cover
 
-        @pdf.fill_color bg_color
+        pdf.fill_color bg_color
 
         (@row..(@row + @height)).each do |r|
-          dot_y = @grid.y(r)
+          dot_y = grid.y(r)
           (@col..(@col + @width)).each do |c|
-            dot_x = @grid.x(c)
-            @pdf.fill_circle [dot_x, dot_y], radius
+            dot_x = grid.x(c)
+            pdf.fill_circle [dot_x, dot_y], radius
           end
         end
 
         # Restore default fill color
-        @pdf.fill_color '000000'
+        pdf.fill_color '000000'
       end
     end
   end
