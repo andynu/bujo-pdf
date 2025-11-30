@@ -137,4 +137,35 @@ module BujoPdf
     # Reset theme after generation to avoid side effects
     Themes.reset! if theme
   end
+
+  # Define and generate a custom PDF using the DocumentBuilder DSL.
+  #
+  # This provides a declarative way to build PDFs with access to all
+  # page verbs (seasonal_calendar, weekly_page, etc.) in the block.
+  #
+  # @param year [Integer] The year for the planner
+  # @param output [String] Output file path
+  # @param theme [Symbol, nil] Theme to use (default: :light)
+  # @yield Document definition block with access to page verbs
+  # @return [DocumentBuilder] The builder instance
+  #
+  # @example Generate a minimal planner
+  #   BujoPdf.define_pdf(year: 2025, output: "mini.pdf") do
+  #     seasonal_calendar
+  #     (1..52).each { |w| weekly_page(week: w) }
+  #   end
+  #
+  # @example Generate with custom pages
+  #   BujoPdf.define_pdf(year: 2025, output: "custom.pdf", theme: :earth) do
+  #     index_page(num: 1, total: 1)
+  #     grid_pages
+  #   end
+  #
+  def self.define_pdf(year:, output:, theme: nil, &block)
+    Themes.set(theme) if theme
+
+    DocumentBuilder.generate(output, year: year, &block)
+  ensure
+    Themes.reset! if theme
+  end
 end
