@@ -33,42 +33,51 @@ module BujoPdf
 
       # Define a page with explicit metadata.
       #
-      # During the define phase (when @defining is true), this creates a PageRef
-      # with the provided metadata and stores the render block for later execution.
-      # During the render phase, it simply executes the render block.
+      # Handles common boilerplate: starts a new page, builds context,
+      # and yields the context to the block. During define phase, stores
+      # everything for later; during render phase, executes immediately.
       #
       # @param dest [String] Named destination for PDF linking
       # @param title [String] Display title for the page
       # @param type [Symbol] Type identifier (e.g., :index, :weekly, :seasonal)
-      # @param metadata [Hash] Optional additional metadata
-      # @yield Block containing the page rendering logic
+      # @param metadata [Hash] Additional context passed to build_context
+      # @yield [RenderContext] Context with page metadata for rendering
       # @return [PageRef, nil] The PageRef during define phase, nil during render
       #
       # @example Simple page
       #   def seasonal_calendar
-      #     define_page(dest: 'seasonal', title: 'Seasonal Calendar', type: :seasonal) do
-      #       start_new_page
-      #       context = build_context(page_key: :seasonal)
-      #       SeasonalCalendar.new(@pdf, context).generate
+      #     define_page(dest: 'seasonal', title: 'Seasonal Calendar', type: :seasonal) do |ctx|
+      #       SeasonalCalendar.new(@pdf, ctx).generate
       #     end
       #   end
       #
-      # @example Parameterized page
+      # @example Page with extra context
       #   def weekly_page(week:)
-      #     define_page(dest: "week_#{week}", title: "Week #{week}", type: :weekly) do
-      #       start_new_page
-      #       context = build_context(page_key: "week_#{week}".to_sym, week_num: week)
-      #       WeeklyPage.new(@pdf, context).generate
+      #     week_start = Utilities::DateCalculator.week_start(@year, week)
+      #     week_end = Utilities::DateCalculator.week_end(@year, week)
+      #
+      #     define_page(dest: "week_#{week}", title: "Week #{week}", type: :weekly,
+      #                 week_num: week, week_start: week_start, week_end: week_end) do |ctx|
+      #       WeeklyPage.new(@pdf, ctx).generate
       #     end
       #   end
-      def define_page(dest:, title:, type:, **metadata, &render_block)
+      def define_page(dest:, title:, type:, **metadata, &block)
+        page_key = metadata.delete(:page_key) || dest.to_sym
+
         if @defining
           # Define phase: create PageRef with stored render block
+          # The block will be called during render with a fresh context
+          render_block = proc do
+            start_new_page
+            context = build_context(page_key: page_key, **metadata)
+            block.call(context)
+          end
+
           ref = PageRef.new(
             dest_name: dest,
             title: title,
             page_type: type,
-            metadata: metadata,
+            metadata: metadata.merge(page_key: page_key),
             render_block: render_block
           )
 
@@ -78,8 +87,10 @@ module BujoPdf
           @pages << ref
           ref
         else
-          # Render phase: just execute the block
-          render_block.call
+          # Render phase: execute immediately
+          start_new_page
+          context = build_context(page_key: page_key, **metadata)
+          block.call(context)
           nil
         end
       end
