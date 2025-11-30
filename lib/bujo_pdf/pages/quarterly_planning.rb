@@ -67,6 +67,21 @@ module BujoPdf
       # Weeks per quarter (approximately 13, but we show 12 for clean grid)
       WEEKS_PER_QUARTER = 12
 
+      # Layout constants - grid-quantized positions
+      HEADER_ROW = 2
+      HEADER_HEIGHT = 3
+
+      GOALS_START_ROW = 6
+      GOALS_HEADER_HEIGHT = 1
+      GOALS_PROMPT_HEIGHT = 2
+      GOALS_LINE_HEIGHT = 2
+      GOALS_COUNT = 3
+      GOALS_NUM_COL_WIDTH = 3
+
+      WEEK_GRID_START_ROW = 16
+      WEEK_GRID_HEADER_HEIGHT = 2
+      WEEK_LABEL_WIDTH = 6
+
       def setup
         @quarter = context[:quarter] || 1
         @year = context[:year]
@@ -161,120 +176,81 @@ module BujoPdf
       #
       # @return [void]
       def draw_header
-        header_box = @grid_system.rect(2, 1, 39, 4)
+        # Main title: Q1 2025
+        text(2, HEADER_ROW, "Q#{@quarter} #{@year}",
+             size: 20, style: :bold, height: 2, position: :subscript)
 
-        @pdf.bounding_box([header_box[:x], header_box[:y]],
-                          width: header_box[:width],
-                          height: header_box[:height]) do
-          # Quarter name
-          @pdf.text "Q#{@quarter} #{@year}",
-                    size: 20,
-                    style: :bold,
-                    align: :left,
-                    valign: :center
-
-          # Date range
-          start_month = Date::MONTHNAMES[@start_date.month]
-          end_month = Date::MONTHNAMES[@end_date.month]
-          @pdf.text "#{start_month} - #{end_month}",
-                    size: 12,
-                    color: '666666',
-                    align: :left,
-                    valign: :bottom
-        end
+        # Subtitle: date range
+        start_month = Date::MONTHNAMES[@start_date.month]
+        end_month = Date::MONTHNAMES[@end_date.month]
+        text(2, HEADER_ROW + 2, "#{start_month} - #{end_month}",
+             size: 12, color: '666666', height: 1, position: :center)
       end
 
       # Draw the goals section with prompts
       #
       # @return [void]
       def draw_goals_section
-        # Goals header
-        goals_header_box = @grid_system.rect(2, 6, 39, 2)
-        @pdf.bounding_box([goals_header_box[:x], goals_header_box[:y]],
-                          width: goals_header_box[:width],
-                          height: goals_header_box[:height]) do
-          @pdf.text "Quarter Goals",
-                    size: 14,
-                    style: :bold,
-                    align: :left,
-                    valign: :bottom
-        end
+        # h1 header for "Quarter Goals"
+        h1(2, GOALS_START_ROW, "Quarter Goals", position: :subscript)
 
         # Prompt text
-        prompt_box = @grid_system.rect(2, 8, 39, 2)
-        @pdf.bounding_box([prompt_box[:x], prompt_box[:y]],
-                          width: prompt_box[:width],
-                          height: prompt_box[:height]) do
-          @pdf.text "What are the 2-3 most important things to accomplish this quarter?",
-                    size: 10,
-                    style: :italic,
-                    color: '999999',
-                    align: :left,
-                    valign: :top
-        end
+        prompt_row = GOALS_START_ROW + GOALS_HEADER_HEIGHT
+        text(2, prompt_row, "What are the 2-3 most important things to accomplish this quarter?",
+             size: 10, style: :italic, color: '999999', height: GOALS_PROMPT_HEIGHT)
 
-        # Goal lines (3 lines)
-        draw_goal_lines(10, 3)
+        # Goal lines using divide_rows for consistent spacing
+        lines_start_row = prompt_row + GOALS_PROMPT_HEIGHT
+        lines_height = GOALS_COUNT * GOALS_LINE_HEIGHT
+
+        rows = @grid.divide_rows(row: lines_start_row, height: lines_height, count: GOALS_COUNT)
+
+        rows.each_with_index do |row_info, i|
+          draw_goal_line(row_info.row, i + 1)
+        end
       end
 
-      # Draw goal entry lines
+      # Draw a single goal entry line with number prefix
       #
-      # @param start_row [Integer] Starting row
-      # @param count [Integer] Number of lines
+      # @param row [Integer] Starting row for this line
+      # @param number [Integer] Goal number (1, 2, 3...)
       # @return [void]
-      def draw_goal_lines(start_row, count)
-        @pdf.stroke_color 'E5E5E5'
-        @pdf.line_width 0.5
+      def draw_goal_line(row, number)
+        # Number prefix (right-aligned)
+        text(2, row, "#{number}.", size: 10, color: '999999',
+             width: GOALS_NUM_COL_WIDTH, height: GOALS_LINE_HEIGHT,
+             align: :right, position: :subscript)
 
-        count.times do |i|
-          row = start_row + (i * 2)
-          line_y = @grid_system.y(row + 2) + 3
-
-          # Number prefix
-          num_box = @grid_system.rect(2, row, 2, 2)
-          @pdf.bounding_box([num_box[:x], num_box[:y]],
-                            width: num_box[:width],
-                            height: num_box[:height]) do
-            @pdf.text "#{i + 1}.",
-                      size: 10,
-                      color: '999999',
-                      align: :right,
-                      valign: :bottom
-          end
-
-          # Line
-          @pdf.stroke_line [@grid_system.x(5), line_y], [@grid_system.x(41), line_y]
-        end
-
-        @pdf.stroke_color '000000'
+        # Ruled line for writing - single line at bottom of entry area
+        line_col = 2 + GOALS_NUM_COL_WIDTH + 1
+        line_width = 41 - line_col
+        hline(line_col, row + GOALS_LINE_HEIGHT, line_width)
       end
 
       # Draw the 12-week grid
       #
       # @return [void]
       def draw_week_grid
-        grid_start_row = 18
-
-        # Week grid header
-        header_box = @grid_system.rect(2, grid_start_row, 39, 2)
-        @pdf.bounding_box([header_box[:x], header_box[:y]],
-                          width: header_box[:width],
-                          height: header_box[:height]) do
-          @pdf.text "12-Week Focus",
-                    size: 14,
-                    style: :bold,
-                    align: :left,
-                    valign: :bottom
-        end
+        # h1 header for "12-Week Focus"
+        h1(2, WEEK_GRID_START_ROW, "12-Week Focus", position: :subscript)
 
         # Calculate first week number of this quarter
         first_week = calculate_first_week_of_quarter
 
-        # Draw week rows (12 weeks, 2.5 rows each = 30 rows total)
-        WEEKS_PER_QUARTER.times do |i|
+        # Calculate available height for week rows
+        weeks_start_row = WEEK_GRID_START_ROW + WEEK_GRID_HEADER_HEIGHT
+        available_height = 54 - weeks_start_row  # Use rows to 54 (36 rows for 12 weeks = 3 each)
+
+        # Use divide_rows for consistent week spacing
+        rows = @grid.divide_rows(
+          row: weeks_start_row,
+          height: available_height,
+          count: WEEKS_PER_QUARTER
+        )
+
+        rows.each_with_index do |row_info, i|
           week_num = first_week + i
-          row = grid_start_row + 3 + (i * 2.5).to_i
-          draw_week_row(week_num, row)
+          draw_week_row(week_num, row_info.row, row_info.height)
         end
       end
 
@@ -282,31 +258,23 @@ module BujoPdf
       #
       # @param week_num [Integer] Week number in the year
       # @param row [Integer] Grid row
+      # @param height [Integer] Row height in grid boxes
       # @return [void]
-      def draw_week_row(week_num, row)
-        # Week label
-        label_box = @grid_system.rect(2, row, 6, 2)
-        @pdf.bounding_box([label_box[:x], label_box[:y]],
-                          width: label_box[:width],
-                          height: label_box[:height]) do
-          @pdf.text "Week #{week_num}",
-                    size: 9,
-                    color: '666666',
-                    align: :left,
-                    valign: :center
-        end
+      def draw_week_row(week_num, row, height)
+        # Week label - right-aligned to col 4 (matching goals list indent)
+        text(2, row, "Week #{week_num}", size: 9, color: '666666',
+             width: GOALS_NUM_COL_WIDTH, height: 1,
+             align: :right, position: :center)
 
-        # Line for notes
-        line_y = @grid_system.y(row + 1.5)
-        @pdf.stroke_color 'E5E5E5'
-        @pdf.line_width 0.5
-        @pdf.stroke_line [@grid_system.x(8), line_y], [@grid_system.x(41), line_y]
-        @pdf.stroke_color '000000'
+        # Ruled line for notes - at bottom of row area, starting at col 6
+        line_col = 6
+        line_width = 41 - line_col
+        hline(line_col, row + height, line_width)
 
         # Clickable link to weekly page
         total_weeks = context[:total_weeks] || 52
         if week_num >= 1 && week_num <= total_weeks
-          @grid_system.link(2, row, 39, 2, "week_#{week_num}")
+          @grid_system.link(2, row, 39, height, "week_#{week_num}")
         end
       end
 
