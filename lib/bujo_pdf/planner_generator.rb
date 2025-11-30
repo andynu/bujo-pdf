@@ -75,22 +75,17 @@ module BujoPdf
 
         # 3. Weekly pages with interleaved monthly reviews and quarterly planning
         generated_months = Set.new
-        generated_quarters = Set.new
 
         weeks_in(year).each do |week|
           # Insert interleaved pages for weeks that start in the target year
           if week.in_year?
             month = week.month
-            quarter = week.quarter
 
-            # Quarterly planning at quarter boundaries
-            unless generated_quarters.include?(quarter)
-              page :quarterly_planning, quarter: quarter
-              generated_quarters.add(quarter)
-            end
-
-            # Monthly review at month boundaries
             unless generated_months.include?(month)
+              # Quarterly planning at start of each quarter
+              quarter = [1, 4, 7, 10].index(month)
+              page :quarterly_planning, quarter: quarter + 1 if quarter
+
               page :monthly_review, month: month
               generated_months.add(month)
             end
