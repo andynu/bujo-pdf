@@ -309,10 +309,11 @@ class GridSystem
   #   @pdf.text_box "Title", at: [x, y]
   def grid_dots(col:, row:, width:, height:, color: nil)
     require_relative '../components/grid_dots'
+    require_relative '../canvas'
 
+    canvas = BujoPdf::Canvas.new(@pdf, self)
     BujoPdf::Components::GridDots.new(
-      pdf: @pdf,
-      grid: self,
+      canvas: canvas,
       col: col,
       row: row,
       width: width,

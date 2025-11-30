@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../base/component'
 require_relative '../utilities/styling'
 require_relative '../utilities/date_calculator'
 require_relative 'h1'
@@ -24,7 +25,7 @@ module BujoPdf
     #   mini_month(2, 5, 21, month: 1, year: 2025)
     #   mini_month(2, 5, 20, month: 3, year: 2025, align: :left)
     #
-    class MiniMonth
+    class MiniMonth < Component
       include H1::Mixin
       include Styling::Colors
 
@@ -46,9 +47,9 @@ module BujoPdf
         # @param quantize [Boolean] Use grid-aligned column widths when width divisible by 7 (default: true)
         # @return [void]
         def mini_month(col, row, width, month:, year:, align: :center, show_links: true, show_weekend_bg: true, quantize: true)
+          c = @canvas || Canvas.new(@pdf, @grid)
           MiniMonth.new(
-            pdf: @pdf,
-            grid: @grid,
+            canvas: c,
             col: col,
             row: row,
             width: width,
@@ -64,8 +65,7 @@ module BujoPdf
 
       # Initialize a new MiniMonth component
       #
-      # @param pdf [Prawn::Document] The PDF document to render into
-      # @param grid [GridSystem] The grid system for coordinate conversion
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
       # @param col [Integer] Starting column (left edge)
       # @param row [Integer] Starting row (top edge)
       # @param width [Integer] Width in grid boxes
@@ -75,9 +75,8 @@ module BujoPdf
       # @param show_links [Boolean] Add clickable links
       # @param show_weekend_bg [Boolean] Show weekend background
       # @param quantize [Boolean] Use grid-aligned column widths
-      def initialize(pdf:, grid:, col:, row:, width:, month:, year:, align: :center, show_links: true, show_weekend_bg: true, quantize: true)
-        @pdf = pdf
-        @grid = grid
+      def initialize(canvas:, col:, row:, width:, month:, year:, align: :center, show_links: true, show_weekend_bg: true, quantize: true)
+        super(canvas: canvas)
         @col = col
         @row = row
         @width = width
@@ -91,8 +90,7 @@ module BujoPdf
         # Create WeekGrid for column layout (used for headers row position)
         # The WeekGrid handles quantization: grid-aligned widths when divisible by 7
         @week_grid = WeekGrid.from_grid(
-          pdf: @pdf,
-          grid: @grid,
+          canvas: @canvas,
           col: @col,
           row: @row + 1, # Headers are at row + 1 (after title)
           width_boxes: @width,
@@ -123,14 +121,14 @@ module BujoPdf
       def draw_weekday_headers
         day_names = %w[M T W T F S S]
 
-        @pdf.font 'Helvetica', size: 7
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.font 'Helvetica', size: 7
+        pdf.fill_color Styling::Colors.TEXT_BLACK
 
         @week_grid.each_cell do |day_index, cell_rect|
-          @pdf.text_box day_names[day_index],
+          pdf.text_box day_names[day_index],
                         at: [cell_rect[:x], cell_rect[:y]],
                         width: cell_rect[:width],
-                        height: @grid.height(1),
+                        height: grid.height(1),
                         align: :center,
                         valign: :center
         end
@@ -153,15 +151,15 @@ module BujoPdf
 
           cal_row = headers_row + 1 + day_row
           cell_rect = @week_grid.cell_rect(day_col)
-          cell_y = @grid.y(cal_row)
+          cell_y = grid.y(cal_row)
 
-          @pdf.fill_color Styling::Colors.WEEKEND_BG
-          @pdf.transparent(0.1) do
-            @pdf.fill_rectangle [cell_rect[:x], cell_y], cell_rect[:width], @grid.height(1)
+          pdf.fill_color Styling::Colors.WEEKEND_BG
+          pdf.transparent(0.1) do
+            pdf.fill_rectangle [cell_rect[:x], cell_y], cell_rect[:width], grid.height(1)
           end
         end
 
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color Styling::Colors.TEXT_BLACK
       end
 
       # Draw day numbers and optional links using WeekGrid's cell_rect for column positioning
@@ -174,26 +172,26 @@ module BujoPdf
         current_row = 0
         current_col = start_col_offset
 
-        @pdf.font 'Helvetica', size: 7
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.font 'Helvetica', size: 7
+        pdf.fill_color Styling::Colors.TEXT_BLACK
 
         1.upto(last_day.day) do |day|
           cal_row = headers_row + 1 + current_row
           cell_rect = @week_grid.cell_rect(current_col)
-          cell_y = @grid.y(cal_row)
+          cell_y = grid.y(cal_row)
 
-          @pdf.text_box day.to_s,
+          pdf.text_box day.to_s,
                         at: [cell_rect[:x], cell_y],
                         width: cell_rect[:width],
-                        height: @grid.height(1),
+                        height: grid.height(1),
                         align: :center,
                         valign: :center
 
           if @show_links
             date = Date.new(@year, @month, day)
             week_num = Utilities::DateCalculator.week_number_for_date(@year, date)
-            link_bottom = cell_y - @grid.height(1)
-            @pdf.link_annotation(
+            link_bottom = cell_y - grid.height(1)
+            pdf.link_annotation(
               [cell_rect[:x], link_bottom, cell_rect[:x] + cell_rect[:width], cell_y],
               Dest: "week_#{week_num}",
               Border: [0, 0, 0]

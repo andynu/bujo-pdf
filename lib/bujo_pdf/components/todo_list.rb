@@ -130,20 +130,32 @@ module BujoPdf
 
       # Create a TodoList using grid coordinates
       #
-      # @param pdf [Prawn::Document] The PDF document
-      # @param grid [GridSystem] The grid system instance
+      # Accepts either a canvas or separate pdf/grid parameters.
+      #
+      # @param canvas [Canvas, nil] The canvas wrapping pdf and grid
+      # @param pdf [Prawn::Document, nil] The PDF document (deprecated, use canvas)
+      # @param grid [GridSystem, nil] The grid system instance (deprecated, use canvas)
       # @param col [Integer] Starting column in grid coordinates
       # @param row [Integer] Starting row in grid coordinates
       # @param width_boxes [Integer] Width in grid boxes
       # @param rows [Integer] Number of to-do items
       # @param opts [Hash] Additional options to pass to TodoList constructor
       # @return [TodoList] New TodoList instance
-      def self.from_grid(pdf:, grid:, col:, row:, width_boxes:, rows:, **opts)
+      def self.from_grid(canvas: nil, pdf: nil, grid: nil, col:, row:, width_boxes:, rows:, **opts)
+        # Support both canvas and legacy pdf/grid parameters
+        if canvas
+          actual_pdf = canvas.pdf
+          actual_grid = canvas.grid
+        else
+          actual_pdf = pdf
+          actual_grid = grid
+        end
+
         new(
-          pdf: pdf,
-          x: grid.x(col),
-          y: grid.y(row),
-          width: grid.width(width_boxes),
+          pdf: actual_pdf,
+          x: actual_grid.x(col),
+          y: actual_grid.y(row),
+          width: actual_grid.width(width_boxes),
           rows: rows,
           **opts
         )

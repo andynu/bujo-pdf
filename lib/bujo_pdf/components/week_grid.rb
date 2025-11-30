@@ -35,7 +35,7 @@ module BujoPdf
     #
     # Or using grid coordinates via the class method:
     #   grid = WeekGrid.from_grid(
-    #     pdf: @pdf,
+    #     canvas: canvas,
     #     col: 5,
     #     row: 10,
     #     width_boxes: 35,
@@ -129,23 +129,33 @@ module BujoPdf
       # Create a WeekGrid using grid coordinates
       #
       # This is a convenience factory method for working with the grid system.
-      # Requires access to grid helper methods (grid_x, grid_y, grid_width, grid_height).
+      # Accepts either a canvas or separate pdf/grid parameters.
       #
-      # @param pdf [Prawn::Document] The PDF document
-      # @param grid [GridSystem] The grid system instance
+      # @param canvas [Canvas, nil] The canvas wrapping pdf and grid
+      # @param pdf [Prawn::Document, nil] The PDF document (deprecated, use canvas)
+      # @param grid [GridSystem, nil] The grid system instance (deprecated, use canvas)
       # @param col [Integer] Starting column in grid coordinates
       # @param row [Integer] Starting row in grid coordinates
       # @param width_boxes [Integer] Width in grid boxes
       # @param height_boxes [Integer] Height in grid boxes
       # @param opts [Hash] Additional options to pass to WeekGrid constructor
       # @return [WeekGrid] New WeekGrid instance
-      def self.from_grid(pdf:, grid:, col:, row:, width_boxes:, height_boxes:, **opts)
+      def self.from_grid(canvas: nil, pdf: nil, grid: nil, col:, row:, width_boxes:, height_boxes:, **opts)
+        # Support both canvas and legacy pdf/grid parameters
+        if canvas
+          actual_pdf = canvas.pdf
+          actual_grid = canvas.grid
+        else
+          actual_pdf = pdf
+          actual_grid = grid
+        end
+
         new(
-          pdf: pdf,
-          x: grid.x(col),
-          y: grid.y(row),
-          width: grid.width(width_boxes),
-          height: grid.height(height_boxes),
+          pdf: actual_pdf,
+          x: actual_grid.x(col),
+          y: actual_grid.y(row),
+          width: actual_grid.width(width_boxes),
+          height: actual_grid.height(height_boxes),
           **opts
         )
       end

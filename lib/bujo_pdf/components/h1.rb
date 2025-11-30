@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../base/component'
 require_relative 'text'
 
 module BujoPdf
@@ -25,7 +26,7 @@ module BujoPdf
     #   h1(2, 1, "Legend", position: :subscript)
     #   h1(2, 1, "Centered", width: 20, align: :center)
     #
-    class H1
+    class H1 < Component
       include Text::Mixin
 
       # Default font size for H1 headers (fits in 1 box = ~14pt)
@@ -47,9 +48,9 @@ module BujoPdf
         # @param width [Integer, nil] Width in grid boxes (default: nil, auto-sized)
         # @return [void]
         def h1(col, row, content, color: nil, style: :bold, position: :center, align: :left, width: nil)
+          c = @canvas || Canvas.new(@pdf, @grid)
           H1.new(
-            pdf: @pdf,
-            grid: @grid,
+            canvas: c,
             col: col,
             row: row,
             content: content,
@@ -64,8 +65,7 @@ module BujoPdf
 
       # Initialize a new H1 component
       #
-      # @param pdf [Prawn::Document] The PDF document to render into
-      # @param grid [GridSystem] The grid system for coordinate conversion
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
       # @param col [Integer] Column position (left edge)
       # @param row [Integer] Row position (top edge)
       # @param content [String] Header text
@@ -74,9 +74,8 @@ module BujoPdf
       # @param position [Symbol] Vertical position :center, :superscript, :subscript
       # @param align [Symbol] Text alignment :left, :center, :right
       # @param width [Integer, nil] Width in grid boxes
-      def initialize(pdf:, grid:, col:, row:, content:, color: nil, style: :bold, position: :center, align: :left, width: nil)
-        @pdf = pdf
-        @grid = grid
+      def initialize(canvas:, col:, row:, content:, color: nil, style: :bold, position: :center, align: :left, width: nil)
+        super(canvas: canvas)
         @col = col
         @row = row
         @content = content
