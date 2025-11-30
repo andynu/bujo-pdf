@@ -18,7 +18,7 @@ module BujoPdf
   #   ref.set_context.label  # => "Index 1 of 2"
   #
   class PageRef
-    attr_reader :dest_name, :title, :page_type, :metadata
+    attr_reader :dest_name, :title, :page_type, :metadata, :render_block
     attr_accessor :pdf_page_number, :set_context
 
     # Create a new page reference.
@@ -27,13 +27,24 @@ module BujoPdf
     # @param title [String] Display title for the page
     # @param page_type [Symbol] Type identifier (e.g., :index, :weekly, :seasonal)
     # @param metadata [Hash] Optional additional metadata
-    def initialize(dest_name:, title:, page_type:, metadata: {})
+    # @param render_block [Proc, nil] Block to execute during render phase
+    def initialize(dest_name:, title:, page_type:, metadata: {}, render_block: nil)
       @dest_name = dest_name
       @title = title
       @page_type = page_type
       @metadata = metadata
+      @render_block = render_block
       @pdf_page_number = nil  # Assigned during render phase
       @set_context = nil      # Assigned if part of PageSet
+    end
+
+    # Execute the render block.
+    #
+    # Called during the render phase to generate page content.
+    #
+    # @return [void]
+    def render
+      @render_block&.call
     end
 
     # Check if this page is part of a PageSet.
