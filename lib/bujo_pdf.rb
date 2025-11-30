@@ -17,6 +17,7 @@ require_relative 'bujo_pdf/utilities/diagnostics'
 require_relative 'bujo_pdf/utilities/date_calculator'
 
 # Load shared infrastructure
+require_relative 'bujo_pdf/page_set'
 require_relative 'bujo_pdf/render_context'
 require_relative 'bujo_pdf/component_context'
 
