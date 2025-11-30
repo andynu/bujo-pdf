@@ -68,9 +68,7 @@ module BujoPdf
       # Number of months per page (2 columns x 3 rows)
       MONTHS_PER_PAGE = 6
 
-      # Layout constants
-      LEFT_MARGIN = 2
-      RIGHT_MARGIN = 41
+      # Layout constants (adjusted for sidebar layout)
       COLUMN_GAP = 1        # Gap between month columns in grid boxes
       ENTRY_COLUMN_GAP = 1  # Gap between entry line columns within a month
       HEADER_ROW = 1
@@ -83,11 +81,16 @@ module BujoPdf
         @future_log_page_count = context.set? ? context.set.total : (context[:future_log_page_count] || 2)
         @start_month = context[:future_log_start_month] || ((@future_log_page - 1) * MONTHS_PER_PAGE + 1)
         @year = context[:year]
+        @total_weeks = context[:total_weeks] || 53
 
         # Set named destination for this page
         set_destination("future_log_#{@future_log_page}")
 
-        use_layout :full_page
+        use_layout :standard_with_sidebars,
+          current_week: nil,            # No week highlighting on future log
+          highlight_tab: nil,           # Let layout auto-detect from destination
+          year: @year,
+          total_weeks: @total_weeks
       end
 
       def render
@@ -95,10 +98,20 @@ module BujoPdf
         # Components::GridRuler.new(@pdf, @grid_system).render
         draw_header
         draw_two_column_layout
-        draw_set_label(col: LEFT_MARGIN, width: content_width)
+        draw_set_label(col: content_col, width: content_width)
       end
 
       private
+
+      # Get content area starting column
+      def content_col
+        content_area[:col]
+      end
+
+      # Get content area starting row
+      def content_row
+        content_area[:row]
+      end
 
       # Draw the page header
       #
@@ -106,16 +119,19 @@ module BujoPdf
       def draw_header
         first_month = Date::MONTHNAMES[@start_month]
         last_month = Date::MONTHNAMES[@start_month + MONTHS_PER_PAGE - 1]
-        h2(LEFT_MARGIN, HEADER_ROW, "Future Log: #{first_month} - #{last_month} #{@year}")
+        h2(content_col, content_row + HEADER_ROW, "Future Log: #{first_month} - #{last_month} #{@year}")
       end
 
       # Draw the two-column layout with 3 months per column
       #
       # @return [void]
       def draw_two_column_layout
+        # Calculate available height for month sections
+        available_height = content_area[:height_boxes] - CONTENT_START_ROW
+
         month_cells = @grid.divide_grid(
-          col: LEFT_MARGIN, row: CONTENT_START_ROW,
-          width: content_width, height: 50,
+          col: content_col, row: content_row + CONTENT_START_ROW,
+          width: content_width, height: available_height,
           cols: 2, rows: MONTHS_PER_COLUMN,
           col_gap: COLUMN_GAP, order: :down
         )
@@ -189,11 +205,11 @@ module BujoPdf
         ruled_lines(col, start_row, width, row_count)
       end
 
-      # Calculate content width (usable area between margins)
+      # Calculate content width (usable area from layout's content_area)
       #
       # @return [Integer] Width in grid boxes
       def content_width
-        RIGHT_MARGIN - LEFT_MARGIN
+        content_area[:width_boxes]
       end
     end
   end
