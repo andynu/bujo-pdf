@@ -100,6 +100,7 @@ require_relative 'bujo_pdf/pages/all'
 
 # Load main generator (depends on everything above)
 require_relative 'bujo_pdf/planner_generator'
+require_relative 'bujo_pdf/document_builder'
 
 # Module for namespace
 module BujoPdf
