@@ -36,6 +36,7 @@ module BujoPdf
         base.include H2::Mixin
         base.include MiniMonth::Mixin
         base.include RuledList::Mixin
+        base.include Fieldset::Mixin
         base.include LayoutHelpers::Mixin
       end
     end
