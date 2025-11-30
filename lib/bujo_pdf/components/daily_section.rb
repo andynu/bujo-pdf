@@ -83,18 +83,15 @@ module BujoPdf
         width_boxes = cell_rect[:width] / Styling::Grid::DOT_SPACING
         height_boxes = @daily_rows
 
-        # Create WeekColumn component
-        # Note: WeekColumn still uses old interface (SubComponentBase migration is separate)
-        column = WeekColumn.new(pdf, grid,
+        # Create WeekColumn component with canvas
+        column = WeekColumn.new(
+          canvas: canvas,
+          col: col, row: row, width: width_boxes, height: height_boxes,
           date: date,
           day_name: day_name,
           weekend: is_weekend,
           show_time_labels: (day_index == 0),  # Show time labels on Monday only
           line_count: @line_count,
-          header_height: @header_height,
-          header_padding: @header_padding,
-          lines_start: @lines_start,
-          lines_padding: @lines_padding,
           line_margin: @line_margin,
           day_header_font_size: @day_header_font_size,
           day_date_font_size: @day_date_font_size,
@@ -102,8 +99,7 @@ module BujoPdf
           event_store: @event_store
         )
 
-        # Render at column position
-        column.render_at(col, row, width_boxes, height_boxes)
+        column.render
       end
     end
   end
