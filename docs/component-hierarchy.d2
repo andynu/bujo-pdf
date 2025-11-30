@@ -18,15 +18,18 @@ verb_system: Component Verb System {
     stroke-width: 2
   }
 
-  all_module: "Components::All" {
-    desc: "Aggregates all component mixins.\nSingle include point for Pages::Base."
-  }
+  all_module: |md
+    **Components::All**<br/>
+    Aggregates all component mixins<br/>
+    Single include point for Pages::Base
+  |
 
-  pattern: Mixin Pattern {
-    mixin: "Each component defines Mixin module"
-    verb: "Mixin provides verb method(s)"
-    include: "Pages call verbs directly"
-  }
+  pattern: |md
+    **Mixin Pattern**<br/>
+    1. Each component defines Mixin module<br/>
+    2. Mixin provides verb method(s)<br/>
+    3. Pages call verbs directly
+  |
 }
 
 # Grid system
@@ -37,13 +40,14 @@ grid_system: GridSystem Utilities {
     stroke: "#c2185b"
   }
 
-  helpers: Grid Helper Methods {
-    grid_x: grid_x(col) → x
-    grid_y: grid_y(row) → y
-    grid_width: grid_width(boxes) → width
-    grid_height: grid_height(boxes) → height
-    grid_rect: grid_rect(col, row, w, h) → hash
-  }
+  helpers: |md
+    **Grid Helper Methods**<br/>
+    `grid_x(col)` → x coordinate<br/>
+    `grid_y(row)` → y coordinate<br/>
+    `grid_width(boxes)` → width in points<br/>
+    `grid_height(boxes)` → height in points<br/>
+    `grid_rect(col, row, w, h)` → bounds hash
+  |
 }
 
 # Navigation Components
@@ -51,20 +55,23 @@ nav_components: Navigation Components {
   shape: package
   style.fill: "#e8f5e9"
 
-  week_sidebar: WeekSidebar {
-    verb: "Used by layouts (not verb)"
-    renders: "Week list 1-53 with month labels"
-  }
+  week_sidebar: |md
+    **WeekSidebar**<br/>
+    Week list 1-53 with month labels<br/>
+    *(Used by layouts, not verb)*
+  |
 
-  right_sidebar: RightSidebar {
-    verb: "Used by layouts (not verb)"
-    renders: "Rotated year/grid page tabs"
-  }
+  right_sidebar: |md
+    **RightSidebar**<br/>
+    Rotated year/grid page tabs<br/>
+    *(Used by layouts, not verb)*
+  |
 
-  top_nav: TopNavigation {
-    verb: "Used by layouts (not verb)"
-    renders: "Prev/next week buttons"
-  }
+  top_nav: |md
+    **TopNavigation**<br/>
+    Prev/next week buttons<br/>
+    *(Used by layouts, not verb)*
+  |
 }
 
 # Content Components (with verbs)
@@ -72,40 +79,47 @@ content_components: Content Components (Verbs) {
   shape: package
   style.fill: "#c8e6c9"
 
-  text_comp: Text {
-    verb: "text(col, row, content, **opts)"
-    renders: "Text at grid position"
-  }
+  text_comp: |md
+    **Text**<br/>
+    Text at grid position<br/>
+    `text(col, row, content, **opts)`
+  |
 
-  h1_comp: H1 {
-    verb: "h1(col, row, content, **opts)"
-    renders: "Large heading text"
-  }
+  h1_comp: |md
+    **H1**<br/>
+    Large heading text<br/>
+    `h1(col, row, content, **opts)`
+  |
 
-  h2_comp: H2 {
-    verb: "h2(col, row, content, **opts)"
-    renders: "Medium heading text"
-  }
+  h2_comp: |md
+    **H2**<br/>
+    Medium heading text<br/>
+    `h2(col, row, content, **opts)`
+  |
 
-  fieldset_comp: Fieldset {
-    verb: "fieldset(position:, legend:, **opts)"
-    renders: "Bordered section with legend"
-  }
+  fieldset_comp: |md
+    **Fieldset**<br/>
+    Bordered section with legend<br/>
+    `fieldset(position:, legend:, **opts)`
+  |
 
-  ruled_lines_comp: RuledLines {
-    verb: "ruled_lines(col, row, w, h, **opts)"
-    renders: "Horizontal ruled lines"
-  }
+  ruled_lines_comp: |md
+    **RuledLines**<br/>
+    Horizontal ruled lines<br/>
+    `ruled_lines(col, row, w, h, **opts)`
+  |
 
-  ruled_list_comp: RuledList {
-    verb: "ruled_list(col, row, w, h, **opts)"
-    renders: "Numbered/bulleted list"
-  }
+  ruled_list_comp: |md
+    **RuledList**<br/>
+    Numbered/bulleted list<br/>
+    `ruled_list(col, row, w, h, **opts)`
+  |
 
-  mini_month_comp: MiniMonth {
-    verb: "mini_month(col, row, year, month)"
-    renders: "Compact month calendar"
-  }
+  mini_month_comp: |md
+    **MiniMonth**<br/>
+    Compact month calendar<br/>
+    `mini_month(col, row, year, month)`
+  |
 }
 
 # Drawing Components (with verbs)
@@ -113,30 +127,35 @@ drawing_components: Drawing Components (Verbs) {
   shape: package
   style.fill: "#b2dfdb"
 
-  box_comp: Box {
-    verb: "box(col, row, w, h, **opts)"
-    renders: "Rectangle outline/fill"
-  }
+  box_comp: |md
+    **Box**<br/>
+    Rectangle outline/fill<br/>
+    `box(col, row, w, h, **opts)`
+  |
 
-  hline_comp: HLine {
-    verb: "hline(col, row, width, **opts)"
-    renders: "Horizontal line"
-  }
+  hline_comp: |md
+    **HLine**<br/>
+    Horizontal line<br/>
+    `hline(col, row, width, **opts)`
+  |
 
-  vline_comp: VLine {
-    verb: "vline(col, row, height, **opts)"
-    renders: "Vertical line"
-  }
+  vline_comp: |md
+    **VLine**<br/>
+    Vertical line<br/>
+    `vline(col, row, height, **opts)`
+  |
 
-  grid_dots_comp: GridDots {
-    verb: "grid_dots(col, row, w, h, **opts)"
-    renders: "Dot grid overlay"
-  }
+  grid_dots_comp: |md
+    **GridDots**<br/>
+    Dot grid overlay<br/>
+    `grid_dots(col, row, w, h, **opts)`
+  |
 
-  erase_dots_comp: EraseDots {
-    verb: "erase_dots(col, row, w, h)"
-    renders: "White rectangle to hide dots"
-  }
+  erase_dots_comp: |md
+    **EraseDots**<br/>
+    White rectangle to hide dots<br/>
+    `erase_dots(col, row, w, h)`
+  |
 }
 
 # Prawn integration
@@ -153,9 +172,11 @@ pages: Page Classes {
   shape: package
   style.fill: "#fff3e0"
 
-  base: "Pages::Base" {
-    includes: "includes Components::All"
-  }
+  base: |md
+    **Pages::Base**<br/>
+    includes Components::All<br/>
+    provides @pdf and @grid_system
+  |
 
   example_usage: |ruby
     def render
