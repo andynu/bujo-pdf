@@ -42,6 +42,7 @@ module BujoPdf
 
       # Set up layout with Grids tab highlighted
       def setup
+        set_destination('grids_overview')
         use_layout :standard_with_sidebars,
           highlight_tab: :grids
       end
