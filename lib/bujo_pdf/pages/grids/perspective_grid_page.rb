@@ -20,11 +20,11 @@ module BujoPdf
 
           # Generate the perspective grid page.
           #
-          # @return [void]
+          # @return [PageRef, nil] PageRef during define phase, nil during render
           def perspective_grid_page
-            start_new_page
-            context = build_context(page_key: :grid_perspective)
-            Grids::PerspectiveGridPage.new(@pdf, context).generate
+            define_page(dest: 'grid_perspective', title: 'Perspective Grid', type: :grid) do |ctx|
+              Grids::PerspectiveGridPage.new(@pdf, ctx).generate
+            end
           end
         end
 

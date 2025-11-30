@@ -33,22 +33,21 @@ module BujoPdf
         # Generate a single monthly review page.
         #
         # @param month [Integer] Month number (1-12)
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def monthly_review_page(month:)
-          start_new_page
-          context = build_context(
-            page_key: "review_#{month}".to_sym,
-            review_month: month
-          )
-          MonthlyReview.new(@pdf, context).generate
+          month_name = Date::MONTHNAMES[month]
+          define_page(dest: "review_#{month}", title: month_name, type: :monthly_review,
+                      review_month: month) do |ctx|
+            MonthlyReview.new(@pdf, ctx).generate
+          end
         end
 
         # Generate all monthly review pages (12 pages).
         #
-        # @return [void]
+        # @return [Array<PageRef>, nil] Array of PageRefs during define phase
         def monthly_review_pages
-          12.times do |i|
-            monthly_review_page(month: i + 1)
+          (1..12).map do |month|
+            monthly_review_page(month: month)
           end
         end
       end

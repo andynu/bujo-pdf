@@ -21,11 +21,11 @@ module BujoPdf
 
           # Generate the lined grid page.
           #
-          # @return [void]
+          # @return [PageRef, nil] PageRef during define phase, nil during render
           def lined_grid_page
-            start_new_page
-            context = build_context(page_key: :grid_lined)
-            Grids::LinedGridPage.new(@pdf, context).generate
+            define_page(dest: 'grid_lined', title: 'Ruled Lines', type: :grid) do |ctx|
+              Grids::LinedGridPage.new(@pdf, ctx).generate
+            end
           end
         end
 

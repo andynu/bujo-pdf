@@ -39,16 +39,13 @@ module BujoPdf
         # @param id [String] Collection identifier
         # @param title [String] Collection title
         # @param subtitle [String, nil] Optional subtitle
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def collection_page(id:, title:, subtitle: nil)
-          start_new_page
-          context = build_context(
-            page_key: "collection_#{id}".to_sym,
-            collection_id: id,
-            collection_title: title,
-            collection_subtitle: subtitle
-          )
-          CollectionPage.new(@pdf, context).generate
+          define_page(dest: "collection_#{id}", title: title, type: :collection,
+                      collection_id: id, collection_title: title,
+                      collection_subtitle: subtitle) do |ctx|
+            CollectionPage.new(@pdf, ctx).generate
+          end
         end
       end
 

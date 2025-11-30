@@ -25,11 +25,11 @@ module BujoPdf
 
         # Generate the daily wheel page.
         #
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def daily_wheel_page
-          start_new_page
-          context = build_context(page_key: :daily_wheel)
-          DailyWheel.new(@pdf, context).generate
+          define_page(dest: 'daily_wheel', title: 'Daily Wheel', type: :template) do |ctx|
+            DailyWheel.new(@pdf, ctx).generate
+          end
         end
       end
 

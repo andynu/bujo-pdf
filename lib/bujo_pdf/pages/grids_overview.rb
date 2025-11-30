@@ -22,11 +22,11 @@ module BujoPdf
 
         # Generate the grids overview page.
         #
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def grids_overview_page
-          start_new_page
-          context = build_context(page_key: :grids_overview)
-          GridsOverview.new(@pdf, context).generate
+          define_page(dest: 'grids_overview', title: 'Grids Overview', type: :grid) do |ctx|
+            GridsOverview.new(@pdf, ctx).generate
+          end
         end
       end
 

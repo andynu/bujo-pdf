@@ -33,22 +33,20 @@ module BujoPdf
         # Generate a single quarterly planning page.
         #
         # @param quarter [Integer] Quarter number (1-4)
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def quarterly_planning_page(quarter:)
-          start_new_page
-          context = build_context(
-            page_key: "quarter_#{quarter}".to_sym,
-            quarter: quarter
-          )
-          QuarterlyPlanning.new(@pdf, context).generate
+          define_page(dest: "quarter_#{quarter}", title: "Q#{quarter} Planning", type: :quarterly_planning,
+                      quarter: quarter) do |ctx|
+            QuarterlyPlanning.new(@pdf, ctx).generate
+          end
         end
 
         # Generate all quarterly planning pages (4 pages).
         #
-        # @return [void]
+        # @return [Array<PageRef>, nil] Array of PageRefs during define phase
         def quarterly_planning_pages
-          4.times do |i|
-            quarterly_planning_page(quarter: i + 1)
+          (1..4).map do |quarter|
+            quarterly_planning_page(quarter: quarter)
           end
         end
       end

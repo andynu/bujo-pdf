@@ -20,11 +20,11 @@ module BujoPdf
 
           # Generate the isometric grid page.
           #
-          # @return [void]
+          # @return [PageRef, nil] PageRef during define phase, nil during render
           def isometric_grid_page
-            start_new_page
-            context = build_context(page_key: :grid_isometric)
-            Grids::IsometricGridPage.new(@pdf, context).generate
+            define_page(dest: 'grid_isometric', title: 'Isometric Grid', type: :grid) do |ctx|
+              Grids::IsometricGridPage.new(@pdf, ctx).generate
+            end
           end
         end
 

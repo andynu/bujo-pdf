@@ -20,11 +20,11 @@ module BujoPdf
 
           # Generate the hexagon grid page.
           #
-          # @return [void]
+          # @return [PageRef, nil] PageRef during define phase, nil during render
           def hexagon_grid_page
-            start_new_page
-            context = build_context(page_key: :grid_hexagon)
-            Grids::HexagonGridPage.new(@pdf, context).generate
+            define_page(dest: 'grid_hexagon', title: 'Hexagon Grid', type: :grid) do |ctx|
+              Grids::HexagonGridPage.new(@pdf, ctx).generate
+            end
           end
         end
 
