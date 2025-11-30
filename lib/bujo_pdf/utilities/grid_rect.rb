@@ -37,16 +37,6 @@ module BujoPdf
 
     alias to_h to_hash
 
-    # Create from a Cell struct
-    def self.from_cell(cell)
-      new(cell.col, cell.row, cell.width, cell.height)
-    end
-
-    # Convert to Cell struct for compatibility
-    def to_cell
-      Cell.new(col: col, row: row, width: width, height: height)
-    end
-
     def ==(other)
       return false unless other.is_a?(GridRect)
 

@@ -14,8 +14,8 @@ require_relative 'bujo_pdf/canvas'
 
 # Load utilities (no dependencies)
 require_relative 'bujo_pdf/utilities/styling'
-require_relative 'bujo_pdf/utilities/grid_system'
 require_relative 'bujo_pdf/utilities/grid_rect'
+require_relative 'bujo_pdf/utilities/grid_system'
 require_relative 'bujo_pdf/utilities/dot_grid'
 require_relative 'bujo_pdf/utilities/diagnostics'
 require_relative 'bujo_pdf/utilities/date_calculator'
