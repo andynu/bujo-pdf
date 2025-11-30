@@ -328,6 +328,57 @@ class GridSystem
     grid_dots(col: col, row: row, width: width, height: height, color: color).render
   end
 
+  # Apply grid-based margins to create an inset region
+  #
+  # Unlike the point-based `inset` method, this works entirely in grid boxes
+  # and returns a Cell struct that can be passed directly to other grid methods.
+  #
+  # @param col [Integer] Starting column position
+  # @param row [Integer] Starting row position
+  # @param width [Integer] Width in grid boxes
+  # @param height [Integer] Height in grid boxes
+  # @param left [Integer] Left margin in grid boxes (default: 0)
+  # @param right [Integer] Right margin in grid boxes (default: 0)
+  # @param top [Integer] Top margin in grid boxes (default: 0)
+  # @param bottom [Integer] Bottom margin in grid boxes (default: 0)
+  # @param all [Integer, nil] Uniform margin on all sides (overridden by specific sides)
+  # @return [Cell] Cell struct with adjusted position and dimensions
+  #
+  # @example Uniform margins
+  #   inner = @grid.margins(col: 2, row: 4, width: 39, height: 50, all: 2)
+  #   inner.col    # => 4
+  #   inner.row    # => 6
+  #   inner.width  # => 35
+  #   inner.height # => 46
+  #
+  # @example Specific margins
+  #   inner = @grid.margins(col: 0, row: 0, width: 43, height: 55,
+  #                         left: 3, right: 1, top: 2, bottom: 3)
+  #   inner.col    # => 3
+  #   inner.row    # => 2
+  #   inner.width  # => 39
+  #   inner.height # => 50
+  #
+  # @example Used with divide_columns
+  #   content = @grid.margins(col: 0, row: 0, width: 43, height: 55, all: 2)
+  #   cols = @grid.divide_columns(col: content.col, width: content.width, count: 2)
+  def margins(col:, row:, width:, height:, left: 0, right: 0, top: 0, bottom: 0, all: nil)
+    # Apply 'all' as default if specified
+    if all
+      left = left.zero? ? all : left
+      right = right.zero? ? all : right
+      top = top.zero? ? all : top
+      bottom = bottom.zero? ? all : bottom
+    end
+
+    Cell.new(
+      col: col + left,
+      row: row + top,
+      width: width - left - right,
+      height: height - top - bottom
+    )
+  end
+
   # Divide a width into equal columns with optional gaps
   #
   # Returns an array of Column structs that can be destructured or indexed.
