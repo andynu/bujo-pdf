@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
+require_relative 'text'
 
 module BujoPdf
   module Components
@@ -33,6 +34,7 @@ module BujoPdf
     #   )
     #   sidebar.render
     class RightSidebar < Component
+      include Text::Mixin
       DEFAULT_SIDEBAR_COL = 42
       FONT_SIZE = 8
       TAB_GAP_PT = 4           # Uniform gap between tabs in points
@@ -145,36 +147,27 @@ module BujoPdf
       def draw_tab_text(left, top, width, height, label, is_current)
         require_relative '../themes/theme_registry'
 
-        # Font and color based on current state
-        font_style = is_current ? "Helvetica-Bold" : "Helvetica"
+        # Font style and color based on current state
+        font_style = is_current ? :bold : :normal
         color = is_current ? BujoPdf::Themes.current[:colors][:text_black] : BujoPdf::Themes.current[:colors][:text_gray]
 
-        with_font(font_style, FONT_SIZE) do
-          with_fill_color(color) do
-            # Center point of the tab for rotation
-            center_x = left + (width / 2.0)
-            center_y = top - (height / 2.0)
-
-            # Rotate -90 degrees (clockwise) for top-to-bottom reading
-            pdf.rotate(-90, origin: [center_x, center_y]) do
-              # After rotation, the text box needs to be positioned relative to center
-              # Text width becomes the height dimension, text height becomes width
-              text_box_width = height - (TAB_PADDING_PT * 2)
-              text_box_height = width
-
-              # Position text box so it's centered on the rotation point
-              text_x = center_x - (text_box_width / 2.0)
-              text_y = center_y + (text_box_height / 2.0)
-
-              pdf.text_box label,
-                            at: [text_x, text_y],
-                            width: text_box_width,
-                            height: text_box_height,
-                            align: :center,
-                            valign: :center
-            end
-          end
-        end
+        # Use Text component with centered rotation mode
+        # - Center point is the middle of the tab rectangle
+        # - Text box dimensions are (height-padding, width) which after -90 rotation
+        #   becomes vertical extent = height-padding, horizontal extent = width
+        text(
+          0, 0, label,
+          rotation: -90,
+          size: FONT_SIZE,
+          style: font_style,
+          color: color,
+          align: :center,
+          pt_x: left + (width / 2.0),
+          pt_y: top - (height / 2.0),
+          pt_width: height - (TAB_PADDING_PT * 2),
+          pt_height: width,
+          centered: true
+        )
       end
     end
   end
