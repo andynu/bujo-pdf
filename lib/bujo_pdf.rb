@@ -34,8 +34,7 @@ require_relative 'bujo_pdf/dsl/configuration/calendars'
 require_relative 'bujo_pdf/base/component'
 require_relative 'bujo_pdf/base/layout'
 
-# Load components (including sub-component base and position-based components)
-require_relative 'bujo_pdf/components/sub_component_base'
+# Load components (position-based components now inherit from Component)
 require_relative 'bujo_pdf/components/fieldset'
 require_relative 'bujo_pdf/components/week_column'
 require_relative 'bujo_pdf/components/day_header'
