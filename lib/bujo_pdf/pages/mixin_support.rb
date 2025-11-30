@@ -31,6 +31,41 @@ module BujoPdf
     module MixinSupport
       private
 
+      # Create a page set and iterate over its pages.
+      #
+      # The page_set DSL allows builders to declare multi-page spreads.
+      # Pages generated inside the block automatically have context.set
+      # populated with the current page position (page, total, label).
+      #
+      # @param count [Integer] Number of pages in the set
+      # @param label [String, nil] Label pattern with %page/%total placeholders
+      # @param name [String, nil] Set name (extracted from label if not provided)
+      # @yield [PageSet] The page set for the current iteration
+      # @return [PageSet, nil] The PageSet if no block given, nil otherwise
+      #
+      # @example Generate 4 index pages with labels
+      #   page_set(4, "Index %page of %total") do |set|
+      #     index_page  # context.set.label => "Index 1 of 4", etc.
+      #   end
+      #
+      # @example Generate pages with custom name
+      #   page_set(2, name: "Future Log") do |set|
+      #     future_log_page
+      #   end
+      def page_set(count, label = nil, name: nil)
+        set = PageSet.new(count: count, label: label, name: name)
+        return set unless block_given?
+
+        set.each do |i|
+          @current_page_set = set
+          @current_page_set_index = i
+          yield set
+        end
+      ensure
+        @current_page_set = nil
+        @current_page_set_index = nil
+      end
+
       # Start a new page, but no-op if this is the first page.
       #
       # This allows verbs to always call start_new_page without checking
@@ -51,7 +86,7 @@ module BujoPdf
       # @param extras [Hash] Additional context fields
       # @return [RenderContext] Fully populated context
       def build_context(page_key:, **extras)
-        RenderContext.new(
+        ctx = RenderContext.new(
           page_key: page_key,
           page_number: @pdf.page_number,
           year: @year,
@@ -61,6 +96,13 @@ module BujoPdf
           event_store: @event_store,
           **extras
         )
+
+        # Attach page set context if inside a page_set block
+        if @current_page_set
+          ctx.set = @current_page_set[@current_page_set_index]
+        end
+
+        ctx
       end
 
       # Get total weeks for the current year (cached).
