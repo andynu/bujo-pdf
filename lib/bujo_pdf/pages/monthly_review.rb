@@ -158,14 +158,10 @@ module BujoPdf
       #
       # @return [void]
       def draw_prompt_sections
-        # Calculate available height for sections
-        start_row = 6
-        available_rows = 47  # Rows 6-52
-        section_height = available_rows / PROMPTS.count
+        sections = @grid.divide_rows(row: 6, height: 47, count: PROMPTS.count)
 
-        PROMPTS.each_with_index do |prompt, index|
-          row = start_row + (index * section_height)
-          draw_prompt_section(prompt, row, section_height - 1)
+        PROMPTS.zip(sections).each do |prompt, section|
+          draw_prompt_section(prompt, section.row, section.height - 1)
         end
       end
 

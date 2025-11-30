@@ -59,17 +59,18 @@ module BujoPdf
       private
 
       def draw_header
-        col_width = year_column_width
+        year_cols = @grid.divide_columns(
+          col: content_area[:col] + MONTH_LABEL_WIDTH,
+          width: content_area[:width_boxes] - MONTH_LABEL_WIDTH,
+          count: @year_count
+        )
 
-        @year_count.times do |year_idx|
-          year = @start_year + year_idx
-          col = content_area[:col] + MONTH_LABEL_WIDTH + (year_idx * col_width)
-
+        year_cols.each_with_index do |col, year_idx|
           @grid_system.text_box(
-            year.to_s,
-            col,
+            (@start_year + year_idx).to_s,
+            col.col,
             content_area[:row] + HEADER_START_ROW,
-            col_width,
+            col.width,
             HEADER_HEIGHT,
             align: :center,
             valign: :center,
@@ -80,21 +81,24 @@ module BujoPdf
       end
 
       def draw_month_labels
-        12.times do |month_idx|
-          row = HEADER_HEIGHT + (month_idx * MONTH_HEIGHT_BOXES)
+        month_rows = @grid.divide_rows(
+          row: content_area[:row] + HEADER_HEIGHT,
+          height: 12 * MONTH_HEIGHT_BOXES,
+          count: 12
+        )
 
-          # Draw month label with padding from cell borders
+        MONTH_NAMES.zip(month_rows).each do |month_name, section|
           label_box = @grid_system.rect(
             content_area[:col],
-            content_area[:row] + row,
+            section.row,
             MONTH_LABEL_WIDTH,
-            MONTH_HEIGHT_BOXES
+            section.height
           )
 
           # Add padding (0.3 boxes on all sides)
           padding = @grid_system.width(0.3)
 
-          @pdf.text_box MONTH_NAMES[month_idx],
+          @pdf.text_box month_name,
             at: [label_box[:x] + padding, label_box[:y] - padding],
             width: label_box[:width] - (padding * 2),
             height: label_box[:height] - (padding * 2),
@@ -105,25 +109,29 @@ module BujoPdf
       end
 
       def draw_year_columns
-        col_width = year_column_width
+        # Grid of year columns × month rows (order: :right = row-major)
+        cells = @grid.divide_grid(
+          col: content_area[:col] + MONTH_LABEL_WIDTH,
+          row: content_area[:row] + HEADER_HEIGHT,
+          width: content_area[:width_boxes] - MONTH_LABEL_WIDTH,
+          height: 12 * MONTH_HEIGHT_BOXES,
+          cols: @year_count,
+          rows: 12,
+          order: :right
+        )
 
-        @year_count.times do |year_idx|
-          year = @start_year + year_idx
-          base_col = content_area[:col] + MONTH_LABEL_WIDTH + (year_idx * col_width)
+        cells.each_with_index do |cell, idx|
+          year_idx = idx % @year_count
+          month_idx = idx / @year_count
 
-          12.times do |month_idx|
-            month_num = month_idx + 1
-            row = HEADER_HEIGHT + (month_idx * MONTH_HEIGHT_BOXES)
-
-            draw_cell(
-              year,
-              month_num,
-              base_col,
-              content_area[:row] + row,
-              col_width,
-              MONTH_HEIGHT_BOXES
-            )
-          end
+          draw_cell(
+            @start_year + year_idx,
+            month_idx + 1,
+            cell.col,
+            cell.row,
+            cell.width,
+            cell.height
+          )
         end
       end
 
@@ -136,39 +144,42 @@ module BujoPdf
         @pdf.stroke_color Styling::Colors.BORDERS
         @pdf.line_width 0.5
 
-        # Horizontal lines between months (including top and bottom)
-        13.times do |i|
-          row = HEADER_HEIGHT + (i * MONTH_HEIGHT_BOXES)
-          y = @grid_system.y(content_area[:row] + row)
+        grid_top = content_area[:row] + HEADER_HEIGHT
+        grid_height = 12 * MONTH_HEIGHT_BOXES
+        grid_left = content_area[:col] + MONTH_LABEL_WIDTH
+        grid_width = content_area[:width_boxes] - MONTH_LABEL_WIDTH
 
+        month_rows = @grid.divide_rows(row: grid_top, height: grid_height, count: 12)
+        year_cols = @grid.divide_columns(col: grid_left, width: grid_width, count: @year_count)
+
+        # Horizontal lines between months (including top and bottom)
+        month_rows.each do |section|
+          y = @grid_system.y(section.row)
           @pdf.stroke_line(
             [@grid_system.x(content_area[:col]), y],
             [@grid_system.x(content_area[:col] + content_area[:width_boxes]), y]
           )
         end
+        # Bottom line
+        bottom_y = @grid_system.y(grid_top + grid_height)
+        @pdf.stroke_line(
+          [@grid_system.x(content_area[:col]), bottom_y],
+          [@grid_system.x(content_area[:col] + content_area[:width_boxes]), bottom_y]
+        )
 
         # Vertical lines between years (including left and right edges)
-        col_width = year_column_width
-        (@year_count + 1).times do |i|
-          col = content_area[:col] + MONTH_LABEL_WIDTH + (i * col_width)
-          x = @grid_system.x(col)
-
-          top_y = @grid_system.y(content_area[:row] + HEADER_HEIGHT)
-          bottom_y = @grid_system.y(content_area[:row] + HEADER_HEIGHT + (12 * MONTH_HEIGHT_BOXES))
-
+        top_y = @grid_system.y(grid_top)
+        year_cols.each do |col|
+          x = @grid_system.x(col.col)
           @pdf.stroke_line([x, top_y], [x, bottom_y])
         end
+        # Right edge
+        right_x = @grid_system.x(grid_left + grid_width)
+        @pdf.stroke_line([right_x, top_y], [right_x, bottom_y])
 
         # Vertical line separating month labels from data
-        label_edge_x = @grid_system.x(content_area[:col] + MONTH_LABEL_WIDTH)
-        top_y = @grid_system.y(content_area[:row] + HEADER_HEIGHT)
-        bottom_y = @grid_system.y(content_area[:row] + HEADER_HEIGHT + (12 * MONTH_HEIGHT_BOXES))
+        label_edge_x = @grid_system.x(grid_left)
         @pdf.stroke_line([label_edge_x, top_y], [label_edge_x, bottom_y])
-      end
-
-      def year_column_width
-        # Available width after month labels, divided by number of years
-        (content_area[:width_boxes] - MONTH_LABEL_WIDTH) / @year_count
       end
     end
   end
