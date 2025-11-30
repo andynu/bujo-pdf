@@ -55,6 +55,9 @@ module BujoPdf
         # Phase 2: Render pass - generate pages with resolved links
         render_pages(pdf, context.pages, base_context)
 
+        # Build PDF outline/bookmarks
+        build_outline(pdf, context.pages, base_context)
+
         # Output
         if output
           pdf.render_file(output)
@@ -220,6 +223,129 @@ module BujoPdf
         page.generate
       rescue ArgumentError => e
         raise ArgumentError, "Failed to create page '#{page_type}': #{e.message}"
+      end
+
+      # Build PDF outline/bookmarks for navigation.
+      #
+      # Creates a hierarchical outline matching the document structure:
+      # - Front matter (Seasonal, Index, Future Log)
+      # - Year overview (Events, Highlights, Multi-Year)
+      # - Planning pages (Quarterly, Monthly Reviews)
+      # - Months (linked to first week of each month)
+      # - Grid pages
+      # - Templates
+      # - Collections
+      #
+      # @param pdf [Prawn::Document] The PDF document
+      # @param pages [Array<PageDeclaration>] All page declarations
+      # @param base_context [Hash] Base render context with year info
+      def build_outline(pdf, pages, base_context)
+        pages_by_dest = build_pages_by_dest(pages)
+        year = base_context[:year]
+
+        pdf.outline.define do
+          # Front matter
+          if (p = pages_by_dest['seasonal'])
+            page destination: p[:page_number], title: 'Seasonal Calendar'
+          end
+          if (p = pages_by_dest['index_1'])
+            page destination: p[:page_number], title: 'Index'
+          end
+          if (p = pages_by_dest['future_log_1'])
+            page destination: p[:page_number], title: 'Future Log'
+          end
+
+          # Year overview
+          if (p = pages_by_dest['year_events'])
+            page destination: p[:page_number], title: 'Year at a Glance - Events'
+          end
+          if (p = pages_by_dest['year_highlights'])
+            page destination: p[:page_number], title: 'Year at a Glance - Highlights'
+          end
+          if (p = pages_by_dest['multi_year'])
+            page destination: p[:page_number], title: 'Multi-Year Overview'
+          end
+
+          # Planning pages
+          if (p = pages_by_dest['quarter_1'])
+            page destination: p[:page_number], title: 'Quarterly Planning'
+          end
+          if (p = pages_by_dest['review_1'])
+            page destination: p[:page_number], title: 'Monthly Reviews'
+          end
+
+          # Months (link to first week of each month)
+          (1..12).each do |month|
+            month_name = Date::MONTHNAMES[month]
+            weeks = BujoPdf::Utilities::DateCalculator.weeks_for_month(year, month)
+            if weeks.any? && (p = pages_by_dest["week_#{weeks.first}"])
+              page destination: p[:page_number], title: "#{month_name} #{year}"
+            end
+          end
+
+          # Grids
+          if (p = pages_by_dest['grid_showcase'])
+            page destination: p[:page_number], title: 'Grid Types Showcase'
+          end
+          if (p = pages_by_dest['grids_overview'])
+            page destination: p[:page_number], title: '  - Basic Grids Overview'
+          end
+          if (p = pages_by_dest['grid_dot'])
+            page destination: p[:page_number], title: '  - Dot Grid (5mm)'
+          end
+          if (p = pages_by_dest['grid_graph'])
+            page destination: p[:page_number], title: '  - Graph Grid (5mm)'
+          end
+          if (p = pages_by_dest['grid_lined'])
+            page destination: p[:page_number], title: '  - Ruled Lines (10mm)'
+          end
+          if (p = pages_by_dest['grid_isometric'])
+            page destination: p[:page_number], title: '  - Isometric Grid'
+          end
+          if (p = pages_by_dest['grid_perspective'])
+            page destination: p[:page_number], title: '  - Perspective Grid'
+          end
+          if (p = pages_by_dest['grid_hexagon'])
+            page destination: p[:page_number], title: '  - Hexagon Grid'
+          end
+
+          # Templates
+          if (p = pages_by_dest['tracker_example'])
+            page destination: p[:page_number], title: 'Tracker Ideas'
+          end
+          if (p = pages_by_dest['reference'])
+            page destination: p[:page_number], title: 'Calibration & Reference'
+          end
+          if (p = pages_by_dest['daily_wheel'])
+            page destination: p[:page_number], title: 'Daily Wheel'
+          end
+          if (p = pages_by_dest['year_wheel'])
+            page destination: p[:page_number], title: 'Year Wheel'
+          end
+
+          # Collections
+          pages_by_dest.each do |dest, p|
+            next unless dest.start_with?('collection_')
+
+            page destination: p[:page_number], title: p[:title]
+          end
+        end
+      end
+
+      # Build a lookup hash of pages by destination key.
+      #
+      # @param pages [Array<PageDeclaration>] All page declarations
+      # @return [Hash<String, Hash>] Map of dest key to page info
+      def build_pages_by_dest(pages)
+        pages.each_with_index.each_with_object({}) do |(page_decl, index), hash|
+          dest_key = page_decl.destination_key
+          # For collection pages, get title from params
+          title = page_decl.params[:collection_title] || dest_key.tr('_', ' ').split.map(&:capitalize).join(' ')
+          hash[dest_key] = {
+            page_number: index + 1,
+            title: title
+          }
+        end
       end
     end
   end
