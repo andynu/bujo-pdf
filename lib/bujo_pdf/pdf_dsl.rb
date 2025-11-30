@@ -124,7 +124,7 @@ module BujoPdf
       # Call this after requiring pdf_dsl to register standard recipes.
       # Uses load instead of require to allow re-loading after clear_recipes!
       def load_recipes!
-        recipe_path = File.expand_path('pdf_dsl/recipes/standard_planner.rb', __dir__)
+        recipe_path = File.expand_path('pdfs/standard_planner.rb', __dir__)
         load recipe_path
       end
     end
