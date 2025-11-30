@@ -154,7 +154,8 @@ module BujoPdf
           total_pages: declaration_context.pages.length,
           link_registry: @link_registry,
           date_config: date_config,
-          event_store: event_store
+          event_store: event_store,
+          sidebar_overrides: declaration_context.sidebar_overrides
         }
       end
 

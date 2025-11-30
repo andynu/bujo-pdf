@@ -214,22 +214,38 @@ module BujoPdf
         # Determine which index to use (prefer current_index from actual page)
         active_index = current_index || highlight_index
 
-        if active_index.nil?
-          # Not in cycle: go to first page (entry point), not highlighted
-          {
-            label: label,
-            dest: dest_array.first.to_s,
-            current: false
-          }
-        else
+        if active_index
           # In cycle: advance to next page (wrap around), highlighted
           next_index = (active_index + 1) % dest_array.size
-          {
+          return {
             label: label,
             dest: dest_array[next_index].to_s,
             current: true
           }
         end
+
+        # Not in cycle: check for sidebar override
+        if options[:page_context]
+          page_key = options[:page_context][:page_key]
+          sidebar_overrides = options[:page_context][:sidebar_overrides]
+          if sidebar_overrides
+            override = sidebar_overrides.get(page_key, label)
+            if override
+              return {
+                label: label,
+                dest: override,
+                current: false
+              }
+            end
+          end
+        end
+
+        # Default: go to first page (entry point), not highlighted
+        {
+          label: label,
+          dest: dest_array.first.to_s,
+          current: false
+        }
       end
 
       # Check if currently rendering a specific page.

@@ -4,6 +4,7 @@ require_relative 'page_declaration'
 require_relative 'inline_page'
 require_relative 'metadata'
 require_relative 'outline'
+require_relative 'sidebar_overrides'
 require_relative 'week'
 
 module BujoPdf
@@ -27,7 +28,7 @@ module BujoPdf
     #   end
     #
     class DeclarationContext
-      attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries
+      attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries, :sidebar_overrides
 
       # Initialize a new declaration context.
       def initialize
@@ -38,6 +39,7 @@ module BujoPdf
         @current_group = nil
         @outline_entries = []
         @current_section = nil
+        @sidebar_overrides = SidebarOverrides.new
       end
 
       # Declare a page.
@@ -240,6 +242,27 @@ module BujoPdf
         end
 
         weeks.each(&block)
+      end
+
+      # Set a sidebar tab destination override for a specific page.
+      #
+      # Allows customizing which destination a sidebar tab navigates to
+      # when viewing a particular page. Useful for context-aware navigation,
+      # e.g., weekly pages linking to the appropriate Future Log based on month.
+      #
+      # @param from [Symbol, String] The source page key (e.g., :week_27)
+      # @param tab [Symbol, String] The tab label (e.g., :future, "Future")
+      # @param to [Symbol, String] The destination page key (e.g., :future_log_2)
+      # @return [void]
+      #
+      # @example Set Future Log destination based on week's month
+      #   weeks_in(year).each do |week|
+      #     future_dest = week.start_date.month <= 6 ? :future_log_1 : :future_log_2
+      #     set_sidebar_dest from: :"week_#{week.number}", tab: :future, to: future_dest
+      #     page :weekly, week: week
+      #   end
+      def set_sidebar_dest(from:, tab:, to:)
+        @sidebar_overrides.set(from: from, tab: tab, to: to)
       end
 
       # Get the metadata hash for Prawn.
