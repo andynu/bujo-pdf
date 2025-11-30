@@ -8,6 +8,9 @@ Column = Struct.new(:col, :width, keyword_init: true)
 # Simple struct representing a row's position and height in grid boxes
 Row = Struct.new(:row, :height, keyword_init: true)
 
+# Simple struct representing a grid cell's position and dimensions in grid boxes
+Cell = Struct.new(:col, :row, :width, :height, keyword_init: true)
+
 # GridSystem provides a coordinate conversion system for grid-based layout
 #
 # The grid system uses a top-left origin (0,0) where:
@@ -390,5 +393,70 @@ class GridSystem
         height: row_height
       )
     end
+  end
+
+  # Divide a region into a 2D grid of cells
+  #
+  # Returns an array of Cell structs ordered by the specified direction.
+  # Each Cell has :col, :row, :width, and :height attributes.
+  #
+  # @param col [Integer] Starting column position
+  # @param row [Integer] Starting row position
+  # @param width [Integer] Total width to divide (in grid boxes)
+  # @param height [Integer] Total height to divide (in grid boxes)
+  # @param cols [Integer] Number of columns
+  # @param rows [Integer] Number of rows
+  # @param col_gap [Integer] Gap between columns in grid boxes (default: 0)
+  # @param row_gap [Integer] Gap between rows in grid boxes (default: 0)
+  # @param order [Symbol] :right (row-major) or :down (column-major) (default: :right)
+  # @return [Array<Cell>] Array of Cell structs in specified order
+  #
+  # @example 2x3 grid, row-major order (left→right, top→bottom)
+  #   cells = @grid.divide_grid(col: 2, row: 4, width: 39, height: 50,
+  #                             cols: 2, rows: 3, col_gap: 1, order: :right)
+  #   # Returns cells ordered: [0,0], [1,0], [0,1], [1,1], [0,2], [1,2]
+  #   #   0 1
+  #   #   2 3
+  #   #   4 5
+  #
+  # @example 2x3 grid, column-major order (top→bottom, left→right)
+  #   cells = @grid.divide_grid(col: 2, row: 4, width: 39, height: 50,
+  #                             cols: 2, rows: 3, col_gap: 1, order: :down)
+  #   # Returns cells ordered: [0,0], [0,1], [0,2], [1,0], [1,1], [1,2]
+  #   #   0 3
+  #   #   1 4
+  #   #   2 5
+  #
+  # @example FutureLog: 6 months in 2 columns x 3 rows, filling down each column
+  #   jan, feb, mar, apr, may, jun = @grid.divide_grid(
+  #     col: 2, row: 4, width: 39, height: 50,
+  #     cols: 2, rows: 3, col_gap: 1, order: :down
+  #   )
+  def divide_grid(col:, row:, width:, height:, cols:, rows:, col_gap: 0, row_gap: 0, order: :right)
+    columns = divide_columns(col: col, width: width, count: cols, gap: col_gap)
+    row_divs = divide_rows(row: row, height: height, count: rows, gap: row_gap)
+
+    cells = []
+
+    case order
+    when :right
+      # Row-major: left→right, top→bottom
+      row_divs.each do |r|
+        columns.each do |c|
+          cells << Cell.new(col: c.col, row: r.row, width: c.width, height: r.height)
+        end
+      end
+    when :down
+      # Column-major: top→bottom, left→right
+      columns.each do |c|
+        row_divs.each do |r|
+          cells << Cell.new(col: c.col, row: r.row, width: c.width, height: r.height)
+        end
+      end
+    else
+      raise ArgumentError, "order must be :right or :down, got #{order.inspect}"
+    end
+
+    cells
   end
 end

@@ -72,17 +72,15 @@ module BujoPdf
       #
       # @return [void]
       def draw_two_column_layout
-        left_col, right_col = @grid.divide_columns(col: LEFT_MARGIN, width: content_width, count: 2, gap: COLUMN_GAP)
-        month_rows = @grid.divide_rows(row: CONTENT_START_ROW, height: 50, count: MONTHS_PER_COLUMN)
+        month_cells = @grid.divide_grid(
+          col: LEFT_MARGIN, row: CONTENT_START_ROW,
+          width: content_width, height: 50,
+          cols: 2, rows: MONTHS_PER_COLUMN,
+          col_gap: COLUMN_GAP, order: :down
+        )
 
-        # Draw left column (first 3 months)
-        month_rows.each_with_index do |section, i|
-          draw_month_section(@start_month + i, left_col.col, section.row, left_col.width, section.height)
-        end
-
-        # Draw right column (next 3 months)
-        month_rows.each_with_index do |section, i|
-          draw_month_section(@start_month + MONTHS_PER_COLUMN + i, right_col.col, section.row, right_col.width, section.height)
+        month_cells.each_with_index do |cell, i|
+          draw_month_section(@start_month + i, cell.col, cell.row, cell.width, cell.height)
         end
       end
 
