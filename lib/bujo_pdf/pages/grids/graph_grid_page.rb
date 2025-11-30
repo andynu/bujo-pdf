@@ -20,11 +20,11 @@ module BujoPdf
 
           # Generate the graph grid page.
           #
-          # @return [void]
+          # @return [PageRef, nil] PageRef during define phase, nil during render
           def graph_grid_page
-            start_new_page
-            context = build_context(page_key: :grid_graph)
-            Grids::GraphGridPage.new(@pdf, context).generate
+            define_page(dest: 'grid_graph', title: 'Graph Grid', type: :grid) do |ctx|
+              Grids::GraphGridPage.new(@pdf, ctx).generate
+            end
           end
         end
 

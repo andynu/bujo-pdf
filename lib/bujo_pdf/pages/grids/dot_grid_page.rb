@@ -20,11 +20,11 @@ module BujoPdf
 
           # Generate the dot grid page.
           #
-          # @return [void]
+          # @return [PageRef, nil] PageRef during define phase, nil during render
           def dot_grid_page
-            start_new_page
-            context = build_context(page_key: :grid_dot)
-            Grids::DotGridPage.new(@pdf, context).generate
+            define_page(dest: 'grid_dot', title: 'Dot Grid', type: :grid) do |ctx|
+              Grids::DotGridPage.new(@pdf, ctx).generate
+            end
           end
         end
 

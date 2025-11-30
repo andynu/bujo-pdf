@@ -25,11 +25,11 @@ module BujoPdf
 
         # Generate the tracker example page.
         #
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def tracker_example_page
-          start_new_page
-          context = build_context(page_key: :tracker_example)
-          TrackerExample.new(@pdf, context).generate
+          define_page(dest: 'tracker_example', title: 'Tracker Ideas', type: :template) do |ctx|
+            TrackerExample.new(@pdf, ctx).generate
+          end
         end
       end
 

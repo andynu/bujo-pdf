@@ -19,11 +19,11 @@ module BujoPdf
 
         # Generate the Year at a Glance - Highlights page.
         #
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def year_highlights_page
-          start_new_page
-          context = build_context(page_key: :year_highlights)
-          YearAtGlanceHighlights.new(@pdf, context).generate
+          define_page(dest: 'year_highlights', title: 'Year at a Glance - Highlights', type: :year_overview) do |ctx|
+            YearAtGlanceHighlights.new(@pdf, ctx).generate
+          end
         end
       end
 

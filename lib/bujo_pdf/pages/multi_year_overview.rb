@@ -33,11 +33,12 @@ module BujoPdf
         # Generate the Multi-Year Overview page.
         #
         # @param year_count [Integer] Number of years to display (default: 4)
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def multi_year_page(year_count: 4)
-          start_new_page
-          context = build_context(page_key: :multi_year, year_count: year_count)
-          MultiYearOverview.new(@pdf, context).generate
+          define_page(dest: 'multi_year', title: 'Multi-Year Overview', type: :multi_year,
+                      year_count: year_count) do |ctx|
+            MultiYearOverview.new(@pdf, ctx).generate
+          end
         end
       end
 

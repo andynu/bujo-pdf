@@ -35,18 +35,16 @@ module BujoPdf
         #
         # @param num [Integer] Which future log page (1, 2, etc.)
         # @param total [Integer, nil] Total future log pages (defaults to num)
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def future_log_page(num:, total: nil)
-          start_new_page
           count = total || num
           start_month = (num - 1) * 6 + 1  # Page 1 = months 1-6, Page 2 = months 7-12
-          context = build_context(
-            page_key: "future_log_#{num}".to_sym,
-            future_log_page: num,
-            future_log_page_count: count,
-            future_log_start_month: start_month
-          )
-          FutureLog.new(@pdf, context).generate
+
+          define_page(dest: "future_log_#{num}", title: 'Future Log', type: :future_log,
+                      future_log_page: num, future_log_page_count: count,
+                      future_log_start_month: start_month) do |ctx|
+            FutureLog.new(@pdf, ctx).generate
+          end
         end
 
         # Generate multiple future log pages.
@@ -55,7 +53,7 @@ module BujoPdf
         # page position and label information.
         #
         # @param count [Integer] Number of future log pages (default: 2)
-        # @return [void]
+        # @return [Array<PageRef>, nil] Array of PageRefs during define phase
         def future_log_pages(count: 2)
           page_set(count, "Future Log %page of %total") do
             future_log_page(num: @current_page_set_index + 1, total: count)

@@ -32,11 +32,11 @@ module BujoPdf
 
         # Generate the reference/calibration page.
         #
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def reference_page
-          start_new_page
-          context = build_context(page_key: :reference)
-          ReferenceCalibration.new(@pdf, context).generate
+          define_page(dest: 'reference', title: 'Calibration & Reference', type: :template) do |ctx|
+            ReferenceCalibration.new(@pdf, ctx).generate
+          end
         end
       end
 

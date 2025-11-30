@@ -33,16 +33,13 @@ module BujoPdf
         #
         # @param num [Integer] Which index page (1, 2, etc.)
         # @param total [Integer, nil] Total index pages (defaults to num)
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def index_page(num:, total: nil)
-          start_new_page
           count = total || num
-          context = build_context(
-            page_key: "index_#{num}".to_sym,
-            index_page_num: num,
-            index_page_count: count
-          )
-          IndexPage.new(@pdf, context).generate
+          define_page(dest: "index_#{num}", title: 'Index', type: :index,
+                      index_page_num: num, index_page_count: count) do |ctx|
+            IndexPage.new(@pdf, ctx).generate
+          end
         end
 
         # Generate multiple index pages.
@@ -51,7 +48,7 @@ module BujoPdf
         # page position and label information.
         #
         # @param count [Integer] Number of index pages (default: 2)
-        # @return [void]
+        # @return [Array<PageRef>, nil] Array of PageRefs during define phase
         def index_pages(count: 2)
           page_set(count, "Index %page of %total") do
             index_page(num: @current_page_set_index + 1, total: count)

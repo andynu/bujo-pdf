@@ -42,25 +42,22 @@ module BujoPdf
         # Generate a single weekly page.
         #
         # @param week [Integer] Week number (1-53)
-        # @return [void]
+        # @return [PageRef, nil] PageRef during define phase, nil during render
         def weekly_page(week:)
-          start_new_page
           week_start = Utilities::DateCalculator.week_start(@year, week)
           week_end = Utilities::DateCalculator.week_end(@year, week)
-          context = build_context(
-            page_key: "week_#{week}".to_sym,
-            week_num: week,
-            week_start: week_start,
-            week_end: week_end
-          )
-          WeeklyPage.new(@pdf, context).generate
+
+          define_page(dest: "week_#{week}", title: "Week #{week}", type: :weekly,
+                      week_num: week, week_start: week_start, week_end: week_end) do |ctx|
+            WeeklyPage.new(@pdf, ctx).generate
+          end
         end
 
         # Generate all weekly pages for the year.
         #
-        # @return [void]
+        # @return [Array<PageRef>, nil] Array of PageRefs during define phase
         def weekly_pages
-          total_weeks.times do |i|
+          total_weeks.times.map do |i|
             weekly_page(week: i + 1)
           end
         end
