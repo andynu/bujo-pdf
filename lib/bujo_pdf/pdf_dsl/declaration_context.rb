@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'page_declaration'
+require_relative 'inline_page_declaration'
+require_relative 'inline_page_context'
 require_relative 'metadata_builder'
 require_relative 'outline_declaration'
 require_relative 'week'
@@ -41,14 +43,25 @@ module BujoPdf
 
       # Declare a page.
       #
-      # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
-      # @param id [Symbol, nil] Optional explicit page ID
-      # @param outline [String, Boolean, nil] Outline entry:
-      #   - String: Use as the outline entry title
-      #   - true: Auto-derive title from page class's registered title
-      #   - nil/false: No outline entry
-      # @param params [Hash] Parameters for the page
-      # @return [PageDeclaration] The created declaration
+      # Supports two modes:
+      # 1. Reference a predefined page type: page :seasonal_calendar, year: 2025
+      # 2. Define an inline page with a block: page id: :notes do ... end
+      #
+      # @overload page(type, id: nil, outline: nil, **params)
+      #   Reference a predefined page type.
+      #   @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
+      #   @param id [Symbol, nil] Optional explicit page ID
+      #   @param outline [String, Boolean, nil] Outline entry
+      #   @param params [Hash] Parameters for the page
+      #   @return [PageDeclaration] The created declaration
+      #
+      # @overload page(id: nil, outline: nil, **params, &block)
+      #   Define an inline page with a block.
+      #   @param id [Symbol, nil] Optional explicit page ID
+      #   @param outline [String, Boolean, nil] Outline entry
+      #   @param params [Hash] Additional parameters
+      #   @yield Block defining inline page configuration and body
+      #   @return [InlinePageDeclaration] The created inline declaration
       #
       # @example Simple page
       #   page :seasonal_calendar, year: 2025
@@ -62,36 +75,34 @@ module BujoPdf
       #
       # @example No outline entry (omitted)
       #   page :index, id: :index_2  # No outline
-      def page(type, id: nil, outline: nil, **params)
-        # Resolve outline: true to the page class's registered title
-        outline_title = case outline
-        when true
-          page_class = PageFactory.registry[type]
-          if page_class&.respond_to?(:generate_title)
-            page_class.generate_title(params) || type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
-          else
-            type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
-          end
-        when String
-          outline
+      #
+      # @example Inline page with block
+      #   page id: :notes, outline: 'Notes' do
+      #     layout :full_page
+      #     background :ruled
+      #
+      #     body do
+      #       h1(2, 1, "Notes")
+      #       ruled_lines(2, 3, 38, 50)
+      #     end
+      #   end
+      #
+      # @example Minimal inline page
+      #   page do
+      #     body do
+      #       h1(2, 1, "Blank")
+      #     end
+      #   end
+      def page(type = nil, id: nil, outline: nil, **params, &block)
+        if block_given?
+          # Inline page definition with block
+          create_inline_page(id: id, outline: outline, params: params, &block)
         else
-          nil
+          # Standard page type reference
+          raise ArgumentError, 'page type is required when not using a block' if type.nil?
+
+          create_standard_page(type, id: id, outline: outline, **params)
         end
-
-        decl = PageDeclaration.new(type, id: id, outline: outline_title, **params)
-
-        if @current_group
-          @current_group.add_page(decl)
-        end
-
-        @pages << decl
-
-        # Add outline entry if specified
-        if outline_title
-          add_outline_entry(OutlineDeclaration.new(title: outline_title, dest: id || type))
-        end
-
-        decl
       end
 
       # Declare a group of related pages.
@@ -344,6 +355,92 @@ module BujoPdf
       end
 
       private
+
+      # Create a standard page declaration referencing a predefined page type.
+      #
+      # @param type [Symbol] The page type
+      # @param id [Symbol, nil] Optional explicit page ID
+      # @param outline [String, Boolean, nil] Outline entry
+      # @param params [Hash] Parameters for the page
+      # @return [PageDeclaration] The created declaration
+      def create_standard_page(type, id: nil, outline: nil, **params)
+        # Resolve outline: true to the page class's registered title
+        outline_title = resolve_outline_title(type, outline, params)
+
+        decl = PageDeclaration.new(type, id: id, outline: outline_title, **params)
+        add_page_declaration(decl, outline_title, id || type)
+        decl
+      end
+
+      # Create an inline page declaration from a block.
+      #
+      # @param id [Symbol, nil] Optional explicit page ID
+      # @param outline [String, Boolean, nil] Outline entry
+      # @param params [Hash] Additional parameters
+      # @yield Block defining inline page configuration
+      # @return [InlinePageDeclaration] The created inline declaration
+      def create_inline_page(id: nil, outline: nil, params: {}, &block)
+        # Create context and evaluate the block
+        inline_context = InlinePageContext.new
+        inline_context.evaluate(&block)
+
+        # Resolve outline title (for inline pages, true just uses id)
+        outline_title = case outline
+        when true
+          id&.to_s&.tr('_', ' ')&.split&.map(&:capitalize)&.join(' ') || 'Untitled'
+        when String
+          outline
+        else
+          nil
+        end
+
+        decl = InlinePageDeclaration.new(
+          id: id,
+          outline: outline_title,
+          inline_context: inline_context,
+          **params
+        )
+        add_page_declaration(decl, outline_title, id)
+        decl
+      end
+
+      # Resolve outline title based on outline parameter type.
+      #
+      # @param type [Symbol] Page type
+      # @param outline [String, Boolean, nil] Outline specification
+      # @param params [Hash] Page parameters
+      # @return [String, nil] Resolved outline title
+      def resolve_outline_title(type, outline, params)
+        case outline
+        when true
+          page_class = PageFactory.registry[type]
+          if page_class&.respond_to?(:generate_title)
+            page_class.generate_title(params) || type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+          else
+            type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+          end
+        when String
+          outline
+        else
+          nil
+        end
+      end
+
+      # Add a page declaration to the context.
+      #
+      # @param decl [PageDeclaration, InlinePageDeclaration] The declaration
+      # @param outline_title [String, nil] Outline title if any
+      # @param dest [Symbol] Destination for outline entry
+      # @return [void]
+      def add_page_declaration(decl, outline_title, dest)
+        @current_group&.add_page(decl)
+        @pages << decl
+
+        # Add outline entry if specified
+        if outline_title && dest
+          add_outline_entry(OutlineDeclaration.new(title: outline_title, dest: dest))
+        end
+      end
 
       # Add an outline entry to the current context.
       #

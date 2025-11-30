@@ -208,9 +208,15 @@ module BujoPdf
       # Render a single page.
       #
       # @param pdf [Prawn::Document] The PDF document
-      # @param page_decl [PageDeclaration] The page declaration
+      # @param page_decl [PageDeclaration, InlinePageDeclaration] The page declaration
       # @param context [Hash] Render context
       def render_page(pdf, page_decl, context)
+        # Handle inline pages
+        if page_decl.respond_to?(:inline?) && page_decl.inline?
+          render_inline_page(pdf, page_decl, context)
+          return
+        end
+
         page_type = page_decl.type
 
         # Handle weekly pages specially
@@ -222,7 +228,31 @@ module BujoPdf
 
         page.generate
       rescue ArgumentError => e
-        raise ArgumentError, "Failed to create page '#{page_type}': #{e.message}"
+        raise ArgumentError, "Failed to create page '#{page_decl.type}': #{e.message}"
+      end
+
+      # Render an inline page.
+      #
+      # @param pdf [Prawn::Document] The PDF document
+      # @param page_decl [InlinePageDeclaration] The inline page declaration
+      # @param context [Hash] Render context
+      def render_inline_page(pdf, page_decl, context)
+        require_relative '../pages/inline_page'
+
+        # Apply theme override if specified
+        original_theme = nil
+        if page_decl.theme_override
+          original_theme = BujoPdf::Themes.current_theme_name
+          BujoPdf::Themes.set(page_decl.theme_override)
+        end
+
+        page = Pages::InlinePage.new(pdf, context, inline_declaration: page_decl)
+        page.generate
+      ensure
+        # Restore original theme if we changed it
+        if original_theme
+          BujoPdf::Themes.set(original_theme)
+        end
       end
 
       # Build PDF outline/bookmarks for navigation.
