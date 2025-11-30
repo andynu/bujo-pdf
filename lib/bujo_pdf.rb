@@ -60,6 +60,7 @@ require_relative 'bujo_pdf/layouts/layout_factory'
 # Load page base classes
 require_relative 'bujo_pdf/pages/base'
 require_relative 'bujo_pdf/pages/standard_layout_page'
+require_relative 'bujo_pdf/pages/mixin_support'  # Shared helpers for page mixins
 
 # Load page factory
 require_relative 'bujo_pdf/page_factory'
@@ -69,8 +70,30 @@ require_relative 'bujo_pdf/pages/seasonal_calendar'
 require_relative 'bujo_pdf/pages/year_at_glance_base'
 require_relative 'bujo_pdf/pages/year_at_glance_events'
 require_relative 'bujo_pdf/pages/year_at_glance_highlights'
+require_relative 'bujo_pdf/pages/multi_year_overview'
 require_relative 'bujo_pdf/pages/weekly_page'
+require_relative 'bujo_pdf/pages/index_pages'
+require_relative 'bujo_pdf/pages/future_log'
+require_relative 'bujo_pdf/pages/monthly_review'
+require_relative 'bujo_pdf/pages/quarterly_planning'
+require_relative 'bujo_pdf/pages/collection_page'
 require_relative 'bujo_pdf/pages/reference_calibration'
+require_relative 'bujo_pdf/pages/tracker_example'
+require_relative 'bujo_pdf/pages/daily_wheel'
+require_relative 'bujo_pdf/pages/year_wheel'
+require_relative 'bujo_pdf/pages/grid_showcase'
+require_relative 'bujo_pdf/pages/grids_overview'
+
+# Load grid page classes
+require_relative 'bujo_pdf/pages/grids/dot_grid_page'
+require_relative 'bujo_pdf/pages/grids/graph_grid_page'
+require_relative 'bujo_pdf/pages/grids/lined_grid_page'
+require_relative 'bujo_pdf/pages/grids/isometric_grid_page'
+require_relative 'bujo_pdf/pages/grids/perspective_grid_page'
+require_relative 'bujo_pdf/pages/grids/hexagon_grid_page'
+
+# Load page verb aggregator (after all page classes)
+require_relative 'bujo_pdf/pages/all'
 
 # Load main generator (depends on everything above)
 require_relative 'bujo_pdf/planner_generator'

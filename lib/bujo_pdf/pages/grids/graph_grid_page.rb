@@ -14,6 +14,20 @@ module BujoPdf
       #   page = Grids::GraphGridPage.new(pdf, context)
       #   page.generate
       class GraphGridPage < Base
+        # Mixin providing graph_grid_page verb for document builders.
+        module Mixin
+          include MixinSupport
+
+          # Generate the graph grid page.
+          #
+          # @return [void]
+          def graph_grid_page
+            start_new_page
+            context = build_context(page_key: :grid_graph)
+            Grids::GraphGridPage.new(@pdf, context).generate
+          end
+        end
+
         # Use full page layout (no sidebars)
         def setup
           use_layout :full_page

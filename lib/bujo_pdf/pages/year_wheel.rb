@@ -18,6 +18,20 @@ module BujoPdf
     #   page = YearWheel.new(pdf, { year: 2025 })
     #   page.generate
     class YearWheel < Base
+      # Mixin providing year_wheel_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the year wheel page.
+        #
+        # @return [void]
+        def year_wheel_page
+          start_new_page
+          context = build_context(page_key: :year_wheel)
+          YearWheel.new(@pdf, context).generate
+        end
+      end
+
       # Configuration constants
       NUM_DAYS = 365
 

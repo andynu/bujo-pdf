@@ -19,6 +19,20 @@ module BujoPdf
     #   page = DailyWheel.new(pdf, { year: 2025 })
     #   page.generate
     class DailyWheel < Base
+      # Mixin providing daily_wheel_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the daily wheel page.
+        #
+        # @return [void]
+        def daily_wheel_page
+          start_new_page
+          context = build_context(page_key: :daily_wheel)
+          DailyWheel.new(@pdf, context).generate
+        end
+      end
+
       # Configuration constants
       NUM_SEGMENTS = 48  # 24 hours × 2 half-hours
       SHOW_HOUR_LABELS = true  # Set to false to hide hour labels

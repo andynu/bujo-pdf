@@ -26,6 +26,33 @@ module BujoPdf
     #   page = QuarterlyPlanning.new(pdf, context)
     #   page.generate
     class QuarterlyPlanning < Base
+      # Mixin providing quarterly_planning_page and quarterly_planning_pages verbs.
+      module Mixin
+        include MixinSupport
+
+        # Generate a single quarterly planning page.
+        #
+        # @param quarter [Integer] Quarter number (1-4)
+        # @return [void]
+        def quarterly_planning_page(quarter:)
+          start_new_page
+          context = build_context(
+            page_key: "quarter_#{quarter}".to_sym,
+            quarter: quarter
+          )
+          QuarterlyPlanning.new(@pdf, context).generate
+        end
+
+        # Generate all quarterly planning pages (4 pages).
+        #
+        # @return [void]
+        def quarterly_planning_pages
+          4.times do |i|
+            quarterly_planning_page(quarter: i + 1)
+          end
+        end
+      end
+
       NAV_FONT_SIZE = 8
       # Quarter date ranges (start month, end month)
       QUARTER_MONTHS = {

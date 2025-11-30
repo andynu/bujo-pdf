@@ -30,6 +30,28 @@ module BujoPdf
     #   page = CollectionPage.new(pdf, context)
     #   page.generate
     class CollectionPage < Base
+      # Mixin providing collection_page verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate a single collection page.
+        #
+        # @param id [String] Collection identifier
+        # @param title [String] Collection title
+        # @param subtitle [String, nil] Optional subtitle
+        # @return [void]
+        def collection_page(id:, title:, subtitle: nil)
+          start_new_page
+          context = build_context(
+            page_key: "collection_#{id}".to_sym,
+            collection_id: id,
+            collection_title: title,
+            collection_subtitle: subtitle
+          )
+          CollectionPage.new(@pdf, context).generate
+        end
+      end
+
       def setup
         @title = context[:collection_title] || "Collection"
         @subtitle = context[:collection_subtitle]

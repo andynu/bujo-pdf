@@ -26,6 +26,20 @@ module BujoPdf
       include Styling::Colors
       include Styling::Grid
 
+      # Mixin providing the seasonal_calendar verb for document builders.
+      module Mixin
+        include MixinSupport
+
+        # Generate the seasonal calendar page.
+        #
+        # @return [void]
+        def seasonal_calendar
+          start_new_page
+          context = build_context(page_key: :seasonal)
+          SeasonalCalendar.new(@pdf, context).generate
+        end
+      end
+
       def setup
         set_destination('seasonal')
         @year = context[:year]

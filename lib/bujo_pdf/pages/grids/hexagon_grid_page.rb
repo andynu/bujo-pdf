@@ -14,6 +14,20 @@ module BujoPdf
       #   page = Grids::HexagonGridPage.new(pdf, context)
       #   page.generate
       class HexagonGridPage < Base
+        # Mixin providing hexagon_grid_page verb for document builders.
+        module Mixin
+          include MixinSupport
+
+          # Generate the hexagon grid page.
+          #
+          # @return [void]
+          def hexagon_grid_page
+            start_new_page
+            context = build_context(page_key: :grid_hexagon)
+            Grids::HexagonGridPage.new(@pdf, context).generate
+          end
+        end
+
         # Use full page layout (no sidebars)
         def setup
           use_layout :full_page
