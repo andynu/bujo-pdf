@@ -1,5 +1,18 @@
 # Proposal: Page Definition DSL
 
+> **Status**: NOT INTEGRATED
+>
+> **Disposition**: This proposal was implemented as the "Layout DSL" but later removed.
+> The removal rationale is documented in `layout-dsl-removed.md`. The approach proved
+> too abstract - it obscured the underlying grid system rather than making it easier
+> to use. Instead, the project moved to a simpler component-based architecture with
+> explicit grid coordinates.
+>
+> **Original Date**: November 2024
+> **Archived**: November 2024
+
+---
+
 ## Overview
 
 A declarative DSL for defining page layouts that abstracts away Prawn internals while preserving full flexibility. Page definitions become composable, testable, and readable specifications rather than imperative drawing code.

@@ -1,5 +1,19 @@
 # Proposal: PDF Definition DSL
 
+> **Status**: INTEGRATED
+>
+> **Disposition**: This proposal was successfully implemented and is in active use.
+> The PDF DSL enables declarative definition of complete PDFs with recipes, page
+> ordering, cross-reference resolution, and metadata.
+>
+> **Implementation Location**: `lib/bujo_pdf/dsl/` (formerly `lib/bujo_pdf/pdf_dsl/`)
+> **Example Recipe**: `lib/bujo_pdf/pdfs/standard_planner.rb`
+>
+> **Original Date**: November 2024
+> **Archived**: November 2024
+
+---
+
 ## Overview
 
 A declarative DSL for composing complete PDFs from page definitions. This sits above the Page DSL and handles document-level concerns: page ordering, cross-reference resolution, metadata, and reusable "recipes" for common planner configurations.
