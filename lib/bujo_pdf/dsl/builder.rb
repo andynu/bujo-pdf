@@ -203,7 +203,7 @@ module BujoPdf
       # @return [Hash] Page-specific context
       def build_page_context(page_decl, base_context, index)
         context = base_context.merge(
-          page_key: page_decl.type,
+          page_key: page_decl.id || page_decl.type,
           page_number: index + 1
         )
 
