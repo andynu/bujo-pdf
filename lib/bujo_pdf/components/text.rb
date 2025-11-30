@@ -36,8 +36,9 @@ module BujoPdf
         # @param position [Symbol] Vertical position :center, :superscript, :subscript (default: :center)
         # @param align [Symbol] Text alignment :left, :center, :right (default: :left)
         # @param width [Integer, nil] Width in grid boxes (default: nil, auto-sized)
+        # @param rotation [Integer] Rotation in degrees: 0, 90, -90 (default: 0)
         # @return [void]
-        def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil)
+        def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
           Text.new(
             pdf: @pdf,
             grid: @grid,
@@ -50,7 +51,8 @@ module BujoPdf
             style: style,
             position: position,
             align: align,
-            width: width
+            width: width,
+            rotation: rotation
           ).render
         end
       end
@@ -69,7 +71,8 @@ module BujoPdf
       # @param position [Symbol] Vertical position :center, :superscript, :subscript
       # @param align [Symbol] Text alignment :left, :center, :right
       # @param width [Integer, nil] Width in grid boxes
-      def initialize(pdf:, grid:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil)
+      # @param rotation [Integer] Rotation in degrees: 0, 90, -90
+      def initialize(pdf:, grid:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
         @pdf = pdf
         @grid = grid
         @col = col
@@ -82,6 +85,7 @@ module BujoPdf
         @position = position
         @align = align
         @width = width
+        @rotation = rotation
       end
 
       # Render the text
@@ -95,6 +99,25 @@ module BujoPdf
 
         @pdf.font 'Helvetica', style: @style, size: @size
 
+        if @rotation != 0
+          render_rotated(text_color)
+        else
+          render_normal(text_color, bg_color)
+        end
+
+        # Reset to defaults
+        @pdf.font 'Helvetica', style: :normal
+        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+      end
+
+      private
+
+      # Render text without rotation (normal case)
+      #
+      # @param text_color [String] Text color as hex string
+      # @param bg_color [String] Background color for dot erasure
+      # @return [void]
+      def render_normal(text_color, bg_color)
         # Calculate text width for erasure (round to nearest, not ceil)
         text_width_pt = @pdf.width_of(@content)
         text_width_boxes = (text_width_pt / @grid.dot_spacing).round
@@ -116,13 +139,38 @@ module BujoPdf
                       align: @align,
                       valign: :center,
                       overflow: :truncate
-
-        # Reset to defaults
-        @pdf.font 'Helvetica', style: :normal
-        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
       end
 
-      private
+      # Render text with rotation
+      #
+      # Rotation is applied around the center of the text box.
+      # Dot erasure is disabled for rotated text (not needed for label use cases).
+      #
+      # @param text_color [String] Text color as hex string
+      # @return [void]
+      def render_rotated(text_color)
+        # Calculate text box dimensions in points
+        box_width = @grid.width(@width || 1)
+        box_height = @grid.height(@height)
+
+        # Calculate the center point of the text box for rotation origin
+        box_x = @grid.x(@col)
+        box_y = @grid.y(@row) - box_height
+        center_x = box_x + (box_width / 2.0)
+        center_y = box_y + (box_height / 2.0)
+
+        @pdf.fill_color text_color
+        @pdf.rotate(@rotation, origin: [center_x, center_y]) do
+          @pdf.text_box @content,
+                        at: [box_x, box_y + box_height],
+                        width: box_width,
+                        height: box_height,
+                        size: @size,
+                        align: @align,
+                        valign: :center,
+                        overflow: :truncate
+        end
+      end
 
       # Calculate vertical offset based on position
       #
