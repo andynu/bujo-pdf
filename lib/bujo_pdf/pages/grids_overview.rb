@@ -56,14 +56,11 @@ module BujoPdf
       #
       # @return [void]
       def draw_grid_samples
-        # Stack samples vertically with spacing
-        sample_height = 16  # boxes per sample
-        spacing = 2         # boxes between samples
-        start_row = 5       # Start below title
+        # 3 samples × 16 boxes + 2 gaps × 2 boxes = 52 boxes total
+        sections = @grid.divide_rows(row: 5, height: 52, count: GRID_SAMPLES.count, gap: 2)
 
-        GRID_SAMPLES.each_with_index do |sample, index|
-          row = start_row + (index * (sample_height + spacing))
-          draw_sample_box(sample, row, sample_height)
+        GRID_SAMPLES.zip(sections).each do |sample, section|
+          draw_sample_box(sample, section.row, section.height)
         end
       end
 
