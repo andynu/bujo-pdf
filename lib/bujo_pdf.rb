@@ -99,9 +99,7 @@ require_relative 'bujo_pdf/pages/grids/hexagon_grid_page'
 # Load page verb aggregator (after all page classes)
 require_relative 'bujo_pdf/pages/all'
 
-# Load main generator (depends on everything above)
-require_relative 'bujo_pdf/planner_generator'
-require_relative 'bujo_pdf/document_builder'
+# Load PDF DSL (depends on everything above)
 require_relative 'bujo_pdf/pdf_dsl'
 
 # Module for namespace
