@@ -211,4 +211,66 @@ class TestInlinePageGeneration < Minitest::Test
 
     assert_instance_of Prawn::Document, pdf
   end
+
+  def test_inline_page_with_margins_helper
+    pdf = BujoPdf::PdfDSL.generate(year: 2025) do
+      page(id: :layout_demo) do
+        body do
+          # Use margins to create inset content area
+          inner = margins(0, 0, 43, 55, all: 2)
+
+          h1(inner.col, inner.row, "Layout Demo")
+
+          # Split into two columns using grid system
+          left, right = @grid.divide_columns(col: inner.col, width: inner.width,
+                                             count: 2, gap: 1)
+
+          h2(left.col, inner.row + 2, "Left Column")
+          ruled_lines(left.col, inner.row + 4, left.width, 10)
+
+          h2(right.col, inner.row + 2, "Right Column")
+          ruled_lines(right.col, inner.row + 4, right.width, 10)
+        end
+      end
+    end
+
+    assert_instance_of Prawn::Document, pdf
+  end
+
+  def test_inline_page_with_divide_grid
+    pdf = BujoPdf::PdfDSL.generate(year: 2025) do
+      page(id: :grid_demo) do
+        body do
+          # 2x3 grid using grid system
+          cells = @grid.divide_grid(col: 2, row: 2, width: 39, height: 50,
+                                    cols: 2, rows: 3, col_gap: 1, row_gap: 1)
+
+          cells.each_with_index do |cell, i|
+            box(cell.col, cell.row, cell.width, cell.height)
+            h2(cell.col + 1, cell.row + 1, "Cell #{i + 1}")
+          end
+        end
+      end
+    end
+
+    assert_instance_of Prawn::Document, pdf
+  end
+
+  def test_inline_page_with_divide_rows
+    pdf = BujoPdf::PdfDSL.generate(year: 2025) do
+      page(id: :rows_demo) do
+        body do
+          # Use grid system for row division
+          sections = @grid.divide_rows(row: 2, height: 50, count: 3, gap: 1)
+
+          sections.each_with_index do |section, i|
+            h1(2, section.row, "Section #{i + 1}")
+            ruled_lines(2, section.row + 2, 39, section.height - 2)
+          end
+        end
+      end
+    end
+
+    assert_instance_of Prawn::Document, pdf
+  end
 end
