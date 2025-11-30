@@ -14,16 +14,18 @@ module BujoPdf
     #   decl.params     # => { week: week_obj }
     #
     class PageDeclaration
-      attr_reader :type, :params, :id
+      attr_reader :type, :params, :id, :outline_title
 
       # Initialize a new page declaration.
       #
       # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       # @param id [Symbol, nil] Optional explicit page ID
+      # @param outline [String, nil] Optional outline entry title
       # @param params [Hash] Parameters to pass to the page
-      def initialize(type, id: nil, **params)
+      def initialize(type, id: nil, outline: nil, **params)
         @type = type
         @id = id
+        @outline_title = outline
         @params = params
       end
 
@@ -81,15 +83,17 @@ module BujoPdf
     #   group.add_page(PageDeclaration.new(:graph_grid))
     #
     class GroupDeclaration
-      attr_reader :name, :options, :pages
+      attr_reader :name, :options, :pages, :outline_title
 
       # Initialize a new group declaration.
       #
       # @param name [Symbol] The group name
+      # @param outline [String, nil] Optional outline entry title for the group
       # @param options [Hash] Group options
       # @option options [Boolean] :cycle Enable tab cycling through pages
-      def initialize(name, **options)
+      def initialize(name, outline: nil, **options)
         @name = name
+        @outline_title = outline
         @options = options
         @pages = []
       end
