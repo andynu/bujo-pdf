@@ -102,6 +102,7 @@ require_relative 'bujo_pdf/pages/all'
 # Load main generator (depends on everything above)
 require_relative 'bujo_pdf/planner_generator'
 require_relative 'bujo_pdf/document_builder'
+require_relative 'bujo_pdf/pdf_dsl'
 
 # Module for namespace
 module BujoPdf
@@ -127,46 +128,9 @@ module BujoPdf
   #   BujoPdf.generate(2025, theme: :earth)
   #
   def self.generate(year = Date.today.year, output_path: nil, theme: nil)
-    # Set theme if provided
-    Themes.set(theme) if theme
-
     output_path ||= "planner_#{year}.pdf"
-    generator = PlannerGenerator.new(year)
-    generator.generate(output_path)
-    output_path
-  ensure
-    # Reset theme after generation to avoid side effects
-    Themes.reset! if theme
+    PdfDSL.load_recipes!
+    generate_from_recipe(:standard_planner, year: year, theme: theme, output: output_path)
   end
 
-  # Define and generate a custom PDF using the DocumentBuilder DSL.
-  #
-  # This provides a declarative way to build PDFs with access to all
-  # page verbs (seasonal_calendar, weekly_page, etc.) in the block.
-  #
-  # @param year [Integer] The year for the planner
-  # @param output [String] Output file path
-  # @param theme [Symbol, nil] Theme to use (default: :light)
-  # @yield Document definition block with access to page verbs
-  # @return [DocumentBuilder] The builder instance
-  #
-  # @example Generate a minimal planner
-  #   BujoPdf.define_pdf(year: 2025, output: "mini.pdf") do
-  #     seasonal_calendar
-  #     (1..52).each { |w| weekly_page(week: w) }
-  #   end
-  #
-  # @example Generate with custom pages
-  #   BujoPdf.define_pdf(year: 2025, output: "custom.pdf", theme: :earth) do
-  #     index_page(num: 1, total: 1)
-  #     grid_pages
-  #   end
-  #
-  def self.define_pdf(year:, output:, theme: nil, &block)
-    Themes.set(theme) if theme
-
-    DocumentBuilder.generate(output, year: year, &block)
-  ensure
-    Themes.reset! if theme
-  end
 end
