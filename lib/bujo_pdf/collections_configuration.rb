@@ -3,82 +3,55 @@
 require 'yaml'
 
 module BujoPdf
-  # Loads and manages collection page configuration.
+  # Immutable collection record.
   #
-  # Collections are user-defined themed pages like "Books to Read" or
-  # "Project Ideas". Each collection becomes a titled blank page in the
-  # planner with an optional subtitle.
+  # @example
+  #   c = Collection.new(id: 'books', title: 'Books to Read', subtitle: 'Fiction and more')
+  #   c.title     # => "Books to Read"
+  #   c.frozen?   # => true
   #
-  # Configuration is loaded from a YAML file with this structure:
-  #
-  #   collections:
-  #     - id: books_to_read
-  #       title: Books to Read
-  #       subtitle: Fiction, non-fiction, and everything in between
-  #     - id: project_ideas
-  #       title: Project Ideas
-  #     - id: recipes
-  #       title: Recipes to Try
-  #       subtitle: Meals worth making again
-  #
-  # Example:
-  #   config = CollectionsConfiguration.new('config/collections.yml')
-  #   config.collections.each do |collection|
-  #     puts collection[:title]
-  #   end
-  class CollectionsConfiguration
-    attr_reader :collections
-
-    # Initialize configuration from a YAML file.
+  Collection = Data.define(:id, :title, :subtitle) do
+    # Build a Collection from a hash, with defaults and ID generation.
     #
-    # @param config_path [String] Path to the collections YAML file
-    def initialize(config_path = 'config/collections.yml')
-      @collections = load_collections(config_path)
+    # @param h [Hash] Hash with :id, :title, :subtitle keys
+    # @return [Collection]
+    def self.from_hash(h)
+      new(
+        id: h[:id] || slugify(h[:title]) || 'collection',
+        title: h[:title] || 'Untitled Collection',
+        subtitle: h[:subtitle]
+      )
     end
 
-    # Check if any collections are configured.
-    #
-    # @return [Boolean] True if at least one collection exists
-    def any?
-      @collections.any?
+    def self.slugify(s)
+      s&.downcase&.gsub(/[^a-z0-9]+/, '_')&.gsub(/^_|_$/, '')
     end
+    private_class_method :slugify
+  end
 
-    # Get the count of collections.
+  # Load collection configurations from YAML.
+  #
+  # Returns a frozen array of immutable Collection objects.
+  #
+  # @example
+  #   collections = CollectionsConfiguration.load
+  #   collections.each { |c| puts c.title }
+  #
+  # @example Check if any collections exist
+  #   CollectionsConfiguration.load.any?
+  #
+  module CollectionsConfiguration
+    DEFAULT_PATH = 'config/collections.yml'
+
+    # Load collections from a YAML file.
     #
-    # @return [Integer] Number of configured collections
-    def count
-      @collections.count
-    end
+    # @param path [String] Path to the YAML file
+    # @return [Array<Collection>] Frozen array of Collection objects
+    def self.load(path = DEFAULT_PATH)
+      return [].freeze unless File.exist?(path)
 
-    private
-
-    # Load collections from YAML file.
-    #
-    # @param config_path [String] Path to the YAML file
-    # @return [Array<Hash>] Array of collection configurations
-    def load_collections(config_path)
-      return [] unless File.exist?(config_path)
-
-      data = YAML.safe_load(File.read(config_path), symbolize_names: true)
-      return [] unless data && data[:collections]
-
-      data[:collections].map do |collection|
-        {
-          id: collection[:id] || generate_id(collection[:title]),
-          title: collection[:title] || "Untitled Collection",
-          subtitle: collection[:subtitle]
-        }
-      end
-    end
-
-    # Generate an ID from a title.
-    #
-    # @param title [String] Collection title
-    # @return [String] Snake_case ID
-    def generate_id(title)
-      return "collection" unless title
-
-      title.downcase.gsub(/[^a-z0-9]+/, '_').gsub(/^_|_$/, '')
+      yaml = YAML.safe_load(File.read(path), symbolize_names: true)
+      (yaml&.dig(:collections) || []).map { |h| Collection.from_hash(h) }.freeze
     end
   end
 end
