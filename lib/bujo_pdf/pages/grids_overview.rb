@@ -98,6 +98,9 @@ module BujoPdf
         @pdf.stroke_rectangle [box[:x], box[:y]], box[:width], box[:height]
         @pdf.stroke_color '000000'
 
+        # Draw grid pattern preview in the box
+        draw_grid_preview(sample[:dest], box)
+
         # Draw label and description
         @pdf.bounding_box([box[:x] + 10, box[:y] - 10],
                           width: box[:width] - 20,
@@ -119,6 +122,120 @@ module BujoPdf
           height,
           sample[:dest]
         )
+      end
+
+      # Draw a preview of the grid pattern inside the sample box
+      #
+      # @param dest [String] Grid destination identifier
+      # @param box [Hash] Bounding box coordinates
+      # @return [void]
+      def draw_grid_preview(dest, box)
+        # Calculate preview area (inside the box with padding)
+        padding = 5
+        preview_x = box[:x] + padding
+        preview_y = box[:y] - padding
+        preview_width = box[:width] - (padding * 2)
+        preview_height = box[:height] - (padding * 2)
+
+        case dest
+        when 'grid_dot'
+          draw_dot_preview(preview_x, preview_y, preview_width, preview_height)
+        when 'grid_graph'
+          draw_graph_preview(preview_x, preview_y, preview_width, preview_height)
+        when 'grid_lined'
+          draw_lined_preview(preview_x, preview_y, preview_width, preview_height)
+        end
+      end
+
+      # Draw dot grid preview
+      #
+      # @param x [Float] Left x coordinate
+      # @param y [Float] Top y coordinate
+      # @param width [Float] Preview width
+      # @param height [Float] Preview height
+      # @return [void]
+      def draw_dot_preview(x, y, width, height)
+        spacing = Styling::Grid::DOT_SPACING
+        radius = Styling::Grid::DOT_RADIUS
+
+        @pdf.fill_color 'CCCCCC'
+
+        # Draw dots at grid spacing
+        cols = (width / spacing).to_i
+        rows = (height / spacing).to_i
+
+        (0..rows).each do |row_idx|
+          (0..cols).each do |col_idx|
+            dot_x = x + (col_idx * spacing)
+            dot_y = y - (row_idx * spacing)
+            next if dot_y < (y - height) || dot_x > (x + width)
+
+            @pdf.fill_circle [dot_x, dot_y], radius
+          end
+        end
+
+        @pdf.fill_color '000000'
+      end
+
+      # Draw graph grid preview
+      #
+      # @param x [Float] Left x coordinate
+      # @param y [Float] Top y coordinate
+      # @param width [Float] Preview width
+      # @param height [Float] Preview height
+      # @return [void]
+      def draw_graph_preview(x, y, width, height)
+        spacing = Styling::Grid::DOT_SPACING
+
+        @pdf.stroke_color 'CCCCCC'
+        @pdf.line_width 0.25
+
+        # Draw vertical lines
+        cols = (width / spacing).to_i
+        (0..cols).each do |col_idx|
+          line_x = x + (col_idx * spacing)
+          next if line_x > (x + width)
+
+          @pdf.line [line_x, y], [line_x, y - height]
+        end
+
+        # Draw horizontal lines
+        rows = (height / spacing).to_i
+        (0..rows).each do |row_idx|
+          line_y = y - (row_idx * spacing)
+          next if line_y < (y - height)
+
+          @pdf.line [x, line_y], [x + width, line_y]
+        end
+
+        @pdf.stroke
+        @pdf.stroke_color '000000'
+      end
+
+      # Draw ruled lines preview
+      #
+      # @param x [Float] Left x coordinate
+      # @param y [Float] Top y coordinate
+      # @param width [Float] Preview width
+      # @param height [Float] Preview height
+      # @return [void]
+      def draw_lined_preview(x, y, width, height)
+        line_spacing = Styling::Grid::DOT_SPACING * 2  # 10mm like the full page
+
+        @pdf.stroke_color 'CCCCCC'
+        @pdf.line_width 0.25
+
+        # Draw horizontal lines
+        rows = (height / line_spacing).to_i
+        (0..rows).each do |row_idx|
+          line_y = y - (row_idx * line_spacing)
+          next if line_y < (y - height)
+
+          @pdf.line [x, line_y], [x + width, line_y]
+        end
+
+        @pdf.stroke
+        @pdf.stroke_color '000000'
       end
 
       # Get a rect within the content area (relative to content area origin)
