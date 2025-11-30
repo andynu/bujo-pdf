@@ -27,7 +27,9 @@ class TestStandardPlannerRecipe < Minitest::Test
     context = evaluate_recipe(year: 2025)
 
     total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(2025)
-    expected_pages = 4 + total_weeks + 8 + 3  # 4 overview + weeks + 8 grids + 3 templates
+    # New structure: 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
+    #               + weekly pages + 8 grids + 4 templates + 3 collections (from config/collections.yml)
+    expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + 3
 
     assert_equal expected_pages, context.pages.length
   end
@@ -35,29 +37,41 @@ class TestStandardPlannerRecipe < Minitest::Test
   def test_standard_planner_page_order
     context = evaluate_recipe(year: 2025)
 
-    # First 4 pages are overview pages
+    # First page is seasonal calendar
     assert_equal :seasonal, context.pages[0].type
-    assert_equal :year_events, context.pages[1].type
-    assert_equal :year_highlights, context.pages[2].type
-    assert_equal :multi_year, context.pages[3].type
 
-    # After weekly pages come grid pages
-    total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(2025)
-    grid_start = 4 + total_weeks
+    # Next are index pages
+    assert_equal :index, context.pages[1].type
+    assert_equal :index, context.pages[2].type
 
-    assert_equal :grid_showcase, context.pages[grid_start].type
-    assert_equal :grids_overview, context.pages[grid_start + 1].type
-    assert_equal :grid_dot, context.pages[grid_start + 2].type
-    assert_equal :grid_graph, context.pages[grid_start + 3].type
-    assert_equal :grid_lined, context.pages[grid_start + 4].type
-    assert_equal :grid_isometric, context.pages[grid_start + 5].type
-    assert_equal :grid_perspective, context.pages[grid_start + 6].type
-    assert_equal :grid_hexagon, context.pages[grid_start + 7].type
+    # Then future log pages
+    assert_equal :future_log, context.pages[3].type
+    assert_equal :future_log, context.pages[4].type
 
-    # Final 3 pages are templates
-    assert_equal :reference, context.pages[-3].type
-    assert_equal :daily_wheel, context.pages[-2].type
-    assert_equal :year_wheel, context.pages[-1].type
+    # Then year overview pages
+    assert_equal :year_events, context.pages[5].type
+    assert_equal :year_highlights, context.pages[6].type
+    assert_equal :multi_year, context.pages[7].type
+
+    # Weekly pages with interleaved monthly reviews and quarterly planning
+    # The exact order depends on the week structure for the year
+
+    # Grid pages come after all weekly/review/quarterly pages
+    grid_showcase_page = context.pages.find { |p| p.type == :grid_showcase }
+    refute_nil grid_showcase_page
+
+    # Verify order of grid pages (sequential in the grids group)
+    grid_types = [:grid_showcase, :grids_overview, :grid_dot, :grid_graph,
+                  :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon]
+    grid_pages = context.pages.select { |p| grid_types.include?(p.type) }
+    assert_equal grid_types, grid_pages.map(&:type)
+
+    # Final pages are template pages (before collections)
+    template_start = context.pages.index { |p| p.type == :tracker_example }
+    assert_equal :tracker_example, context.pages[template_start].type
+    assert_equal :reference, context.pages[template_start + 1].type
+    assert_equal :daily_wheel, context.pages[template_start + 2].type
+    assert_equal :year_wheel, context.pages[template_start + 3].type
   end
 
   def test_standard_planner_weekly_pages
@@ -75,6 +89,46 @@ class TestStandardPlannerRecipe < Minitest::Test
     end
   end
 
+  def test_standard_planner_index_pages
+    context = evaluate_recipe(year: 2025)
+
+    index_pages = context.pages.select { |p| p.type == :index }
+    assert_equal 2, index_pages.length
+
+    assert_equal 1, index_pages[0].params[:index_page_num]
+    assert_equal 2, index_pages[1].params[:index_page_num]
+  end
+
+  def test_standard_planner_future_log_pages
+    context = evaluate_recipe(year: 2025)
+
+    future_log_pages = context.pages.select { |p| p.type == :future_log }
+    assert_equal 2, future_log_pages.length
+
+    assert_equal 1, future_log_pages[0].params[:future_log_start_month]
+    assert_equal 7, future_log_pages[1].params[:future_log_start_month]
+  end
+
+  def test_standard_planner_quarterly_planning_pages
+    context = evaluate_recipe(year: 2025)
+
+    quarterly_pages = context.pages.select { |p| p.type == :quarterly_planning }
+    assert_equal 4, quarterly_pages.length
+
+    quarters = quarterly_pages.map { |p| p.params[:quarter] }
+    assert_equal [1, 2, 3, 4], quarters
+  end
+
+  def test_standard_planner_monthly_review_pages
+    context = evaluate_recipe(year: 2025)
+
+    review_pages = context.pages.select { |p| p.type == :monthly_review }
+    assert_equal 12, review_pages.length
+
+    months = review_pages.map { |p| p.params[:month] }
+    assert_equal (1..12).to_a, months
+  end
+
   def test_standard_planner_destination_keys
     context = evaluate_recipe(year: 2025)
 
@@ -85,6 +139,13 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert context.pages.any? { |p| p.destination_key == 'multi_year' }
     assert context.pages.any? { |p| p.destination_key == 'grid_showcase' }
     assert context.pages.any? { |p| p.destination_key == 'reference' }
+    assert context.pages.any? { |p| p.destination_key == 'index_1' }
+    assert context.pages.any? { |p| p.destination_key == 'index_2' }
+    assert context.pages.any? { |p| p.destination_key == 'future_log_1' }
+    assert context.pages.any? { |p| p.destination_key == 'future_log_2' }
+    assert context.pages.any? { |p| p.destination_key == 'quarter_1' }
+    assert context.pages.any? { |p| p.destination_key == 'review_1' }
+    assert context.pages.any? { |p| p.destination_key == 'tracker_example' }
 
     # Check weekly page destination keys
     assert context.pages.any? { |p| p.destination_key == 'week_1' }
@@ -123,7 +184,9 @@ class TestStandardPlannerRecipe < Minitest::Test
       context = evaluate_recipe(year: year)
 
       total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(year)
-      expected_pages = 4 + total_weeks + 8 + 3
+      # 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
+      # + weekly pages + 8 grids + 4 templates + 3 collections
+      expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + 3
 
       assert_equal expected_pages, context.pages.length, "Wrong page count for year #{year}"
 

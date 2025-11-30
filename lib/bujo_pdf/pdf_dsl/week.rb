@@ -32,7 +32,40 @@ module BujoPdf
       #
       # @return [Date] The Monday starting this week
       def start_date
-        BujoPdf::Utilities::DateCalculator.week_start(@year, @number)
+        @start_date ||= BujoPdf::Utilities::DateCalculator.week_start(@year, @number)
+      end
+
+      # Month number of the week's start date.
+      #
+      # Note: For weeks spanning year boundary, this may be December
+      # of the previous year. Use `primary_month` for interleaving.
+      #
+      # @return [Integer] Month number (1-12)
+      def month
+        start_date.month
+      end
+
+      # Check if this week's start date is in the target year.
+      #
+      # Week 1 may start in December of the previous year.
+      #
+      # @return [Boolean]
+      def in_year?
+        start_date.year == @year
+      end
+
+      # Check if this week starts a new quarter.
+      #
+      # @return [Boolean] true if this is the first week with start date in months 1, 4, 7, or 10
+      def starts_quarter?
+        in_year? && [1, 4, 7, 10].include?(month)
+      end
+
+      # Get the quarter number (1-4).
+      #
+      # @return [Integer]
+      def quarter
+        ((month - 1) / 3) + 1
       end
 
       # Get the end date (Sunday) of this week.
