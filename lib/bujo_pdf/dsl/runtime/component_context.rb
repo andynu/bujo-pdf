@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'utilities/styling'
+require_relative '../../utilities/styling'
 
 # ComponentContext provides a local coordinate system for sub-components
 #

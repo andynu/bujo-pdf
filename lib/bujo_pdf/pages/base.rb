@@ -5,7 +5,7 @@ require_relative '../utilities/grid_system'
 require_relative '../utilities/dot_grid'
 require_relative '../utilities/diagnostics'
 require_relative '../base/layout'
-require_relative '../render_context'
+require_relative '../dsl/runtime/render_context'
 require_relative '../components/all'
 require_relative 'page_registry'
 

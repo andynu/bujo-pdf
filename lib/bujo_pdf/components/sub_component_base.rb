@@ -111,7 +111,7 @@ module BujoPdf
       #                  width: ctx.width_pt, height: header_height
       #   end
       def with_context(col, row, width_boxes, height_boxes, &block)
-        require_relative '../component_context'
+        require_relative '../dsl/runtime/component_context'
 
         box = @grid.rect(col, row, width_boxes, height_boxes)
         ComponentContext.new(@pdf, box[:x], box[:y], box[:width], box[:height], &block)
