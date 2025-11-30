@@ -3,11 +3,11 @@
 module BujoPdf
   # Base class for page-level components.
   #
-  # Components are reusable page elements that compose sub-components into
-  # cohesive sections. They sit between Pages and SubComponents in the
-  # architecture hierarchy:
+  # Components are reusable page elements that can compose other components into
+  # cohesive sections. There are two main component types:
   #
-  #   Page (structure) → Component (section) → SubComponent (primitive)
+  # 1. **Component** - uses render() method with context, typically for sections
+  # 2. **SubComponentBase** - uses render_at(col, row, width, height) for positioned primitives
   #
   # Plan 05 Enhancement: Content Area Support
   # ------------------------------------------
@@ -19,8 +19,8 @@ module BujoPdf
   #
   # Key Concepts:
   # - **Content Area**: The region where content should be rendered (from page layout)
-  # - **Grid System**: The underlying grid for positioning (43×55 boxes)
-  # - **Sub-Components**: Low-level rendering primitives (WeekColumn, Fieldset, etc.)
+  # - **Grid System**: The underlying grid for positioning (43x55 boxes)
+  # - **Position-based Components**: WeekColumn, Fieldset, DayHeader (extend SubComponentBase)
   #
   # @example Component without content area (legacy)
   #   class MyComponent < Component
@@ -352,28 +352,25 @@ module BujoPdf
     # Create a WeekColumn sub-component.
     #
     # @param options [Hash] Options for WeekColumn
-    # @return [SubComponent::WeekColumn] The week column instance
+    # @return [Components::WeekColumn] The week column instance
     def create_week_column(**options)
-      require_relative 'sub_components/week_column'
-      create_sub_component(SubComponent::WeekColumn, **options)
+      create_sub_component(Components::WeekColumn, **options)
     end
 
     # Create a Fieldset sub-component.
     #
     # @param options [Hash] Options for Fieldset
-    # @return [SubComponent::Fieldset] The fieldset instance
+    # @return [Components::Fieldset] The fieldset instance
     def create_fieldset(**options)
-      require_relative 'sub_components/fieldset'
-      create_sub_component(SubComponent::Fieldset, **options)
+      create_sub_component(Components::Fieldset, **options)
     end
 
     # Create a DayHeader sub-component.
     #
     # @param options [Hash] Options for DayHeader
-    # @return [SubComponent::DayHeader] The day header instance
+    # @return [Components::DayHeader] The day header instance
     def create_day_header(**options)
-      require_relative 'sub_components/day_header'
-      create_sub_component(SubComponent::DayHeader, **options)
+      create_sub_component(Components::DayHeader, **options)
     end
 
     # Convenience Delegators

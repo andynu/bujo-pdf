@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../component'
-require_relative '../sub_components/week_column'
+require_relative 'week_column'
 require_relative '../utilities/styling'
 
 module BujoPdf
@@ -71,8 +71,8 @@ module BujoPdf
         width_boxes = cell_rect[:width] / Styling::Grid::DOT_SPACING
         height_boxes = context[:daily_rows]
 
-        # Create WeekColumn sub-component (from Plan 04)
-        column = SubComponent::WeekColumn.new(@pdf, @grid,
+        # Create WeekColumn component
+        column = WeekColumn.new(@pdf, @grid,
           date: date,
           day_name: day_name,
           weekend: is_weekend,
