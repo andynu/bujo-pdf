@@ -38,8 +38,14 @@ module BujoPdf
         # @param align [Symbol] Text alignment :left, :center, :right (default: :left)
         # @param width [Integer, nil] Width in grid boxes (default: nil, auto-sized)
         # @param rotation [Integer] Rotation in degrees: 0, 90, -90 (default: 0)
+        # @param pt_x [Float, nil] X position in points (overrides col when set)
+        # @param pt_y [Float, nil] Y position in points (overrides row when set)
+        # @param pt_width [Float, nil] Width in points (overrides width when set)
+        # @param pt_height [Float, nil] Height in points (overrides height when set)
+        # @param centered [Boolean] When true with rotation, pt_x/pt_y specify the center
+        #   point of the text box (and rotation origin) instead of top-left (default: false)
         # @return [void]
-        def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
+        def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil, centered: false)
           c = @canvas || Canvas.new(@pdf, @grid)
           Text.new(
             canvas: c,
@@ -53,7 +59,12 @@ module BujoPdf
             position: position,
             align: align,
             width: width,
-            rotation: rotation
+            rotation: rotation,
+            pt_x: pt_x,
+            pt_y: pt_y,
+            pt_width: pt_width,
+            pt_height: pt_height,
+            centered: centered
           ).render
         end
       end
@@ -72,7 +83,12 @@ module BujoPdf
       # @param align [Symbol] Text alignment :left, :center, :right
       # @param width [Integer, nil] Width in grid boxes
       # @param rotation [Integer] Rotation in degrees: 0, 90, -90
-      def initialize(canvas:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0)
+      # @param pt_x [Float, nil] X position in points (overrides col when set)
+      # @param pt_y [Float, nil] Y position in points (overrides row when set)
+      # @param pt_width [Float, nil] Width in points (overrides width when set)
+      # @param pt_height [Float, nil] Height in points (overrides height when set)
+      # @param centered [Boolean] When true, pt_x/pt_y specify the center point
+      def initialize(canvas:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil, centered: false)
         super(canvas: canvas)
         @col = col
         @row = row
@@ -85,6 +101,11 @@ module BujoPdf
         @align = align
         @width = width
         @rotation = rotation
+        @pt_x = pt_x
+        @pt_y = pt_y
+        @pt_width = pt_width
+        @pt_height = pt_height
+        @centered = centered
       end
 
       # Render the text
@@ -145,23 +166,43 @@ module BujoPdf
       # Rotation is applied around the center of the text box.
       # Dot erasure is disabled for rotated text (not needed for label use cases).
       #
+      # When pt_x/pt_y/pt_width/pt_height are provided, uses pixel-based
+      # positioning instead of grid-based. This is useful for components
+      # that need precise pixel positioning (e.g., RightSidebar tabs).
+      #
+      # When centered: true, pt_x/pt_y specify the CENTER of the text box
+      # (and rotation origin). The text box is positioned so its center
+      # coincides with this point. This is useful for rotated labels in
+      # narrow spaces like sidebar tabs.
+      #
       # @param text_color [String] Text color as hex string
       # @return [void]
       def render_rotated(text_color)
         # Calculate text box dimensions in points
-        box_width = grid.width(@width || 1)
-        box_height = grid.height(@height)
+        # Use pixel overrides if provided, otherwise grid-based
+        box_width = @pt_width || grid.width(@width || 1)
+        box_height = @pt_height || grid.height(@height)
 
-        # Calculate the center point of the text box for rotation origin
-        box_x = grid.x(@col)
-        box_y = grid.y(@row) - box_height
-        center_x = box_x + (box_width / 2.0)
-        center_y = box_y + (box_height / 2.0)
+        if @centered && @pt_x && @pt_y
+          # Centered mode: pt_x/pt_y specify the center point
+          center_x = @pt_x
+          center_y = @pt_y
+          # Position text box so its center is at (center_x, center_y)
+          box_x = center_x - (box_width / 2.0)
+          box_top = center_y + (box_height / 2.0)
+        else
+          # Default mode: pt_x/pt_y specify the top-left corner
+          box_x = @pt_x || grid.x(@col)
+          box_top = @pt_y || grid.y(@row)
+          # Calculate center from box position
+          center_x = box_x + (box_width / 2.0)
+          center_y = (box_top - box_height) + (box_height / 2.0)
+        end
 
         pdf.fill_color text_color
         pdf.rotate(@rotation, origin: [center_x, center_y]) do
           pdf.text_box @content,
-                        at: [box_x, box_y + box_height],
+                        at: [box_x, box_top],
                         width: box_width,
                         height: box_height,
                         size: @size,
