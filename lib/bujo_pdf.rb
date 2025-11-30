@@ -23,6 +23,7 @@ require_relative 'bujo_pdf/page_set_context'
 require_relative 'bujo_pdf/week'
 require_relative 'bujo_pdf/render_context'
 require_relative 'bujo_pdf/component_context'
+require_relative 'bujo_pdf/collections_configuration'
 
 # Load base classes
 require_relative 'bujo_pdf/component'

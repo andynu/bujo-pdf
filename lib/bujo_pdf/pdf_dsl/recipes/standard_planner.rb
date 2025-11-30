@@ -130,25 +130,12 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   page :year_wheel, id: :year_wheel, outline: true
 
   # 6. Collections (user-configured via config/collections.yml)
-  # Load collections configuration if available
-  collections_path = 'config/collections.yml'
-  if File.exist?(collections_path)
-    require 'yaml'
-    config = YAML.safe_load(File.read(collections_path), permitted_classes: [Symbol]) || {}
-    collections = config['collections'] || []
-
-    collections.each do |collection|
-      # Handle both string and symbol keys
-      id = collection['id'] || collection[:id]
-      title = collection['title'] || collection[:title]
-      subtitle = collection['subtitle'] || collection[:subtitle]
-
-      page :collection, id: :"collection_#{id}",
-           collection_id: id,
-           collection_title: title,
-           collection_subtitle: subtitle,
-           year: year,
-           outline: title
-    end
+  BujoPdf::CollectionsConfiguration.load.each do |collection|
+    page :collection, id: :"collection_#{collection.id}",
+         collection_id: collection.id,
+         collection_title: collection.title,
+         collection_subtitle: collection.subtitle,
+         year: year,
+         outline: collection.title
   end
 end
