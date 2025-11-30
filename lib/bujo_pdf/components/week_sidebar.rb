@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../component'
+require_relative '../base/component'
 require_relative '../utilities/date_calculator'
 
 module BujoPdf

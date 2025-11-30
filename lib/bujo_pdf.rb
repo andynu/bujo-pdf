@@ -28,8 +28,8 @@ require_relative 'bujo_pdf/date_configuration'
 require_relative 'bujo_pdf/calendar_integration'
 
 # Load base classes
-require_relative 'bujo_pdf/component'
-require_relative 'bujo_pdf/layout'
+require_relative 'bujo_pdf/base/component'
+require_relative 'bujo_pdf/base/layout'
 
 # Load components (including sub-component base and position-based components)
 require_relative 'bujo_pdf/components/sub_component_base'
