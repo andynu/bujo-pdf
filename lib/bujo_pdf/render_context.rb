@@ -63,6 +63,9 @@ module BujoPdf
     # @return [Hash] Additional context data
     attr_reader :data
 
+    # @return [PageSet::Context, PageSet::NullContext] Page set context when inside page_set block
+    attr_accessor :set
+
     # Initialize a new RenderContext.
     #
     # @param page_key [Symbol] Page identifier (:seasonal, :week_42, etc.)
@@ -90,6 +93,7 @@ module BujoPdf
       @date_config = date_config
       @event_store = event_store
       @data = data
+      @set = PageSet::NullContext.new
     end
 
     # Check if currently rendering a specific page.
@@ -116,6 +120,21 @@ module BujoPdf
     # @return [Boolean] True if on a weekly page
     def weekly_page?
       !@week_num.nil?
+    end
+
+    # Check if currently rendering within a page set.
+    #
+    # Returns true when @set contains a PageSet::Context (real context),
+    # false when it contains a PageSet::NullContext.
+    #
+    # @return [Boolean] True if inside a page_set block
+    #
+    # @example
+    #   context.set?  # => false (outside page_set block)
+    #   # Inside page_set block:
+    #   context.set?  # => true
+    def set?
+      !@set.is_a?(PageSet::NullContext)
     end
 
     # Get the destination key for this page.
