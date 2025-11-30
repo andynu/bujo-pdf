@@ -20,6 +20,7 @@ require_relative 'bujo_pdf/utilities/date_calculator'
 require_relative 'bujo_pdf/page_ref'
 require_relative 'bujo_pdf/page_set'
 require_relative 'bujo_pdf/page_set_context'
+require_relative 'bujo_pdf/week'
 require_relative 'bujo_pdf/render_context'
 require_relative 'bujo_pdf/component_context'
 
