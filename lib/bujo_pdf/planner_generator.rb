@@ -152,6 +152,7 @@ module BujoPdf
         total_weeks: total_weeks,
         total_pages: @total_pages,
         future_log_page: future_log_page_num,
+        future_log_page_count: FUTURE_LOG_PAGE_COUNT,
         future_log_start_month: start_month,
         date_config: @date_config,
         event_store: @event_store
