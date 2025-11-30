@@ -58,7 +58,7 @@ module BujoPdf
         collections_config_path: @collections_config_path
       ) do
         # 1. Front matter: Seasonal calendar, Index, Future log
-        @seasonal = page :seasonal
+        page :seasonal
 
         page_set :index, label: "Index %page of %total" do
           INDEX_PAGE_COUNT.times { page :index }
@@ -69,15 +69,11 @@ module BujoPdf
         end
 
         # 2. Year overview pages
-        @year_events = page :year_events
-        @year_highlights = page :year_highlights
-        @multi_year = page :multi_year
+        page :year_events
+        page :year_highlights
+        page :multi_year
 
         # 3. Weekly pages with interleaved monthly reviews and quarterly planning
-        @week_pages = []
-        @monthly_reviews = {}
-        @quarterly_plans = {}
-
         generated_months = Set.new
         generated_quarters = Set.new
 
@@ -89,18 +85,18 @@ module BujoPdf
 
             # Quarterly planning at quarter boundaries
             unless generated_quarters.include?(quarter)
-              @quarterly_plans[quarter] = page :quarterly_planning, quarter: quarter
+              page :quarterly_planning, quarter: quarter
               generated_quarters.add(quarter)
             end
 
             # Monthly review at month boundaries
             unless generated_months.include?(month)
-              @monthly_reviews[month] = page :monthly_review, month: month
+              page :monthly_review, month: month
               generated_months.add(month)
             end
           end
 
-          @week_pages << page(:weekly, week_num: week.number)
+          page :weekly, week_num: week.number
         end
 
         # 4. Grid pages (with cycling navigation)
@@ -116,15 +112,14 @@ module BujoPdf
         end
 
         # 5. Template pages
-        @tracker_example = page :tracker_example
-        @reference = page :reference
-        @daily_wheel = page :daily_wheel
-        @year_wheel = page :year_wheel
+        page :tracker_example
+        page :reference
+        page :daily_wheel
+        page :year_wheel
 
         # 6. Collections
-        @collection_pages = {}
         collections.each do |collection|
-          @collection_pages[collection[:id]] = page :collection,
+          page :collection,
             collection_id: collection[:id],
             collection_title: collection[:title],
             collection_subtitle: collection[:subtitle]
