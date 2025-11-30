@@ -10,18 +10,20 @@ require_relative 'render_context'
 require_relative 'date_configuration'
 require_relative 'calendar_integration'
 require_relative 'collections_configuration'
+require_relative 'pages/all'
 
 module BujoPdf
   # Main planner generator orchestrator.
   #
   # This class coordinates the generation of a complete year planner PDF.
-  # It uses the PageFactory to create individual pages and manages the
-  # overall PDF structure including named destinations and bookmarks.
+  # It uses page verb mixins from Pages::All to generate individual pages
+  # with proper context and footer labels.
   #
   # Example:
   #   generator = PlannerGenerator.new(2025)
   #   generator.generate("planner_2025.pdf")
   class PlannerGenerator
+    include Pages::All
     # Page dimensions
     PAGE_WIDTH = 612    # 8.5 inches (letter size)
     PAGE_HEIGHT = 792   # 11 inches
@@ -57,7 +59,6 @@ module BujoPdf
 
     def generate(filename = "planner_#{@year}.pdf")
       # Calculate total pages upfront
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
       collections_count = @collections_config.count
       # 1 seasonal + index + future log + 3 overview + weeks + reviews + quarters + 8 grid + 4 template + collections
       @total_pages = 1 + INDEX_PAGE_COUNT + FUTURE_LOG_PAGE_COUNT + 3 + total_weeks + MONTHLY_REVIEW_COUNT + QUARTERLY_PLANNING_COUNT + 12 + collections_count
@@ -68,23 +69,74 @@ module BujoPdf
         # Create reusable dot grid stamp for efficiency (reduces file size by ~90%)
         DotGrid.create_stamp(@pdf, "page_dots")
 
-        # Generate all pages in user-requested order:
+        # Generate all pages using verb methods from Pages::All.
+        # Each verb handles context creation and page generation internally.
+
         # 1. Seasonal calendar (first page)
-        generate_seasonal_page
+        seasonal_calendar
+        @seasonal_page = @pdf.page_number
+
         # 2. Index pages
-        generate_index_pages
+        @index_pages = {}
+        INDEX_PAGE_COUNT.times do |i|
+          page_num = i + 1
+          index_page(num: page_num, total: INDEX_PAGE_COUNT)
+          @index_pages[page_num] = @pdf.page_number
+        end
+
         # 3. Future log
-        generate_future_log_pages
+        @future_log_pages = {}
+        FUTURE_LOG_PAGE_COUNT.times do |i|
+          page_num = i + 1
+          future_log_page(num: page_num, total: FUTURE_LOG_PAGE_COUNT)
+          @future_log_pages[page_num] = @pdf.page_number
+        end
+
         # 4. Year overview pages (events, highlights, multi-year)
-        generate_year_overview_pages
+        year_events_page
+        @events_page = @pdf.page_number
+        year_highlights_page
+        @highlights_page = @pdf.page_number
+        multi_year_page
+        @multi_year_page = @pdf.page_number
+
         # 5. Weekly pages with interleaved monthly reviews and quarterly planning
         generate_weekly_pages_interleaved
+
         # 6. Grid pages
-        generate_grid_pages
+        grid_showcase_page
+        @grid_showcase_page = @pdf.page_number
+        grids_overview_page
+        @grids_overview_page = @pdf.page_number
+        dot_grid_page
+        @grid_dot_page = @pdf.page_number
+        graph_grid_page
+        @grid_graph_page = @pdf.page_number
+        lined_grid_page
+        @grid_lined_page = @pdf.page_number
+        isometric_grid_page
+        @grid_isometric_page = @pdf.page_number
+        perspective_grid_page
+        @grid_perspective_page = @pdf.page_number
+        hexagon_grid_page
+        @grid_hexagon_page = @pdf.page_number
+
         # 7. Template pages
-        generate_template_pages
+        tracker_example_page
+        @tracker_example_page = @pdf.page_number
+        reference_page
+        @reference_page = @pdf.page_number
+        daily_wheel_page
+        @daily_wheel_page = @pdf.page_number
+        year_wheel_page
+        @year_wheel_page = @pdf.page_number
+
         # 8. Collections (at the end)
-        generate_collection_pages
+        @collection_pages = {}
+        @collections_config.collections.each do |collection|
+          collection_page(id: collection[:id], title: collection[:title], subtitle: collection[:subtitle])
+          @collection_pages[collection[:id]] = @pdf.page_number
+        end
 
         # Build PDF outline (table of contents / bookmarks)
         build_outline
@@ -95,153 +147,12 @@ module BujoPdf
 
     private
 
-    def generate_seasonal_page
-      # First page doesn't need start_new_page
-      generate_page(:seasonal)
-      @seasonal_page = @pdf.page_number
-    end
-
-    def generate_index_pages
-      @index_pages = {}
-
-      INDEX_PAGE_COUNT.times do |i|
-        page_num = i + 1
-        @pdf.start_new_page
-        generate_index_page(page_num)
-        @index_pages[page_num] = @pdf.page_number
-      end
-    end
-
-    def generate_index_page(index_page_num)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      context = RenderContext.new(
-        page_key: "index_#{index_page_num}".to_sym,
-        page_number: @pdf.page_number,
-        year: @year,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        index_page_num: index_page_num,
-        index_page_count: INDEX_PAGE_COUNT,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-
-      page = PageFactory.create(:index, @pdf, context)
-      page.generate
-    end
-
-    def generate_future_log_pages
-      @future_log_pages = {}
-
-      FUTURE_LOG_PAGE_COUNT.times do |i|
-        page_num = i + 1
-        @pdf.start_new_page
-        generate_future_log_page(page_num)
-        @future_log_pages[page_num] = @pdf.page_number
-      end
-    end
-
-    def generate_future_log_page(future_log_page_num)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      start_month = (future_log_page_num - 1) * 6 + 1  # Page 1 = months 1-6, Page 2 = months 7-12
-
-      context = RenderContext.new(
-        page_key: "future_log_#{future_log_page_num}".to_sym,
-        page_number: @pdf.page_number,
-        year: @year,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        future_log_page: future_log_page_num,
-        future_log_page_count: FUTURE_LOG_PAGE_COUNT,
-        future_log_start_month: start_month,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-
-      page = PageFactory.create(:future_log, @pdf, context)
-      page.generate
-    end
-
-    def generate_collection_pages
-      @collection_pages = {}
-
-      @collections_config.collections.each do |collection|
-        @pdf.start_new_page
-        generate_collection_page(collection)
-        @collection_pages[collection[:id]] = @pdf.page_number
-      end
-    end
-
-    def generate_collection_page(collection)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-
-      context = RenderContext.new(
-        page_key: "collection_#{collection[:id]}".to_sym,
-        page_number: @pdf.page_number,
-        year: @year,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        collection_id: collection[:id],
-        collection_title: collection[:title],
-        collection_subtitle: collection[:subtitle],
-        date_config: @date_config,
-        event_store: @event_store
-      )
-
-      page = PageFactory.create(:collection, @pdf, context)
-      page.generate
-    end
-
-    def generate_monthly_review_page(month_num)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-
-      context = RenderContext.new(
-        page_key: "review_#{month_num}".to_sym,
-        page_number: @pdf.page_number,
-        year: @year,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        review_month: month_num,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-
-      page = PageFactory.create(:monthly_review, @pdf, context)
-      page.generate
-    end
-
-    def generate_quarterly_planning_page(quarter_num)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-
-      context = RenderContext.new(
-        page_key: "quarter_#{quarter_num}".to_sym,
-        page_number: @pdf.page_number,
-        year: @year,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        quarter: quarter_num,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-
-      page = PageFactory.create(:quarterly_planning, @pdf, context)
-      page.generate
-    end
-
-    def generate_year_overview_pages
-      @pdf.start_new_page
-      generate_page(:year_events)
-      @events_page = @pdf.page_number
-
-      @pdf.start_new_page
-      generate_page(:year_highlights)
-      @highlights_page = @pdf.page_number
-
-      @pdf.start_new_page
-      generate_multi_year_page
-      @multi_year_page = @pdf.page_number
-    end
-
+    # Generate weekly pages with interleaved monthly reviews and quarterly planning.
+    #
+    # Uses page verbs for each page type while maintaining the interleaving logic
+    # that inserts monthly review and quarterly planning pages at appropriate points.
+    #
+    # @return [void]
     def generate_weekly_pages_interleaved
       @weekly_start_page = @pdf.page_number + 1  # Next page
       @week_pages = {}
@@ -252,7 +163,6 @@ module BujoPdf
       generated_months = Set.new
       generated_quarters = Set.new
 
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
       total_weeks.times do |i|
         week_num = i + 1
         week_start = Utilities::DateCalculator.week_start(@year, week_num)
@@ -263,151 +173,22 @@ module BujoPdf
         # Check if this week starts a new quarter
         quarter = ((primary_month - 1) / 3) + 1
         if !generated_quarters.include?(quarter) && week_start.year == @year
-          @pdf.start_new_page
-          generate_quarterly_planning_page(quarter)
+          quarterly_planning_page(quarter: quarter)
           @quarterly_planning_pages[quarter] = @pdf.page_number
           generated_quarters.add(quarter)
         end
 
         # Check if this week starts a new month
         if !generated_months.include?(primary_month) && week_start.year == @year
-          @pdf.start_new_page
-          generate_monthly_review_page(primary_month)
+          monthly_review_page(month: primary_month)
           @monthly_review_pages[primary_month] = @pdf.page_number
           generated_months.add(primary_month)
         end
 
         # Generate the weekly page
-        @pdf.start_new_page
-        generate_weekly_page(week_num)
+        weekly_page(week: week_num)
         @week_pages[week_num] = @pdf.page_number
       end
-    end
-
-    def generate_grid_pages
-      # Grid showcase (entry point for Grids tab cycling)
-      @pdf.start_new_page
-      @pdf.add_dest('grid_showcase', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_showcase)
-      @grid_showcase_page = @pdf.page_number
-
-      # Grids overview
-      @pdf.start_new_page
-      @pdf.add_dest('grids_overview', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grids_overview)
-      @grids_overview_page = @pdf.page_number
-
-      # Dot grid full page
-      @pdf.start_new_page
-      @pdf.add_dest('grid_dot', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_dot)
-      @grid_dot_page = @pdf.page_number
-
-      # Graph grid full page
-      @pdf.start_new_page
-      @pdf.add_dest('grid_graph', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_graph)
-      @grid_graph_page = @pdf.page_number
-
-      # Ruled lines full page
-      @pdf.start_new_page
-      @pdf.add_dest('grid_lined', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_lined)
-      @grid_lined_page = @pdf.page_number
-
-      # Isometric grid full page
-      @pdf.start_new_page
-      @pdf.add_dest('grid_isometric', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_isometric)
-      @grid_isometric_page = @pdf.page_number
-
-      # Perspective grid full page
-      @pdf.start_new_page
-      @pdf.add_dest('grid_perspective', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_perspective)
-      @grid_perspective_page = @pdf.page_number
-
-      # Hexagon grid full page
-      @pdf.start_new_page
-      @pdf.add_dest('grid_hexagon', @pdf.dest_xyz(0, @pdf.bounds.top))
-      generate_page(:grid_hexagon)
-      @grid_hexagon_page = @pdf.page_number
-    end
-
-    def generate_template_pages
-      @pdf.start_new_page
-      generate_page(:tracker_example)
-      @tracker_example_page = @pdf.page_number
-
-      @pdf.start_new_page
-      generate_page(:reference)
-      @reference_page = @pdf.page_number
-
-      @pdf.start_new_page
-      generate_page(:daily_wheel)
-      @daily_wheel_page = @pdf.page_number
-
-      @pdf.start_new_page
-      generate_page(:year_wheel)
-      @year_wheel_page = @pdf.page_number
-    end
-
-    def generate_page(page_key)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      context = RenderContext.new(
-        page_key: page_key,
-        page_number: @pdf.page_number,
-        year: @year,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-      page = PageFactory.create(page_key, @pdf, context)
-      page.generate
-    end
-
-    def generate_multi_year_page
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-      context = RenderContext.new(
-        page_key: :multi_year,
-        page_number: @pdf.page_number,
-        year: @year,
-        year_count: 4,  # Show 4 years
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-      page = PageFactory.create(:multi_year, @pdf, context)
-      page.generate
-    end
-
-    def generate_weekly_page(week_num)
-      # Calculate week dates
-      week_start = Utilities::DateCalculator.week_start(@year, week_num)
-      week_end = Utilities::DateCalculator.week_end(@year, week_num)
-      total_weeks = Utilities::DateCalculator.total_weeks(@year)
-
-      context = RenderContext.new(
-        page_key: "week_#{week_num}".to_sym,
-        page_number: @pdf.page_number,
-        year: @year,
-        week_num: week_num,
-        week_start: week_start,
-        week_end: week_end,
-        total_weeks: total_weeks,
-        total_pages: @total_pages,
-        date_config: @date_config,
-        event_store: @event_store
-      )
-
-      # Note: PageFactory.create_weekly_page expects a hash with :year
-      # and merges in week info, but since we're passing RenderContext,
-      # we need to use the page class directly
-      require_relative 'pages/weekly_page'
-      page = Pages::WeeklyPage.new(@pdf, context)
-      page.generate
     end
 
     def build_outline
