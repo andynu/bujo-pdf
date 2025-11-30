@@ -24,6 +24,8 @@ require_relative 'bujo_pdf/week'
 require_relative 'bujo_pdf/render_context'
 require_relative 'bujo_pdf/component_context'
 require_relative 'bujo_pdf/collections_configuration'
+require_relative 'bujo_pdf/date_configuration'
+require_relative 'bujo_pdf/calendar_integration'
 
 # Load base classes
 require_relative 'bujo_pdf/component'

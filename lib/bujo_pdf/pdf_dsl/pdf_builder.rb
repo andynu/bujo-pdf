@@ -142,12 +142,39 @@ module BujoPdf
         year = params[:year] || Date.today.year
         total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(year)
 
+        # Load date configuration from dates.yml if it exists
+        date_config = load_date_configuration(year)
+
+        # Load calendar events from calendars.yml if it exists
+        event_store = load_calendar_events(year)
+
         {
           year: year,
           total_weeks: total_weeks,
           total_pages: declaration_context.pages.length,
-          link_registry: @link_registry
+          link_registry: @link_registry,
+          date_config: date_config,
+          event_store: event_store
         }
+      end
+
+      # Load date configuration from dates.yml.
+      #
+      # @param year [Integer] The year for date validation
+      # @return [BujoPdf::DateConfiguration, nil] Date configuration or nil if not available
+      def load_date_configuration(year)
+        config_path = 'config/dates.yml'
+        return nil unless File.exist?(config_path)
+
+        BujoPdf::DateConfiguration.new(config_path, year: year)
+      end
+
+      # Load calendar events from iCal sources configured in calendars.yml.
+      #
+      # @param year [Integer] The year to filter events for
+      # @return [BujoPdf::CalendarIntegration::EventStore, nil] Event store or nil if not available
+      def load_calendar_events(year)
+        BujoPdf::CalendarIntegration.load_events(year: year)
       end
 
       # Render all declared pages.
