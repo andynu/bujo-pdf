@@ -18,7 +18,7 @@ module BujoPdf
     #
     # Options:
     #   - :current_week [Integer, nil] - Week number to highlight in week sidebar (nil for no highlight)
-    #   - :highlight_tab [Symbol, nil] - Tab to highlight (:seasonal, :year_events, :year_highlights, :grids, nil)
+    #   - :highlight_tab [Symbol, nil] - Tab to highlight (:seasonal, :future_log_1, :future_log_2, :year_events, :year_highlights, :grids, nil)
     #   - :year [Integer] - Year for sidebar rendering (from page context if not provided)
     #   - :total_weeks [Integer] - Total weeks in year (from page context if not provided)
     #
@@ -126,6 +126,7 @@ module BujoPdf
       def build_top_tabs
         tabs = [
           { label: "Year", dest: "seasonal" },
+          { label: "Future", dest: [:future_log_1, :future_log_2] },
           { label: "Events", dest: "year_events" },
           { label: "Highlights", dest: "year_highlights" },
           { label: "Multi", dest: "multi_year" },
