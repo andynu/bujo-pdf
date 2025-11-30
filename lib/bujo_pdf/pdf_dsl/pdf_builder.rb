@@ -258,28 +258,18 @@ module BujoPdf
       # Build PDF outline/bookmarks for navigation.
       #
       # Uses declarative outline entries collected during definition evaluation.
-      # Falls back to hardcoded structure if no outline entries are declared.
+      # All PDF definitions should use the DSL's outline declarations
+      # (outline: true, outline: 'Title', or outline_entry/outline_section).
       #
       # @param pdf [Prawn::Document] The PDF document
       # @param pages [Array<PageDeclaration>] All page declarations
-      # @param base_context [Hash] Base render context with year info
+      # @param base_context [Hash] Base render context with year info (unused, kept for API compatibility)
       # @param outline_entries [Array<OutlineDeclaration>] Declared outline entries
       def build_outline(pdf, pages, base_context, outline_entries = [])
+        return if outline_entries.empty?
+
         pages_by_dest = build_pages_by_dest(pages)
 
-        if outline_entries.any?
-          build_declarative_outline(pdf, outline_entries, pages_by_dest)
-        else
-          build_legacy_outline(pdf, pages_by_dest, base_context[:year])
-        end
-      end
-
-      # Build outline from declarative entries.
-      #
-      # @param pdf [Prawn::Document] The PDF document
-      # @param entries [Array<OutlineDeclaration>] Outline entries
-      # @param pages_by_dest [Hash<String, Hash>] Map of dest key to page info
-      def build_declarative_outline(pdf, entries, pages_by_dest)
         # Define a recursive renderer that works within Prawn's outline DSL scope
         render_entry = nil
         render_entry = ->(entry, outline_scope) do
@@ -305,103 +295,8 @@ module BujoPdf
         end
 
         pdf.outline.define do
-          entries.each do |entry|
+          outline_entries.each do |entry|
             render_entry.call(entry, self)
-          end
-        end
-      end
-
-      # Build legacy hardcoded outline for backward compatibility.
-      #
-      # @param pdf [Prawn::Document] The PDF document
-      # @param pages_by_dest [Hash<String, Hash>] Map of dest key to page info
-      # @param year [Integer] The planner year
-      def build_legacy_outline(pdf, pages_by_dest, year)
-        pdf.outline.define do
-          # Front matter
-          if (p = pages_by_dest['seasonal'])
-            page destination: p[:page_number], title: 'Seasonal Calendar'
-          end
-          if (p = pages_by_dest['index_1'])
-            page destination: p[:page_number], title: 'Index'
-          end
-          if (p = pages_by_dest['future_log_1'])
-            page destination: p[:page_number], title: 'Future Log'
-          end
-
-          # Year overview
-          if (p = pages_by_dest['year_events'])
-            page destination: p[:page_number], title: 'Year at a Glance - Events'
-          end
-          if (p = pages_by_dest['year_highlights'])
-            page destination: p[:page_number], title: 'Year at a Glance - Highlights'
-          end
-          if (p = pages_by_dest['multi_year'])
-            page destination: p[:page_number], title: 'Multi-Year Overview'
-          end
-
-          # Planning pages
-          if (p = pages_by_dest['quarter_1'])
-            page destination: p[:page_number], title: 'Quarterly Planning'
-          end
-          if (p = pages_by_dest['review_1'])
-            page destination: p[:page_number], title: 'Monthly Reviews'
-          end
-
-          # Months (link to first week of each month)
-          (1..12).each do |month|
-            month_name = Date::MONTHNAMES[month]
-            weeks = BujoPdf::Utilities::DateCalculator.weeks_for_month(year, month)
-            if weeks.any? && (p = pages_by_dest["week_#{weeks.first}"])
-              page destination: p[:page_number], title: "#{month_name} #{year}"
-            end
-          end
-
-          # Grids
-          if (p = pages_by_dest['grid_showcase'])
-            page destination: p[:page_number], title: 'Grid Types Showcase'
-          end
-          if (p = pages_by_dest['grids_overview'])
-            page destination: p[:page_number], title: '  - Basic Grids Overview'
-          end
-          if (p = pages_by_dest['grid_dot'])
-            page destination: p[:page_number], title: '  - Dot Grid (5mm)'
-          end
-          if (p = pages_by_dest['grid_graph'])
-            page destination: p[:page_number], title: '  - Graph Grid (5mm)'
-          end
-          if (p = pages_by_dest['grid_lined'])
-            page destination: p[:page_number], title: '  - Ruled Lines (10mm)'
-          end
-          if (p = pages_by_dest['grid_isometric'])
-            page destination: p[:page_number], title: '  - Isometric Grid'
-          end
-          if (p = pages_by_dest['grid_perspective'])
-            page destination: p[:page_number], title: '  - Perspective Grid'
-          end
-          if (p = pages_by_dest['grid_hexagon'])
-            page destination: p[:page_number], title: '  - Hexagon Grid'
-          end
-
-          # Templates
-          if (p = pages_by_dest['tracker_example'])
-            page destination: p[:page_number], title: 'Tracker Ideas'
-          end
-          if (p = pages_by_dest['reference'])
-            page destination: p[:page_number], title: 'Calibration & Reference'
-          end
-          if (p = pages_by_dest['daily_wheel'])
-            page destination: p[:page_number], title: 'Daily Wheel'
-          end
-          if (p = pages_by_dest['year_wheel'])
-            page destination: p[:page_number], title: 'Year Wheel'
-          end
-
-          # Collections
-          pages_by_dest.each do |dest, p|
-            next unless dest.start_with?('collection_')
-
-            page destination: p[:page_number], title: p[:title]
           end
         end
       end
@@ -413,13 +308,71 @@ module BujoPdf
       def build_pages_by_dest(pages)
         pages.each_with_index.each_with_object({}) do |(page_decl, index), hash|
           dest_key = page_decl.destination_key
-          # For collection pages, get title from params
-          title = page_decl.params[:collection_title] || dest_key.tr('_', ' ').split.map(&:capitalize).join(' ')
+          title = resolve_page_title(page_decl, dest_key)
           hash[dest_key] = {
             page_number: index + 1,
             title: title
           }
         end
+      end
+
+      # Resolve the title for a page declaration.
+      #
+      # Priority:
+      # 1. Explicit outline_title on the declaration
+      # 2. collection_title param (for collection pages)
+      # 3. Page class's registered title via PageRegistry
+      # 4. Fallback: humanized destination key
+      #
+      # @param page_decl [PageDeclaration] The page declaration
+      # @param dest_key [String] The destination key
+      # @return [String] The resolved title
+      def resolve_page_title(page_decl, dest_key)
+        # 1. Explicit outline_title on the declaration
+        return page_decl.outline_title if page_decl.outline_title
+
+        # 2. collection_title param (for collection pages)
+        return page_decl.params[:collection_title] if page_decl.params[:collection_title]
+
+        # 3. Page class's registered title via PageRegistry
+        page_class = PageFactory.registry[page_decl.type]
+        if page_class&.respond_to?(:generate_title)
+          # Expand DSL value objects to params that PageRegistry expects
+          expanded_params = expand_dsl_params(page_decl.params)
+          begin
+            generated_title = page_class.generate_title(expanded_params)
+            return generated_title if generated_title
+          rescue KeyError
+            # Title requires params not available - fall through to fallback
+          end
+        end
+
+        # 4. Fallback: humanized destination key
+        dest_key.tr('_', ' ').split.map(&:capitalize).join(' ')
+      end
+
+      # Expand DSL value objects (Week, Month) to their component params.
+      #
+      # Mirrors the expansion done in build_page_context.
+      #
+      # @param params [Hash] Page declaration params
+      # @return [Hash] Expanded params with week_num, month, etc.
+      def expand_dsl_params(params)
+        expanded = params.dup
+
+        params.each do |key, value|
+          case value
+          when Week
+            expanded[:week_num] = value.number
+            expanded[:week_start] = value.start_date
+            expanded[:week_end] = value.end_date
+          when Month
+            expanded[:month] = value.number
+            expanded[:month_name] = value.name
+          end
+        end
+
+        expanded
       end
     end
   end

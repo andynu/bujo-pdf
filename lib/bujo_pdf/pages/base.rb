@@ -390,6 +390,16 @@ module BujoPdf
         Styling
       end
 
+      # Get the title to use in the PDF outline (bookmarks).
+      #
+      # By default, uses the title from PageRegistry. Override in subclasses
+      # when the outline title should differ from the registered title.
+      #
+      # @return [String, nil] The outline title, or nil if no title
+      def outline_title
+        self.class.generate_title(context.to_h)
+      end
+
       # Draw dot grid across the entire page.
       #
       # This method uses the page_dots stamp if available (much more efficient),
