@@ -103,28 +103,39 @@ class GridSystem
     boxes * @dot_spacing
   end
 
-  # Get bounding box coordinates for a grid region
+  # Get a GridRect for a grid region
+  #
+  # Returns a GridRect value object that:
+  # - Has grid coordinate accessors: col, row, width, height
+  # - Has point coordinate accessors: x, y, width_pt, height_pt
+  # - Supports hash-style access for both: rect[:x], rect[:col]
+  # - Supports splatting: *rect => [col, row, width, height]
   #
   # @param col [Integer] Column number of top-left corner
   # @param row [Integer] Row number of top-left corner
   # @param width_boxes [Numeric] Width in grid boxes
   # @param height_boxes [Numeric] Height in grid boxes
-  # @return [Hash] Hash with :x, :y, :width, :height keys
+  # @return [BujoPdf::GridRect] GridRect value object
   #
-  # @example
-  #   # Full-width header, 2 boxes tall
-  #   grid.rect(0, 0, 43, 2)
-  #   # => { x: 0, y: 792, width: 609.31, height: 28.34 }
+  # @example Grid coordinate access
+  #   rect = grid.rect(5, 10, 20, 15)
+  #   rect.col    # => 5
+  #   rect.row    # => 10
+  #   rect.width  # => 20
+  #   rect.height # => 15
   #
-  #   # Sidebar: 3 boxes wide, full height
-  #   grid.rect(0, 0, 3, 55)
+  # @example Point coordinate access (for Prawn)
+  #   rect = grid.rect(5, 10, 20, 15)
+  #   rect[:x]      # => x in points
+  #   rect[:y]      # => y in points
+  #   rect[:width]  # => width in points
+  #   rect[:height] # => height in points
+  #
+  # @example Splatting into component verbs
+  #   rect = grid.rect(5, 10, 20, 15)
+  #   ruled_lines(*rect, color: 'red')  # => ruled_lines(5, 10, 20, 15, color: 'red')
   def rect(col, row, width_boxes, height_boxes)
-    {
-      x: x(col),
-      y: y(row),
-      width: width(width_boxes),
-      height: height(height_boxes)
-    }
+    BujoPdf::GridRect.new(col, row, width_boxes, height_boxes)
   end
 
   # Create a text box positioned using grid coordinates
