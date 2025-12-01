@@ -1,16 +1,22 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Generate page thumbnails for embedding in visual TOC pages
+# Generate page snapshots by rendering pages in isolation
 #
-# This script renders sample pages of each type and generates thumbnail-sized
-# PNG images that can be embedded in the PDF during generation.
+# This script renders sample pages of each type to PNG images. Unlike
+# generate-samples (which extracts from a full planner PDF), this script
+# renders each page type in isolation, supporting more page types and
+# theme variations.
+#
+# Output:
+#   assets/pages/       - Full-resolution page snapshots
+#   assets/thumbnails/  - Scaled thumbnails (with --thumbnails flag)
 #
 # Usage:
-#   bin/generate-thumbnails                    # Generate all thumbnails
+#   bin/generate-thumbnails                    # Generate page snapshots
+#   bin/generate-thumbnails --thumbnails       # Also generate thumbnails
 #   bin/generate-thumbnails --list             # List page types
 #   bin/generate-thumbnails weekly seasonal    # Generate specific types
-#   bin/generate-thumbnails --size 100         # Custom thumbnail width
 
 require 'fileutils'
 require 'tempfile'
@@ -22,9 +28,10 @@ require 'bujo_pdf'
 
 module BujoPdf
   class ThumbnailGenerator
+    PAGES_DIR = File.expand_path('../assets/pages', __dir__)
     THUMBNAIL_DIR = File.expand_path('../assets/thumbnails', __dir__)
-    DEFAULT_SIZE = 80  # Default thumbnail width in pixels
-    DPI = 150          # Render DPI for quality
+    DEFAULT_THUMB_SIZE = 160 # Default thumbnail width in pixels
+    DPI = 150                # Render DPI for quality
     TEMP_DIR = '/tmp/bujo-thumbnails'
 
     # Page types that can have thumbnails generated
@@ -142,9 +149,10 @@ module BujoPdf
     def initialize(args)
       @args = args
       @types_to_generate = []
-      @size = DEFAULT_SIZE
+      @thumb_size = DEFAULT_THUMB_SIZE
       @theme = :light
       @list_only = false
+      @generate_thumbnails = false
       parse_args
     end
 
@@ -169,20 +177,22 @@ module BujoPdf
       end
 
       # Create directories
-      FileUtils.mkdir_p(THUMBNAIL_DIR)
+      FileUtils.mkdir_p(PAGES_DIR)
+      FileUtils.mkdir_p(THUMBNAIL_DIR) if @generate_thumbnails
       FileUtils.mkdir_p(TEMP_DIR)
 
-      puts "Generating #{types.length} thumbnail(s) at #{@size}px width..."
+      puts "Generating #{types.length} page snapshot(s)..."
       puts
 
       year = Date.today.year
 
       types.each do |type_name|
-        generate_thumbnail(type_name, year)
+        generate_page_snapshot(type_name, year)
       end
 
       puts
-      puts "Thumbnails saved to: #{THUMBNAIL_DIR}"
+      puts "Page snapshots saved to: #{PAGES_DIR}"
+      puts "Thumbnails saved to: #{THUMBNAIL_DIR}" if @generate_thumbnails
     end
 
     private
@@ -197,9 +207,11 @@ module BujoPdf
           exit 0
         when '--list', '-l'
           @list_only = true
+        when '--thumbnails', '-T'
+          @generate_thumbnails = true
         when '--size', '-s'
           i += 1
-          @size = @args[i].to_i
+          @thumb_size = @args[i].to_i
         when '--theme', '-t'
           i += 1
           @theme = @args[i]&.to_sym
@@ -212,7 +224,7 @@ module BujoPdf
 
     def show_help
       puts <<~HELP
-        bin/generate-thumbnails - Generate page thumbnails for visual TOC
+        bin/generate-thumbnails - Generate page snapshots by rendering in isolation
 
         Usage:
           bin/generate-thumbnails [OPTIONS] [PAGE_TYPES...]
@@ -222,19 +234,23 @@ module BujoPdf
                               Use --list to see available types
 
         Options:
-          --size, -s NUM      Thumbnail width in pixels (default: #{DEFAULT_SIZE})
+          --thumbnails, -T    Also generate scaled thumbnails
+          --size, -s NUM      Thumbnail width in pixels (default: #{DEFAULT_THUMB_SIZE})
           --theme, -t NAME    Color theme: light, earth, dark (default: light)
           --list, -l          List available page types
           --help, -h          Show this help message
 
         Examples:
-          bin/generate-thumbnails                        # Generate all thumbnails
+          bin/generate-thumbnails                        # Generate page snapshots
+          bin/generate-thumbnails --thumbnails           # Also create thumbnails
           bin/generate-thumbnails weekly seasonal        # Generate specific types
-          bin/generate-thumbnails --size 120             # Larger thumbnails
-          bin/generate-thumbnails -t dark                # Dark theme thumbnails
+          bin/generate-thumbnails -t dark                # Dark theme snapshots
 
         Output:
-          Thumbnails are saved to assets/thumbnails/ directory
+          assets/pages/       - Full-resolution page snapshots
+          assets/thumbnails/  - Scaled thumbnails (with --thumbnails)
+
+        Note: For pages extracted from a full planner, use bin/generate-samples instead.
       HELP
     end
 
@@ -246,7 +262,7 @@ module BujoPdf
       end
     end
 
-    def generate_thumbnail(type_name, year)
+    def generate_page_snapshot(type_name, year)
       config = PAGE_TYPES[type_name]
       print "  #{type_name}... "
 
@@ -254,23 +270,26 @@ module BujoPdf
       pdf_file = File.join(TEMP_DIR, "#{type_name}.pdf")
       generate_page_pdf(pdf_file, config, year)
 
-      # Convert to PNG
-      full_png = File.join(TEMP_DIR, "#{type_name}_full.png")
-      cmd = "pdftoppm -png -r #{DPI} -singlefile '#{pdf_file}' '#{full_png.sub(/\.png$/, '')}'"
+      # Convert to full-res PNG
+      page_file = File.join(PAGES_DIR, "#{type_name}.png")
+      cmd = "pdftoppm -png -r #{DPI} -singlefile '#{pdf_file}' '#{page_file.sub(/\.png$/, '')}'"
       system(cmd, err: File::NULL) || abort("Failed to convert PDF to PNG")
 
-      # Scale to thumbnail size
-      output_file = File.join(THUMBNAIL_DIR, "#{type_name}.png")
-      scale_cmd = "convert '#{full_png}' -resize #{@size}x '#{output_file}'"
-      system(scale_cmd, err: File::NULL) || abort("Failed to scale thumbnail")
+      size_kb = (File.size(page_file) / 1024.0).round(1)
 
-      # Get file size
-      size_kb = (File.size(output_file) / 1024.0).round(1)
-      puts "OK (#{size_kb} KB)"
+      # Optionally scale to thumbnail
+      if @generate_thumbnails
+        thumb_file = File.join(THUMBNAIL_DIR, "#{type_name}.png")
+        scale_cmd = "convert '#{page_file}' -resize #{@thumb_size}x '#{thumb_file}'"
+        system(scale_cmd, err: File::NULL) || abort("Failed to scale thumbnail")
+        thumb_kb = (File.size(thumb_file) / 1024.0).round(1)
+        puts "OK (#{size_kb} KB, thumb: #{thumb_kb} KB)"
+      else
+        puts "OK (#{size_kb} KB)"
+      end
 
       # Cleanup
       FileUtils.rm_f(pdf_file)
-      FileUtils.rm_f(full_png)
     end
 
     def generate_page_pdf(pdf_file, config, year)

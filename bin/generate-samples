@@ -1,12 +1,14 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Generate sample page images for documentation
+# Generate sample page images for documentation and thumbnails
 #
 # This script:
 # 1. Generates a PDF planner for the current year
 # 2. Extracts one page of each page type as PNG images
-# 3. Saves images to docs/ folder for README reference
+# 3. Saves images to:
+#    - docs/ folder for README reference
+#    - assets/pages/ for internal use (thumbnail source)
 
 require 'fileutils'
 require 'date'
@@ -14,6 +16,7 @@ require 'date'
 YEAR = Date.today.year
 PDF_FILE = "planner_#{YEAR}.pdf"
 DOCS_DIR = File.expand_path('../docs', __dir__)
+PAGES_DIR = File.expand_path('../assets/pages', __dir__)
 DPI = 150  # Resolution for PNG output
 
 # Page numbers (1-indexed as they appear in PDF)
@@ -39,10 +42,12 @@ abort("PDF file not found: #{PDF_FILE}") unless File.exist?(PDF_FILE)
 puts "   ✓ Generated #{PDF_FILE}"
 puts
 
-# Step 2: Create docs directory
+# Step 2: Create output directories
 FileUtils.mkdir_p(DOCS_DIR)
-puts "2. Creating docs directory..."
+FileUtils.mkdir_p(PAGES_DIR)
+puts "2. Creating output directories..."
 puts "   ✓ #{DOCS_DIR}"
+puts "   ✓ #{PAGES_DIR}"
 puts
 
 # Step 3: Get total page count
@@ -60,7 +65,8 @@ puts
 # Step 4: Extract pages to PNG
 puts "4. Extracting sample pages..."
 PAGES.each do |name, page_num|
-  output_file = File.join(DOCS_DIR, "#{name}.png")
+  docs_file = File.join(DOCS_DIR, "#{name}.png")
+  pages_file = File.join(PAGES_DIR, "#{name}.png")
 
   # Convert negative page numbers to actual page numbers
   actual_page = if page_num < 0
@@ -71,11 +77,14 @@ PAGES.each do |name, page_num|
 
   # Use pdftoppm (poppler) for conversion - more commonly available than ImageMagick
   # pdftoppm uses 1-indexed pages, outputs to stdout with -png flag
-  output_base = output_file.sub(/\.png$/, '')
-  cmd = "pdftoppm -png -r #{DPI} -f #{actual_page} -l #{actual_page} -singlefile #{PDF_FILE} #{output_base}"
+  docs_base = docs_file.sub(/\.png$/, '')
+  cmd = "pdftoppm -png -r #{DPI} -f #{actual_page} -l #{actual_page} -singlefile #{PDF_FILE} #{docs_base}"
 
   print "   Extracting page #{actual_page} (#{name})... "
   system(cmd, err: File::NULL) || abort("\n   ✗ Failed to convert #{name}")
+
+  # Copy to assets/pages for thumbnail source
+  FileUtils.cp(docs_file, pages_file)
   puts "✓"
 end
 puts
@@ -89,9 +98,13 @@ PAGES.keys.each do |name|
 end
 puts
 
-puts "Sample images saved to: #{DOCS_DIR}"
+puts "Sample images saved to:"
+puts "  - #{DOCS_DIR} (for documentation)"
+puts "  - #{PAGES_DIR} (for thumbnails)"
 puts
 puts "You can now reference these in README.md:"
 PAGES.keys.each do |name|
   puts "![#{name.split('_').map(&:capitalize).join(' ')}](docs/#{name}.png)"
 end
+puts
+puts "To generate thumbnails, run: bin/scale-thumbnails"
