@@ -66,7 +66,7 @@ end
 ### `h1(col, row, text, **opts)`
 Large heading text.
 
-![H1](assets/components/h1.png)
+> ![H1](assets/components/h1.png)
 
 **Location**: `lib/bujo_pdf/components/h1.rb`
 
@@ -78,14 +78,14 @@ Large heading text.
 ### `h2(col, row, text, **opts)`
 Medium heading text.
 
-![H2](assets/components/h2.png)
+> ![H2](assets/components/h2.png)
 
 **Location**: `lib/bujo_pdf/components/h2.rb`
 
 ### `text(col, row, content, **opts)`
 Text at grid position with styling options.
 
-![Text](assets/components/text.png)
+> ![Text](assets/components/text.png)
 
 **Location**: `lib/bujo_pdf/components/text.rb`
 
@@ -100,7 +100,7 @@ Text at grid position with styling options.
 ### `ruled_lines(col, row, width, height, **opts)`
 Horizontal ruled lines for writing.
 
-![RuledLines](assets/components/ruledlines.png)
+> ![RuledLines](assets/components/ruledlines.png)
 
 **Location**: `lib/bujo_pdf/components/ruled_lines.rb`
 
@@ -112,7 +112,7 @@ Horizontal ruled lines for writing.
 ### `ruled_list(col, row, width, height, **opts)`
 Numbered or bulleted list with ruled lines.
 
-![RuledList](assets/components/ruledlist.png)
+> ![RuledList](assets/components/ruledlist.png)
 
 **Location**: `lib/bujo_pdf/components/ruled_list.rb`
 
@@ -123,7 +123,7 @@ Numbered or bulleted list with ruled lines.
 ### `mini_month(col, row, year, month, **opts)`
 Compact month calendar.
 
-![MiniMonth](assets/components/minimonth.png)
+> ![MiniMonth](assets/components/minimonth.png)
 
 **Location**: `lib/bujo_pdf/components/mini_month.rb`
 
@@ -135,7 +135,7 @@ Compact month calendar.
 ### `fieldset(position:, legend:, **opts)`
 HTML-like bordered section with legend label.
 
-![Fieldset](assets/components/fieldset.png)
+> ![Fieldset](assets/components/fieldset.png)
 
 **Location**: `lib/bujo_pdf/components/fieldset.rb`
 
@@ -154,7 +154,7 @@ HTML-like bordered section with legend label.
 ### `box(col, row, width, height, **opts)`
 Rectangle outline or fill.
 
-![Box](assets/components/box.png)
+> ![Box](assets/components/box.png)
 
 **Location**: `lib/bujo_pdf/components/box.rb`
 
@@ -167,7 +167,7 @@ Rectangle outline or fill.
 ### `hline(col, row, width, **opts)`
 Horizontal line.
 
-![HLine](assets/components/hline.png)
+> ![HLine](assets/components/hline.png)
 
 **Location**: `lib/bujo_pdf/components/hline.rb`
 
@@ -179,14 +179,14 @@ Horizontal line.
 ### `vline(col, row, height, **opts)`
 Vertical line.
 
-![VLine](assets/components/vline.png)
+> ![VLine](assets/components/vline.png)
 
 **Location**: `lib/bujo_pdf/components/vline.rb`
 
 ### `grid_dots(col, row, width, height, **opts)`
 Dot grid overlay (for z-index layering).
 
-![GridDots](assets/components/griddots.png)
+> ![GridDots](assets/components/griddots.png)
 
 **Location**: `lib/bujo_pdf/components/grid_dots.rb`
 
@@ -244,7 +244,7 @@ Cornell notes layout with cues, notes, and summary sections.
 ### WeekGrid
 7-column grid for week-based displays. Supports quantization for grid alignment.
 
-![WeekGrid](assets/components/weekgrid.png)
+> ![WeekGrid](assets/components/weekgrid.png)
 
 **Location**: `lib/bujo_pdf/components/week_grid.rb`
 
