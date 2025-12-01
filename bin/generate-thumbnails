@@ -30,7 +30,7 @@ module BujoPdf
   class ThumbnailGenerator
     PAGES_DIR = File.expand_path('../assets/pages', __dir__)
     THUMBNAIL_DIR = File.expand_path('../assets/thumbnails', __dir__)
-    DEFAULT_THUMB_SIZE = 160 # Default thumbnail width in pixels
+    DEFAULT_THUMB_SIZE = 480 # Default thumbnail width in pixels
     DPI = 150                # Render DPI for quality
     TEMP_DIR = '/tmp/bujo-thumbnails'
 
