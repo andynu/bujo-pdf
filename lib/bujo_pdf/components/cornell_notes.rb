@@ -2,6 +2,7 @@
 
 require_relative '../base/component'
 require_relative '../utilities/styling'
+require_relative '../utilities/grid_rect'
 require_relative 'box'
 require_relative 'text'
 
@@ -23,11 +24,8 @@ module BujoPdf
     #   canvas = Canvas.new(pdf, grid)
     #   notes = CornellNotes.new(
     #     canvas: canvas,
-    #     content_start_col: 3,
-    #     notes_start_row: 11,
+    #     bounds: GridRect.new(2, 11, 40, 44),
     #     cues_cols: 10,
-    #     notes_cols: 29,
-    #     notes_main_rows: 35,
     #     summary_rows: 9
     #   )
     #   notes.render
@@ -38,21 +36,27 @@ module BujoPdf
 
       LABEL_FONT_SIZE = 8
 
-      def initialize(canvas:, content_start_col:, notes_start_row:, cues_cols:,
-                     notes_cols:, notes_main_rows:, summary_rows:)
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
+      # @param bounds [GridRect] Bounding rectangle for the entire component
+      # @param cues_cols [Integer] Width of cues column in grid boxes
+      # @param summary_rows [Integer] Height of summary section in grid boxes
+      def initialize(canvas:, bounds:, cues_cols:, summary_rows:)
         super(canvas: canvas)
-        @content_start_col = content_start_col
-        @notes_start_row = notes_start_row
-        @cues_cols = cues_cols
-        @notes_cols = notes_cols
-        @notes_main_rows = notes_main_rows
-        @summary_rows = summary_rows
+
+        # Derive dimensions from bounds
+        notes_cols = bounds.width - cues_cols
+        notes_main_rows = bounds.height - summary_rows
+
+        # Pre-compute section rectangles
+        @cues_rect = GridRect.new(bounds.col, bounds.row, cues_cols, notes_main_rows)
+        @notes_rect = GridRect.new(bounds.col + cues_cols, bounds.row, notes_cols, notes_main_rows)
+        @summary_rect = GridRect.new(bounds.col, bounds.row + notes_main_rows, bounds.width, summary_rows)
       end
 
       def render
-        draw_cues_section
-        draw_notes_section
-        draw_summary_section
+        draw_labeled_section(*@cues_rect, "Cues/Questions")
+        draw_labeled_section(*@notes_rect, "Notes")
+        draw_labeled_section(*@summary_rect, "Summary")
       end
 
       private
@@ -74,36 +78,6 @@ module BujoPdf
              align: :center,
              width: width_boxes,
              color: Styling::Colors.SECTION_HEADERS)
-      end
-
-      def draw_cues_section
-        draw_labeled_section(
-          @content_start_col,
-          @notes_start_row,
-          @cues_cols,
-          @notes_main_rows,
-          "Cues/Questions"
-        )
-      end
-
-      def draw_notes_section
-        draw_labeled_section(
-          @content_start_col + @cues_cols,
-          @notes_start_row,
-          @notes_cols,
-          @notes_main_rows,
-          "Notes"
-        )
-      end
-
-      def draw_summary_section
-        draw_labeled_section(
-          @content_start_col,
-          @notes_start_row + @notes_main_rows,
-          @cues_cols + @notes_cols,
-          @summary_rows,
-          "Summary"
-        )
       end
     end
   end

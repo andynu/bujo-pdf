@@ -98,7 +98,7 @@ module BujoPdf
       'CornellNotes' => {
         klass: BujoPdf::Components::CornellNotes,
         factory: :new,
-        defaults: { content_start_col: 2, notes_start_row: 2, cues_cols: 8, notes_cols: 30, notes_main_rows: 20, summary_rows: 5 }
+        defaults: { bounds: BujoPdf::GridRect.new(2, 2, 38, 25), cues_cols: 8, summary_rows: 5 }
       },
       'DailySection' => {
         klass: BujoPdf::Components::DailySection,
