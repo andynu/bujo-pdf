@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Show lib code vs total code ratio
+
+set -e
+
+# Get code counts from cloc CSV output (Ruby line, 5th field)
+lib_code=$(cloc lib --csv --quiet 2>/dev/null | awk -F, '/^[0-9]+,Ruby,/ {print $5}')
+test_code=$(cloc test --csv --quiet 2>/dev/null | awk -F, '/^[0-9]+,Ruby,/ {print $5}')
+all_code=$(cloc lib test --csv --quiet 2>/dev/null | awk -F, '/^[0-9]+,SUM,/ {print $5}')
+
+# Handle missing directories
+lib_code=${lib_code:-0}
+test_code=${test_code:-0}
+all_code=${all_code:-0}
+
+if [[ "$all_code" -eq 0 ]]; then
+  echo "No Ruby code found"
+  exit 1
+fi
+
+ratio=$(echo "scale=2; $test_code / $lib_code" | bc)
+lib_pct=$(echo "scale=1; $lib_code * 100 / $all_code" | bc)
+test_pct=$(echo "scale=1; $test_code * 100 / $all_code" | bc)
+
+echo "lib:  $lib_code lines ($lib_pct%)"
+echo "test: $test_code lines ($test_pct%)"
+echo "total: $all_code lines"
+echo "test:lib ratio: ${ratio}:1"
