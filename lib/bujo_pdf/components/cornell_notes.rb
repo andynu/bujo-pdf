@@ -2,6 +2,8 @@
 
 require_relative '../base/component'
 require_relative '../utilities/styling'
+require_relative 'box'
+require_relative 'text'
 
 module BujoPdf
   module Components
@@ -31,10 +33,10 @@ module BujoPdf
     #   notes.render
     class CornellNotes < Component
       include Styling::Colors
+      include Box::Mixin
+      include Text::Mixin
 
-      HEADER_FONT_SIZE = 10
       LABEL_FONT_SIZE = 8
-      HEADER_PADDING = 5
 
       def initialize(canvas:, content_start_col:, notes_start_row:, cues_cols:,
                      notes_cols:, notes_main_rows:, summary_rows:)
@@ -65,22 +67,13 @@ module BujoPdf
       # @param label_size [Integer] Font size for label (optional)
       # @return [void]
       def draw_labeled_section(col, row, width_boxes, height_boxes, label, label_size: LABEL_FONT_SIZE)
-        section_box = grid.rect(col, row, width_boxes, height_boxes)
-
-        pdf.bounding_box([section_box[:x], section_box[:y]],
-                         width: section_box[:width],
-                         height: section_box[:height]) do
-          with_stroke_color(Styling::Colors.BORDERS) do
-            pdf.stroke_bounds
-          end
-
-          with_font("Helvetica-Bold", HEADER_FONT_SIZE) do
-            pdf.move_down HEADER_PADDING
-            with_fill_color(Styling::Colors.SECTION_HEADERS) do
-              pdf.text label, align: :center, size: label_size
-            end
-          end
-        end
+        box(col, row, width_boxes, height_boxes, stroke: Styling::Colors.BORDERS)
+        text(col, row, label,
+             size: label_size,
+             style: :bold,
+             align: :center,
+             width: width_boxes,
+             color: Styling::Colors.SECTION_HEADERS)
       end
 
       def draw_cues_section
