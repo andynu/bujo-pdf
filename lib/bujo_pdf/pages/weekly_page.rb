@@ -166,17 +166,12 @@ module BujoPdf
       end
 
       def draw_cornell_notes
-        # Use CornellNotes component
-        notes = Components::CornellNotes.new(
+        Components::CornellNotes.new(
           canvas: canvas,
-          content_start_col: 2,
-          notes_start_row: 11,  # After daily section (rows 2-10)
+          bounds: GridRect.new(2, 11, 40, 44),  # After daily section (rows 2-10)
           cues_cols: 10,
-          notes_cols: 30,
-          notes_main_rows: 35,
           summary_rows: 9
-        )
-        notes.render
+        ).render
       end
     end
   end
