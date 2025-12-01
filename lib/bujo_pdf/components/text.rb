@@ -149,12 +149,18 @@ module BujoPdf
         y_offset = calculate_y_offset
         erase_dots_if_needed(text_width_boxes, bg_color)
 
+        # Use pt_x/pt_y if provided, otherwise grid coordinates
+        x_pos = @pt_x || grid.x(@col)
+        y_pos = @pt_y || (grid.y(@row) + y_offset)
+        box_width = @pt_width || grid.width(render_width_boxes)
+        box_height = @pt_height || grid.height(@height)
+
         # Draw the text
         pdf.fill_color text_color
         pdf.text_box @content,
-                      at: [grid.x(@col), grid.y(@row) + y_offset],
-                      width: grid.width(render_width_boxes),
-                      height: grid.height(@height),
+                      at: [x_pos, y_pos],
+                      width: box_width,
+                      height: box_height,
                       size: @size,
                       align: @align,
                       valign: :center,
