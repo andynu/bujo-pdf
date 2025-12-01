@@ -95,6 +95,18 @@ class MockPDF
   def method_missing(method, *args, **kwargs, &block)
     @calls << { method: method, args: args, kwargs: kwargs }
 
+    # Special handling for methods that need specific return values
+    case method
+    when :width_of
+      # Return a reasonable text width (8 points per character as rough estimate)
+      text = args.first.to_s
+      return text.length * 8.0
+    when :font
+      # Execute block if given, return self
+      yield if block_given?
+      return self
+    end
+
     # Return self for chaining
     self
   end
