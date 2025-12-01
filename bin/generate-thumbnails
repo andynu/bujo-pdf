@@ -1,0 +1,300 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate page thumbnails for embedding in visual TOC pages
+#
+# This script renders sample pages of each type and generates thumbnail-sized
+# PNG images that can be embedded in the PDF during generation.
+#
+# Usage:
+#   bin/generate-thumbnails                    # Generate all thumbnails
+#   bin/generate-thumbnails --list             # List page types
+#   bin/generate-thumbnails weekly seasonal    # Generate specific types
+#   bin/generate-thumbnails --size 100         # Custom thumbnail width
+
+require 'fileutils'
+require 'tempfile'
+require 'date'
+
+# Add lib to load path
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
+require 'bujo_pdf'
+
+module BujoPdf
+  class ThumbnailGenerator
+    THUMBNAIL_DIR = File.expand_path('../assets/thumbnails', __dir__)
+    DEFAULT_SIZE = 80  # Default thumbnail width in pixels
+    DPI = 150          # Render DPI for quality
+    TEMP_DIR = '/tmp/bujo-thumbnails'
+
+    # Page types that can have thumbnails generated
+    # Maps type name to rendering configuration
+    # All pages take (pdf, context) where context is a hash
+    PAGE_TYPES = {
+      'seasonal' => {
+        description: 'Seasonal Calendar',
+        dest: 'seasonal',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::SeasonalCalendar.new(pdf, context).generate
+        }
+      },
+      'year_events' => {
+        description: 'Year at a Glance - Events',
+        dest: 'year_events',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::YearAtGlanceEvents.new(pdf, context).generate
+        }
+      },
+      'year_highlights' => {
+        description: 'Year at a Glance - Highlights',
+        dest: 'year_highlights',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::YearAtGlanceHighlights.new(pdf, context).generate
+        }
+      },
+      'weekly' => {
+        description: 'Weekly Page',
+        dest: 'week_1',
+        render: ->(pdf, year) {
+          week_start = BujoPdf::Utilities::DateCalculator.week_start(year, 10)
+          week_end = BujoPdf::Utilities::DateCalculator.week_end(year, 10)
+          context = { year: year, week_num: 10, week_start: week_start, week_end: week_end, total_weeks: 52 }
+          BujoPdf::Pages::WeeklyPage.new(pdf, context).generate
+        }
+      },
+      'multi_year' => {
+        description: 'Multi-Year Overview',
+        dest: 'multi_year',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::MultiYearOverview.new(pdf, context).generate
+        }
+      },
+      'index' => {
+        description: 'Index Page',
+        dest: 'index_1',
+        render: ->(pdf, year) {
+          context = { year: year, index_page_num: 1, index_page_count: 2, total_weeks: 52 }
+          BujoPdf::Pages::IndexPage.new(pdf, context).generate
+        }
+      },
+      'future_log' => {
+        description: 'Future Log',
+        dest: 'future_log_1',
+        render: ->(pdf, year) {
+          context = { year: year, half: 1, total_weeks: 52 }
+          BujoPdf::Pages::FutureLog.new(pdf, context).generate
+        }
+      },
+      'monthly_review' => {
+        description: 'Monthly Review',
+        dest: 'review_1',
+        render: ->(pdf, year) {
+          context = { year: year, month: 1, total_weeks: 52 }
+          BujoPdf::Pages::MonthlyReview.new(pdf, context).generate
+        }
+      },
+      'quarterly' => {
+        description: 'Quarterly Planning',
+        dest: 'quarter_1',
+        render: ->(pdf, year) {
+          context = { year: year, quarter: 1, total_weeks: 52 }
+          BujoPdf::Pages::QuarterlyPlanning.new(pdf, context).generate
+        }
+      },
+      'daily_wheel' => {
+        description: 'Daily Wheel',
+        dest: 'daily_wheel',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::DailyWheel.new(pdf, context).generate
+        }
+      },
+      'year_wheel' => {
+        description: 'Year Wheel',
+        dest: 'year_wheel',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::YearWheel.new(pdf, context).generate
+        }
+      },
+      'grid_showcase' => {
+        description: 'Grid Showcase',
+        dest: 'grid_showcase',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::GridShowcase.new(pdf, context).generate
+        }
+      },
+      'reference' => {
+        description: 'Reference/Calibration',
+        dest: 'reference',
+        render: ->(pdf, year) {
+          context = { year: year, total_weeks: 52 }
+          BujoPdf::Pages::ReferenceCalibration.new(pdf, context).generate
+        }
+      }
+    }.freeze
+
+    def initialize(args)
+      @args = args
+      @types_to_generate = []
+      @size = DEFAULT_SIZE
+      @theme = :light
+      @list_only = false
+      parse_args
+    end
+
+    def run
+      if @list_only
+        list_page_types
+        return
+      end
+
+      # Set theme
+      BujoPdf::Themes.set(@theme)
+
+      # Determine which types to generate
+      types = @types_to_generate.empty? ? PAGE_TYPES.keys : @types_to_generate
+
+      # Validate types
+      invalid = types - PAGE_TYPES.keys
+      unless invalid.empty?
+        warn "Error: Unknown page type(s): #{invalid.join(', ')}"
+        warn "Use --list to see available types"
+        exit 1
+      end
+
+      # Create directories
+      FileUtils.mkdir_p(THUMBNAIL_DIR)
+      FileUtils.mkdir_p(TEMP_DIR)
+
+      puts "Generating #{types.length} thumbnail(s) at #{@size}px width..."
+      puts
+
+      year = Date.today.year
+
+      types.each do |type_name|
+        generate_thumbnail(type_name, year)
+      end
+
+      puts
+      puts "Thumbnails saved to: #{THUMBNAIL_DIR}"
+    end
+
+    private
+
+    def parse_args
+      i = 0
+      while i < @args.length
+        arg = @args[i]
+        case arg
+        when '--help', '-h'
+          show_help
+          exit 0
+        when '--list', '-l'
+          @list_only = true
+        when '--size', '-s'
+          i += 1
+          @size = @args[i].to_i
+        when '--theme', '-t'
+          i += 1
+          @theme = @args[i]&.to_sym
+        else
+          @types_to_generate << arg unless arg.start_with?('-')
+        end
+        i += 1
+      end
+    end
+
+    def show_help
+      puts <<~HELP
+        bin/generate-thumbnails - Generate page thumbnails for visual TOC
+
+        Usage:
+          bin/generate-thumbnails [OPTIONS] [PAGE_TYPES...]
+
+        Arguments:
+          PAGE_TYPES          Page types to generate (default: all)
+                              Use --list to see available types
+
+        Options:
+          --size, -s NUM      Thumbnail width in pixels (default: #{DEFAULT_SIZE})
+          --theme, -t NAME    Color theme: light, earth, dark (default: light)
+          --list, -l          List available page types
+          --help, -h          Show this help message
+
+        Examples:
+          bin/generate-thumbnails                        # Generate all thumbnails
+          bin/generate-thumbnails weekly seasonal        # Generate specific types
+          bin/generate-thumbnails --size 120             # Larger thumbnails
+          bin/generate-thumbnails -t dark                # Dark theme thumbnails
+
+        Output:
+          Thumbnails are saved to assets/thumbnails/ directory
+      HELP
+    end
+
+    def list_page_types
+      puts "Available page types for thumbnail generation:"
+      puts
+      PAGE_TYPES.each do |name, config|
+        puts "  #{name.ljust(20)} #{config[:description]}"
+      end
+    end
+
+    def generate_thumbnail(type_name, year)
+      config = PAGE_TYPES[type_name]
+      print "  #{type_name}... "
+
+      # Generate PDF with the page
+      pdf_file = File.join(TEMP_DIR, "#{type_name}.pdf")
+      generate_page_pdf(pdf_file, config, year)
+
+      # Convert to PNG
+      full_png = File.join(TEMP_DIR, "#{type_name}_full.png")
+      cmd = "pdftoppm -png -r #{DPI} -singlefile '#{pdf_file}' '#{full_png.sub(/\.png$/, '')}'"
+      system(cmd, err: File::NULL) || abort("Failed to convert PDF to PNG")
+
+      # Scale to thumbnail size
+      output_file = File.join(THUMBNAIL_DIR, "#{type_name}.png")
+      scale_cmd = "convert '#{full_png}' -resize #{@size}x '#{output_file}'"
+      system(scale_cmd, err: File::NULL) || abort("Failed to scale thumbnail")
+
+      # Get file size
+      size_kb = (File.size(output_file) / 1024.0).round(1)
+      puts "OK (#{size_kb} KB)"
+
+      # Cleanup
+      FileUtils.rm_f(pdf_file)
+      FileUtils.rm_f(full_png)
+    end
+
+    def generate_page_pdf(pdf_file, config, year)
+      Prawn::Document.generate(pdf_file, page_size: 'LETTER', margin: 0) do |pdf|
+        # Create the page_dots stamp (required by page base class)
+        DotGrid.create_stamp(pdf, 'page_dots')
+
+        # Draw background (for theme support)
+        bg_color = BujoPdf::Themes.current[:colors][:background]
+        pdf.fill_color bg_color
+        pdf.fill_rectangle([0, pdf.bounds.height], pdf.bounds.width, pdf.bounds.height)
+
+        # Reset colors
+        pdf.fill_color '000000'
+        pdf.stroke_color '000000'
+
+        # Render the page (pages draw their own dot grid)
+        config[:render].call(pdf, year)
+      end
+    end
+  end
+end
+
+# Run if executed directly
+if __FILE__ == $PROGRAM_NAME
+  BujoPdf::ThumbnailGenerator.new(ARGV).run
+end
