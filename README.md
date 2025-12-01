@@ -226,72 +226,41 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for detailed technical documentation.
 
 ## Testing
 
-The project includes a comprehensive test suite with 342 tests covering unit and integration testing.
+The project includes a comprehensive test suite covering unit and integration testing.
 
 ### Running Tests
 
-Run all tests (unit + integration):
-
 ```bash
-rake test
-```
-
-Run only unit tests (fast, <1 second):
-
-```bash
-rake test_unit
-```
-
-Run only integration tests (slower, ~30 seconds):
-
-```bash
-rake test_integration
+rake test              # Run all tests (unit + integration)
+rake test_unit         # Unit tests only (fast)
+rake test_integration  # Integration tests (full PDF generation)
 ```
 
 ### Test Coverage
 
-**Unit Tests** (318 tests, 3091 assertions)
-- **GridSystem**: Coordinate conversion, dimension calculations, helpers (grid_rect, grid_inset, grid_bottom), text/link positioning
-- **DateCalculator**: Week numbering, year boundaries, leap years, season calculations
-- **Components**: Fieldset, RuledLines, MiniMonth, WeekGrid, sidebars
-- **DSL**: Builder, Context, Registry, PageFactory, RenderContext
-- **Pages**: Page classes, layout integration, navigation
-
-**Integration Tests** (24 tests, 39 assertions)
-- **PlannerGeneration**: Full PDF generation, file validation, multi-year support, leap year handling, performance benchmarks
-
-### Test Results
-
-```
-342 tests, 3130 assertions
-0 failures, 0 errors, 1 skip
-Completed in ~76 seconds
-
-Code Coverage: 86.53% (4650 / 5374 lines)
-```
-
-### Code Coverage
-
-Test coverage is tracked using SimpleCov. After running tests, open the coverage report:
+Test coverage is tracked using SimpleCov. After running tests:
 
 ```bash
 open coverage/index.html
 ```
 
-Coverage is organized by module:
-- **Utilities**: Core helper classes (GridSystem, DateCalculator, etc.)
-- **Components**: Reusable UI components (sidebars, fieldsets, etc.)
-- **Pages**: Page generation classes
-- **Layouts**: Layout management
-- **Core**: Top-level module and generator
+### Test Areas
 
-**Coverage Targets**:
-- Overall: 80% minimum
-- Per-file: 15% minimum (presentation layer files harder to test)
+**Unit Tests**
+- GridSystem: Coordinate conversion, dimension calculations, helpers
+- DateCalculator: Week numbering, year boundaries, seasons
+- Components: Fieldset, RuledLines, MiniMonth, WeekGrid, sidebars
+- DSL: Builder, Context, Registry, PageFactory, RenderContext
+- Pages: Page classes, layout integration, navigation
+
+**Integration Tests**
+- Full PDF generation and validation
+- Multi-year support and leap year handling
+- Performance benchmarks
 
 ### Test Infrastructure
 
-- **Framework**: Minitest with minitest-reporters for better output
+- **Framework**: Minitest with minitest-reporters
 - **Coverage**: SimpleCov with HTML reports
 - **Test Helper**: Custom assertions (assert_grid_position, assert_valid_link_bounds, assert_rect_equals)
 - **Mock Objects**: MockPDF class for testing without PDF generation
