@@ -76,6 +76,36 @@ The planner uses a **grid coordinate system** where all positioning is based on 
 - Grid system: Row 0 is top, increases downward
 - `grid_y(row)` converts from grid coordinates to Prawn coordinates
 
+### Canvas Value Object
+
+The `Canvas` class (`lib/bujo_pdf/canvas.rb`) bundles a PDF document with its grid system into a single object. This simplifies component interfaces:
+
+```ruby
+# Canvas provides both pdf and grid access
+def initialize(canvas:)
+  @pdf = canvas.pdf
+  @grid = canvas.grid
+end
+
+# Convenience delegators allow direct coordinate access
+canvas.x(5)      # instead of canvas.grid.x(5)
+canvas.rect(...)  # instead of canvas.grid.rect(...)
+```
+
+### GridRect Value Object
+
+`GridRect` (`lib/bujo_pdf/utilities/grid_rect.rb`) represents rectangular grid regions and supports Ruby splatting:
+
+```ruby
+rect = GridRect.new(5, 10, 20, 15)  # col, row, width, height
+
+# Positional splatting into method calls
+ruled_lines(*rect, color: 'red')  # => ruled_lines(5, 10, 20, 15, color: 'red')
+
+# Keyword splatting into constructors
+Component.new(**rect)  # => Component.new(col: 5, row: 10, width: 20, height: 15)
+```
+
 ### Declarative Layout System
 
 The planner uses a **declarative layout system** where pages declare their layout intent rather than implementing layout details. Layouts automatically handle sidebar rendering and content area management.
@@ -166,20 +196,21 @@ module BujoPdf
       module Mixin
         def my_verb(col, row, width, height, **options)
           MyComponent.new(
-            pdf: @pdf,
-            grid: @grid_system,
+            canvas: @canvas,
             col: col, row: row, width: width, height: height,
             **options
           ).render
         end
       end
 
-      def initialize(pdf:, grid:, col:, row:, width:, height:, **options)
-        # ...
+      def initialize(canvas:, col:, row:, width:, height:, **options)
+        @canvas = canvas
+        @pdf = canvas.pdf
+        @grid = canvas.grid
       end
 
       def render
-        # ...
+        # Use @pdf and @grid for drawing
       end
     end
   end
@@ -322,6 +353,18 @@ Right sidebar tabs can cycle through multiple related pages using destination ar
 5. Click "Grids" again → cycles back to `grid_showcase`
 
 **Implementation**: `lib/bujo_pdf/layouts/standard_with_sidebars_layout.rb:137-256`
+
+**Sidebar tab overrides** (`lib/bujo_pdf/dsl/sidebar_overrides.rb`):
+Pages can customize where sidebar tabs navigate based on context. For example, the "Future" tab navigates to `future_log_1` from weeks 1-26 but `future_log_2` from weeks 27-53:
+
+```ruby
+# Pages register overrides during setup
+overrides.set(from: :week_1, tab: :future, to: :future_log_1)
+overrides.set(from: :week_27, tab: :future, to: :future_log_2)
+
+# Layouts query overrides when rendering tabs
+dest = overrides.get(current_page_key, "Future") || default_dest
+```
 
 ## Layout Constants
 
@@ -504,3 +547,6 @@ end
   - **themes/** - Color theme definitions (light, earth, dark)
 - **config/** - Configuration file examples (dates.yml, calendars.yml)
 - **Gemfile** - Dependencies specification
+
+---
+Last updated: b2211d9
