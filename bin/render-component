@@ -1,0 +1,435 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Render components in isolation for visual testing and documentation
+#
+# This script renders specific components to a single-page PDF, converts
+# to PNG, and optionally trims blank space for clean output.
+#
+# Usage:
+#   bin/render-component WeekGrid --params 'width_boxes: 35, height_boxes: 10'
+#   bin/render-component Box --params 'col: 5, row: 5, width: 10, height: 5, fill: "EEEEEE"'
+#   bin/render-component WeekGrid --variations 'quantize: [true, false]'
+#
+# Options:
+#   --params HASH        Component parameters as Ruby hash syntax
+#   --variations HASH    Parameter variations to compare (renders side by side)
+#   --output FILE        Output filename (default: component_name.png)
+#   --no-trim            Skip whitespace trimming
+#   --dpi NUM            Output resolution (default: 150)
+#   --list               List available components
+#   --help               Show this help message
+
+require 'fileutils'
+require 'tempfile'
+
+# Add lib to load path
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
+require 'bujo_pdf'
+
+module BujoPdf
+  class ComponentRenderer
+    DPI_DEFAULT = 150
+    TEMP_DIR = '/tmp/bujo-component-render'
+
+    # Components that can be rendered in isolation
+    # Maps component name to the class and any required setup
+    RENDERABLE_COMPONENTS = {
+      'WeekGrid' => {
+        klass: BujoPdf::Components::WeekGrid,
+        factory: :from_grid,
+        defaults: { col: 5, row: 5, width_boxes: 35, height_boxes: 10, quantize: true, show_headers: true }
+      },
+      'Box' => {
+        klass: BujoPdf::Components::Box,
+        factory: :new,
+        defaults: { col: 5, row: 5, width: 10, height: 5, stroke: 'CCCCCC' }
+      },
+      'RuledLines' => {
+        klass: BujoPdf::Components::RuledLines,
+        factory: :new,
+        defaults: { col: 5, row: 5, width: 20, height: 10 }
+      },
+      'GridDots' => {
+        klass: BujoPdf::Components::GridDots,
+        factory: :new,
+        defaults: { col: 5, row: 5, width: 20, height: 10 }
+      },
+      'Fieldset' => {
+        klass: BujoPdf::Components::Fieldset,
+        factory: :new,
+        defaults: { col: 2, row: 2, width: 20, height: 15, legend: 'Example' }
+      },
+      'MiniMonth' => {
+        klass: BujoPdf::Components::MiniMonth,
+        factory: :new,
+        defaults: { col: 5, row: 5, width: 14, year: Date.today.year, month: Date.today.month }
+      },
+      'H1' => {
+        klass: BujoPdf::Components::H1,
+        factory: :new,
+        defaults: { col: 5, row: 5, content: 'Sample Header' }
+      },
+      'H2' => {
+        klass: BujoPdf::Components::H2,
+        factory: :new,
+        defaults: { col: 5, row: 5, content: 'Sample Subheader' }
+      },
+      'HLine' => {
+        klass: BujoPdf::Components::HLine,
+        factory: :new,
+        defaults: { col: 5, row: 10, width: 20 }
+      },
+      'VLine' => {
+        klass: BujoPdf::Components::VLine,
+        factory: :new,
+        defaults: { col: 10, row: 5, height: 10 }
+      },
+      'Text' => {
+        klass: BujoPdf::Components::Text,
+        factory: :new,
+        defaults: { col: 5, row: 5, content: 'Sample text content' }
+      },
+      'RuledList' => {
+        klass: BujoPdf::Components::RuledList,
+        factory: :new,
+        defaults: { col: 5, row: 5, width: 20, entries: 5 }
+      }
+    }.freeze
+
+    def initialize(args)
+      @args = args
+      @component_name = nil
+      @params = {}
+      @variations = nil
+      @output_file = nil
+      @trim = true
+      @dpi = DPI_DEFAULT
+      @theme = :light
+      @show_grid = true
+      parse_args
+    end
+
+    def run
+      if @list_components
+        list_components
+        return
+      end
+
+      unless @component_name
+        show_help
+        exit 1
+      end
+
+      unless RENDERABLE_COMPONENTS.key?(@component_name)
+        warn "Error: Unknown component '#{@component_name}'"
+        warn "Use --list to see available components"
+        exit 1
+      end
+
+      FileUtils.mkdir_p(TEMP_DIR)
+
+      if @variations
+        render_variations
+      else
+        render_single
+      end
+    end
+
+    private
+
+    def parse_args
+      i = 0
+      while i < @args.length
+        arg = @args[i]
+        case arg
+        when '--help', '-h'
+          show_help
+          exit 0
+        when '--list', '-l'
+          @list_components = true
+        when '--params', '-p'
+          i += 1
+          @params = parse_ruby_hash(@args[i])
+        when '--variations', '-v'
+          i += 1
+          @variations = parse_variations(@args[i])
+        when '--output', '-o'
+          i += 1
+          @output_file = @args[i]
+        when '--no-trim'
+          @trim = false
+        when '--no-grid'
+          @show_grid = false
+        when '--dpi', '-d'
+          i += 1
+          @dpi = @args[i].to_i
+        when '--theme', '-t'
+          i += 1
+          theme_name = @args[i]&.to_sym
+          if theme_name && BujoPdf::Themes::ThemeRegistry.exists?(theme_name)
+            @theme = theme_name
+          else
+            warn "Error: Invalid theme '#{@args[i]}'"
+            warn "Available themes: #{BujoPdf::Themes::ThemeRegistry.available_names.join(', ')}"
+            exit 1
+          end
+        else
+          @component_name = arg unless arg.start_with?('-')
+        end
+        i += 1
+      end
+    end
+
+    def parse_ruby_hash(str)
+      return {} if str.nil? || str.empty?
+
+      # Safely evaluate a Ruby hash literal
+      # Convert string to actual hash
+      eval("{#{str}}")
+    rescue StandardError => e
+      warn "Error parsing params: #{e.message}"
+      warn "Expected format: 'key: value, key2: value2'"
+      exit 1
+    end
+
+    def parse_variations(str)
+      return nil if str.nil? || str.empty?
+
+      # Parse variations like 'quantize: [true, false], width_boxes: [28, 35, 42]'
+      result = {}
+      eval("{#{str}}").each do |key, values|
+        result[key] = Array(values)
+      end
+      result
+    rescue StandardError => e
+      warn "Error parsing variations: #{e.message}"
+      warn "Expected format: 'param: [value1, value2]'"
+      exit 1
+    end
+
+    def list_components
+      puts "Available components for isolation rendering:"
+      puts
+      RENDERABLE_COMPONENTS.each do |name, config|
+        defaults = config[:defaults].map { |k, v| "#{k}: #{v.inspect}" }.join(', ')
+        puts "  #{name}"
+        puts "    Defaults: #{defaults}"
+        puts
+      end
+    end
+
+    def show_help
+      puts <<~HELP
+        bin/render-component - Render components in isolation for visual testing
+
+        Usage:
+          bin/render-component COMPONENT [OPTIONS]
+
+        Arguments:
+          COMPONENT           Name of component to render (use --list to see available)
+
+        Options:
+          --params, -p HASH   Component parameters as Ruby hash syntax
+                              Example: 'col: 5, row: 5, width: 10'
+          --variations, -v    Parameter variations to compare side by side
+                              Example: 'quantize: [true, false]'
+          --output, -o FILE   Output filename (default: component_name.png)
+          --theme, -t NAME    Color theme: light, earth, dark (default: light)
+          --no-trim           Skip whitespace trimming
+          --no-grid           Hide background dot grid
+          --dpi, -d NUM       Output resolution (default: 150)
+          --list, -l          List available components
+          --help, -h          Show this help message
+
+        Examples:
+          # Render WeekGrid with default parameters
+          bin/render-component WeekGrid
+
+          # Render with custom parameters
+          bin/render-component WeekGrid --params 'width_boxes: 42, quantize: false'
+
+          # Compare variations side by side
+          bin/render-component WeekGrid --variations 'quantize: [true, false]'
+
+          # Custom output file with dark theme
+          bin/render-component Box -p 'fill: "FF0000"' -t dark -o red_box.png
+
+          # Clean output without background grid
+          bin/render-component MiniMonth --no-grid -o clean_month.png
+      HELP
+    end
+
+    def render_single
+      config = RENDERABLE_COMPONENTS[@component_name]
+      merged_params = config[:defaults].merge(@params)
+
+      pdf_file = File.join(TEMP_DIR, "#{@component_name.downcase}.pdf")
+      output = @output_file || "#{@component_name.downcase}.png"
+
+      puts "Rendering #{@component_name}..."
+      puts "  Parameters: #{merged_params.inspect}"
+
+      generate_pdf(pdf_file, config, merged_params)
+      convert_to_png(pdf_file, output)
+
+      puts "  Output: #{output}"
+    end
+
+    def render_variations
+      config = RENDERABLE_COMPONENTS[@component_name]
+
+      # Generate all combinations
+      keys = @variations.keys
+      value_arrays = @variations.values
+      combinations = value_arrays[0].product(*value_arrays[1..])
+
+      puts "Rendering #{combinations.length} variations of #{@component_name}..."
+
+      # Calculate grid layout
+      num_variations = combinations.length
+      cols = [num_variations, 4].min
+      rows = (num_variations / cols.to_f).ceil
+
+      pdf_file = File.join(TEMP_DIR, "#{@component_name.downcase}_variations.pdf")
+      output = @output_file || "#{@component_name.downcase}_comparison.png"
+
+      generate_comparison_pdf(pdf_file, config, keys, combinations, cols, rows)
+      convert_to_png(pdf_file, output)
+
+      puts "  Output: #{output}"
+    end
+
+    def generate_pdf(pdf_file, config, params)
+      # Set the theme before generating
+      BujoPdf::Themes.set(@theme)
+
+      Prawn::Document.generate(pdf_file, page_size: 'LETTER', margin: 0) do |pdf|
+        grid = GridSystem.new(pdf)
+        canvas = Canvas.new(pdf, grid)
+
+        # Draw subtle page boundary for context
+        pdf.stroke_color 'EEEEEE'
+        pdf.stroke_rectangle([0, pdf.bounds.height], pdf.bounds.width, pdf.bounds.height)
+
+        # Draw dot grid background (optional, helps visualize alignment)
+        draw_dot_grid(pdf, grid) if @show_grid
+
+        # Render the component
+        component = create_component(config, canvas, params)
+        component.render
+      end
+
+      puts "  Generated PDF: #{pdf_file}"
+    end
+
+    def generate_comparison_pdf(pdf_file, config, keys, combinations, cols, _rows)
+      # Set the theme before generating
+      BujoPdf::Themes.set(@theme)
+
+      Prawn::Document.generate(pdf_file, page_size: 'LETTER', margin: 0) do |pdf|
+        grid = GridSystem.new(pdf)
+        canvas = Canvas.new(pdf, grid)
+
+        # Calculate cell size for the comparison grid
+        cell_width = 43 / cols
+        cell_height = 20  # Fixed height per variation
+
+        combinations.each_with_index do |values, idx|
+          col_idx = idx % cols
+          row_idx = idx / cols
+
+          # Build params for this variation
+          variation_params = keys.zip(values).to_h
+          merged = config[:defaults].merge(@params).merge(variation_params)
+
+          # Position this variation
+          base_col = col_idx * cell_width + 2
+          base_row = row_idx * (cell_height + 3) + 3
+
+          # Adjust component position
+          positioned_params = merged.merge(
+            col: base_col + (merged[:col] || 0).to_i % cell_width,
+            row: base_row + (merged[:row] || 0).to_i % cell_height
+          )
+
+          # Reset colors before each component
+          pdf.fill_color '000000'
+          pdf.stroke_color '000000'
+
+          # Draw label
+          label = variation_params.map { |k, v| "#{k}: #{v}" }.join(', ')
+          pdf.text_box label,
+                       at: [grid.x(base_col), grid.y(base_row - 1)],
+                       width: grid.width(cell_width - 2),
+                       size: 8,
+                       align: :center
+
+          # Draw boundary
+          pdf.stroke_color 'DDDDDD'
+          pdf.stroke_rectangle(
+            [grid.x(base_col), grid.y(base_row)],
+            grid.width(cell_width - 2),
+            grid.height(cell_height)
+          )
+
+          # Render component
+          component = create_component(config, canvas, positioned_params)
+          component.render
+        end
+      end
+
+      puts "  Generated comparison PDF: #{pdf_file}"
+    end
+
+    def create_component(config, canvas, params)
+      klass = config[:klass]
+
+      if config[:factory] == :from_grid
+        # WeekGrid-style factory
+        klass.from_grid(canvas: canvas, **params)
+      else
+        # Standard component constructor
+        klass.new(canvas: canvas, **params)
+      end
+    end
+
+    def draw_dot_grid(pdf, grid)
+      pdf.fill_color 'DDDDDD'
+
+      (0..grid.cols).each do |col|
+        (0..grid.rows).each do |row|
+          pdf.fill_circle([grid.x(col), grid.y(row)], 0.3)
+        end
+      end
+
+      pdf.fill_color '000000'
+    end
+
+    def convert_to_png(pdf_file, output_file)
+      # Generate PNG with pdftoppm
+      temp_png = pdf_file.sub(/\.pdf$/, '')
+      cmd = "pdftoppm -png -r #{@dpi} -singlefile '#{pdf_file}' '#{temp_png}'"
+      system(cmd, err: File::NULL) || abort("Failed to convert PDF to PNG")
+
+      temp_png_file = "#{temp_png}.png"
+
+      if @trim
+        # Trim whitespace with ImageMagick
+        trim_cmd = "convert '#{temp_png_file}' -trim +repage '#{output_file}'"
+        unless system(trim_cmd, err: File::NULL)
+          warn "Warning: Failed to trim image (ImageMagick not available?)"
+          FileUtils.mv(temp_png_file, output_file)
+        end
+        FileUtils.rm_f(temp_png_file) if File.exist?(temp_png_file) && temp_png_file != output_file
+      else
+        FileUtils.mv(temp_png_file, output_file)
+      end
+    end
+  end
+end
+
+# Run if executed directly
+if __FILE__ == $PROGRAM_NAME
+  BujoPdf::ComponentRenderer.new(ARGV).run
+end
