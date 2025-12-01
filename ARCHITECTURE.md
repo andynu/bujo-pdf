@@ -175,6 +175,43 @@ end
 
 Core module mixed into all page and component classes. See "Grid-Based Layout System" above for details.
 
+### Canvas (`lib/bujo_pdf/canvas.rb`)
+
+**Responsibility**: Bundle PDF document and grid system together
+
+Value object that simplifies component interfaces by combining the two objects that always travel together:
+
+```ruby
+# Before: Components need two parameters
+def initialize(pdf:, grid:)
+
+# After: Single canvas parameter
+def initialize(canvas:)
+  @pdf = canvas.pdf
+  @grid = canvas.grid
+end
+```
+
+**Convenience delegators**: `x()`, `y()`, `width()`, `height()`, `rect()` delegate to the grid system, allowing `canvas.x(5)` instead of `canvas.grid.x(5)`.
+
+### GridRect (`lib/bujo_pdf/utilities/grid_rect.rb`)
+
+**Responsibility**: Immutable value object for rectangular grid regions
+
+Supports Ruby's splatting for ergonomic method calls:
+
+```ruby
+rect = GridRect.new(5, 10, 20, 15)
+
+# Positional splatting
+ruled_lines(*rect, color: 'red')  # => ruled_lines(5, 10, 20, 15, color: 'red')
+
+# Keyword splatting
+Component.new(**rect)  # => Component.new(col: 5, row: 10, width: 20, height: 15)
+```
+
+Replaces the older `Cell` struct (now an alias for backwards compatibility).
+
 ### DotGrid (`lib/bujo_pdf/utilities/dot_grid.rb`)
 
 **Responsibility**: Draw dot grid backgrounds
@@ -312,11 +349,29 @@ The `grid_link` helper simplifies this:
 grid_link(col, row, width_boxes, height_boxes, "week_1")
 ```
 
+### Sidebar Tab Overrides
+
+`SidebarOverrides` (`lib/bujo_pdf/dsl/sidebar_overrides.rb`) allows pages to customize where sidebar tabs navigate based on the current page context.
+
+**Use case**: The "Future" tab should navigate to different future log pages depending on which half of the year the user is viewing.
+
+```ruby
+# During page setup, register overrides
+overrides.set(from: :week_1, tab: :future, to: :future_log_1)   # Jan-Jun weeks
+overrides.set(from: :week_27, tab: :future, to: :future_log_2)  # Jul-Dec weeks
+
+# During render, look up the override
+dest = overrides.get(current_page_key, "Future") || default_dest
+```
+
+Pages register their overrides during setup, and layouts query them when rendering sidebar tabs.
+
 ## File Organization
 
 ```
 lib/bujo_pdf/
 ├── constants.rb               # Layout constants
+├── canvas.rb                  # PDF + grid bundle (value object)
 │
 ├── dsl/                       # DSL for planner definition
 │   ├── builder.rb             # Entry point for planners
@@ -328,6 +383,7 @@ lib/bujo_pdf/
 │   ├── page_declaration.rb    # Page declaration helpers
 │   ├── week.rb                # Week-related DSL methods
 │   ├── inline_page.rb         # Inline page definitions
+│   ├── sidebar_overrides.rb   # Page-specific tab destinations
 │   ├── configuration/         # Config file loaders
 │   │   ├── dates.rb           # dates.yml loader
 │   │   ├── collections.rb     # collections.yml loader
@@ -426,6 +482,8 @@ lib/bujo_pdf/
 │
 └── utilities/                 # Core helpers
     ├── grid_system.rb
+    ├── grid_rect.rb           # Splatting-enabled rectangle value object
+    ├── dot_grid.rb            # Dot grid stamp rendering
     ├── date_calculator.rb
     └── grid_renderers/        # Specialized grid renderers
 ```
@@ -604,8 +662,10 @@ Useful for verifying layout calculations.
 
 ## Further Reading
 
-- **CLAUDE.md** - Detailed technical documentation for Claude Code
-- **COMPONENTS.md** - Component design patterns
-- **GRID_HELPERS.md** - Grid system helper methods
-- **PRAWN_CHEAT_SHEET.md** - Prawn PDF library reference
-- **REFACTORING_PLAN.md** - Future architectural improvements
+- [CLAUDE.md](CLAUDE.md) - Detailed technical documentation for Claude Code
+- [COMPONENTS.md](COMPONENTS.md) - Component design patterns
+- [GRID_HELPERS.md](GRID_HELPERS.md) - Grid system helper methods
+- [PRAWN_CHEAT_SHEET.md](PRAWN_CHEAT_SHEET.md) - Prawn PDF library reference
+
+---
+Last updated: b2211d9
