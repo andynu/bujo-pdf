@@ -2,6 +2,7 @@
 
 require_relative '../base/component'
 require_relative 'text'
+require_relative 'box'
 require_relative '../utilities/styling'
 
 module BujoPdf
@@ -11,6 +12,8 @@ module BujoPdf
     # This component creates a bordered box with a legend label that "breaks" the border.
     # The legend can be positioned on any of the four edges (top, right, bottom, left)
     # and can be rotated for vertical orientations.
+    #
+    # Uses box() verb for border drawing with a background-filled gap for the legend.
     #
     # @example Basic top-left fieldset
     #   canvas = Canvas.new(pdf, grid)
@@ -32,6 +35,7 @@ module BujoPdf
     #   fieldset.render
     class Fieldset < Component
       include Text::Mixin
+      include Box::Mixin
 
       # Mixin providing the fieldset verb for pages and components
       module Mixin
@@ -113,21 +117,21 @@ module BujoPdf
       end
 
       def render
-        @box = grid.rect(@col, @row, @width_boxes, @height_boxes)
+        # Calculate inset border in grid coordinates (float for sub-grid positioning)
+        @border_col = @col + @inset_boxes
+        @border_row = @row + @inset_boxes
+        @border_width = @width_boxes - (@inset_boxes * 2)
+        @border_height = @height_boxes - (@inset_boxes * 2)
 
-        # Calculate inset border
-        inset = grid.width(@inset_boxes)
-        @border = {
-          x: @box[:x] + inset,
-          y: @box[:y] - inset,
-          width: @box[:width] - (inset * 2),
-          height: @box[:height] - (inset * 2)
-        }
-
-        # Measure legend
+        # Measure legend in grid boxes
         pdf.font "Helvetica-Bold", size: @font_size
-        @legend_width = pdf.width_of(@legend)
-        @legend_total_width = @legend_width + (@legend_padding * 2)
+        @legend_width_pt = pdf.width_of(@legend)
+        @legend_width_boxes = @legend_width_pt / grid.dot_spacing
+        @legend_padding_boxes = @legend_padding / grid.dot_spacing
+        @legend_total_boxes = @legend_width_boxes + (@legend_padding_boxes * 2)
+
+        # Get background color for gap erasing
+        @background_color = BujoPdf::Themes.current[:colors][:background]
 
         draw_border
         draw_legend
@@ -146,120 +150,74 @@ module BujoPdf
       end
 
       def draw_border
-        pdf.stroke_color border_color
+        # Draw the full border box
+        box(@border_col, @border_row, @border_width, @border_height,
+            stroke: border_color, fill: nil)
+
+        # Erase the gap where the legend will go
+        erase_legend_gap
+      end
+
+      # Erase the border segment where the legend will be placed
+      def erase_legend_gap
+        gap_col, gap_row, gap_width, gap_height = calculate_gap_rect
+
+        # Draw a background-colored box to erase the border segment
+        box(gap_col, gap_row, gap_width, gap_height,
+            stroke: nil, fill: @background_color)
+      end
+
+      # Calculate the gap rectangle in grid coordinates
+      # @return [Array<Float, Float, Float, Float>] [col, row, width, height]
+      def calculate_gap_rect
+        # Convert legend offset to grid boxes
+        offset_x_boxes = @legend_offset_x / grid.dot_spacing
+        offset_y_boxes = @legend_offset_y / grid.dot_spacing
+
+        # Small height/width for the eraser box (just enough to cover the border line)
+        stroke_boxes = 0.15  # ~2pt in grid boxes
 
         case @config[:edge]
         when :top
-          draw_top_edge_border
-        when :right
-          draw_right_edge_border
+          gap_col = calculate_horizontal_gap_col(@config[:align], offset_x_boxes)
+          gap_row = @border_row - stroke_boxes
+          [gap_col, gap_row, @legend_total_boxes, stroke_boxes * 2]
+
         when :bottom
-          draw_bottom_edge_border
+          gap_col = calculate_horizontal_gap_col(@config[:align], offset_x_boxes)
+          gap_row = @border_row + @border_height - stroke_boxes
+          [gap_col, gap_row, @legend_total_boxes, stroke_boxes * 2]
+
+        when :right
+          gap_col = @border_col + @border_width - stroke_boxes
+          gap_row = @row + 1 + offset_y_boxes
+          [gap_col, gap_row, stroke_boxes * 2, @legend_total_boxes]
+
         when :left
-          draw_left_edge_border
+          gap_col = @border_col - stroke_boxes
+          gap_row = @row + @height_boxes - 1 - @legend_total_boxes + offset_y_boxes
+          [gap_col, gap_row, stroke_boxes * 2, @legend_total_boxes]
         end
       end
 
-      def draw_top_edge_border
-        gap_start, gap_end = calculate_horizontal_gap(@config[:align])
-
-        # Top edge with gap
-        pdf.stroke_line [@border[:x], @border[:y]], [gap_start, @border[:y]]
-        pdf.stroke_line [gap_end, @border[:y]], [@border[:x] + @border[:width], @border[:y]]
-        # Remaining edges
-        draw_right_edge
-        draw_bottom_edge_full
-        draw_left_edge
-      end
-
-      def draw_bottom_edge_border
-        gap_start, gap_end = calculate_horizontal_gap(@config[:align])
-
-        draw_top_edge_full
-        draw_right_edge
-        # Bottom edge with gap
-        pdf.stroke_line [@border[:x] + @border[:width], @border[:y] - @border[:height]],
-                         [gap_end, @border[:y] - @border[:height]]
-        pdf.stroke_line [gap_start, @border[:y] - @border[:height]],
-                         [@border[:x], @border[:y] - @border[:height]]
-        draw_left_edge
-      end
-
-      def draw_right_edge_border
-        gap_start, gap_end = calculate_vertical_gap(:top)
-
-        draw_top_edge_full
-        # Right edge with gap
-        pdf.stroke_line [@border[:x] + @border[:width], @border[:y]],
-                         [@border[:x] + @border[:width], gap_start]
-        pdf.stroke_line [@border[:x] + @border[:width], gap_end],
-                         [@border[:x] + @border[:width], @border[:y] - @border[:height]]
-        draw_bottom_edge_full
-        draw_left_edge
-      end
-
-      def draw_left_edge_border
-        gap_start, gap_end = calculate_vertical_gap(:bottom)
-
-        draw_top_edge_full
-        draw_right_edge
-        draw_bottom_edge_full
-        # Left edge with gap
-        pdf.stroke_line [@border[:x], @border[:y] - @border[:height]],
-                         [@border[:x], gap_end]
-        pdf.stroke_line [@border[:x], gap_start],
-                         [@border[:x], @border[:y]]
-      end
-
-      # Full edge drawing helpers
-      def draw_top_edge_full
-        pdf.stroke_line [@border[:x], @border[:y]], [@border[:x] + @border[:width], @border[:y]]
-      end
-
-      def draw_right_edge
-        pdf.stroke_line [@border[:x] + @border[:width], @border[:y]],
-                         [@border[:x] + @border[:width], @border[:y] - @border[:height]]
-      end
-
-      def draw_bottom_edge_full
-        pdf.stroke_line [@border[:x] + @border[:width], @border[:y] - @border[:height]],
-                         [@border[:x], @border[:y] - @border[:height]]
-      end
-
-      def draw_left_edge
-        pdf.stroke_line [@border[:x], @border[:y] - @border[:height]], [@border[:x], @border[:y]]
-      end
-
-      def calculate_horizontal_gap(align)
+      # Calculate horizontal gap column based on alignment
+      def calculate_horizontal_gap_col(align, offset_boxes)
         case align
         when :left
-          start = @box[:x] + grid.width(1) + @legend_offset_x
+          @col + 1 + offset_boxes
         when :center
-          start = @box[:x] + (@box[:width] / 2) - (@legend_total_width / 2) + @legend_offset_x
+          @col + (@width_boxes / 2.0) - (@legend_total_boxes / 2.0) + offset_boxes
         when :right
-          start = @box[:x] + @box[:width] - grid.width(1) - @legend_total_width + @legend_offset_x
-        end
-
-        [start, start + @legend_total_width]
-      end
-
-      def calculate_vertical_gap(align)
-        case align
-        when :top
-          start = @box[:y] - grid.height(1) + @legend_offset_y
-          [start, start - @legend_total_width]
-        when :bottom
-          start = @box[:y] - @box[:height] + grid.height(1) + @legend_offset_y
-          [start, start + @legend_total_width]
+          @col + @width_boxes - 1 - @legend_total_boxes + offset_boxes
         end
       end
 
       def draw_legend
         case @config[:edge]
         when :top
-          draw_horizontal_legend(@box[:y], @config[:align])
+          draw_horizontal_legend(@border_row, @config[:align])
         when :bottom
-          draw_horizontal_legend(@box[:y] - @box[:height], @config[:align])
+          draw_horizontal_legend(@border_row + @border_height, @config[:align])
         when :right
           draw_vertical_legend(:right)
         when :left
@@ -267,45 +225,58 @@ module BujoPdf
         end
       end
 
-      def draw_horizontal_legend(y_base, align)
+      def draw_horizontal_legend(row, align)
+        # Convert legend offset to grid boxes
+        offset_boxes = @legend_offset_x / grid.dot_spacing
+
         case align
         when :left
-          x = @box[:x] + grid.width(1) + @legend_padding + @legend_offset_x
+          col = @col + 1 + @legend_padding_boxes + offset_boxes
         when :center
-          x = @box[:x] + (@box[:width] / 2) - (@legend_width / 2) + @legend_offset_x
+          col = @col + (@width_boxes / 2.0) - (@legend_width_boxes / 2.0) + offset_boxes
         when :right
-          x = @box[:x] + @box[:width] - grid.width(1) - @legend_total_width + @legend_padding + @legend_offset_x
+          col = @col + @width_boxes - 1 - @legend_total_boxes + @legend_padding_boxes + offset_boxes
         end
 
-        pdf.fill_color text_color
-        pdf.font "Helvetica-Bold", size: @font_size
-        pdf.text_box @legend,
-                      at: [x, y_base + (@font_size / 2)],
-                      width: @legend_width,
-                      height: @font_size + 4,
-                      valign: :center
+        # Position text box so its CENTER aligns with the border row
+        # text() uses a 1-box height with valign: :center, so offset by 0.5 boxes
+        text_row = row - 0.5
+
+        text(col, text_row, @legend,
+             size: @font_size, style: :bold, color: text_color,
+             width: @legend_width_boxes.ceil, height: 1)
       end
 
       def draw_vertical_legend(edge)
+        # Convert legend offset to grid boxes
+        offset_x_boxes = @legend_offset_x / grid.dot_spacing
+        offset_y_boxes = @legend_offset_y / grid.dot_spacing
+
         if edge == :right
-          center_x = @box[:x] + @box[:width]
-          center_y = @box[:y] - grid.height(1) - @legend_padding - (@legend_width / 2)
+          # Right edge: text rotated -90 (reads top-to-bottom)
+          # Center on the right border line
+          center_col = @border_col + @border_width
+          center_row = @row + 1 + @legend_padding_boxes + (@legend_width_boxes / 2.0) + offset_y_boxes
           rotation = -90
         else # :left
-          center_x = @box[:x] + @legend_offset_x
-          center_y = @box[:y] - @box[:height] + grid.height(1) + @legend_padding + (@legend_width / 2) + @legend_offset_y
+          # Left edge: text rotated +90 (reads bottom-to-top)
+          # Center on the left border line
+          center_col = @border_col + offset_x_boxes
+          center_row = @row + @height_boxes - 1 - @legend_padding_boxes - (@legend_width_boxes / 2.0) + offset_y_boxes
           rotation = 90
         end
 
-        pdf.fill_color text_color
-        pdf.font "Helvetica-Bold", size: @font_size
-        pdf.rotate(rotation, origin: [center_x, center_y]) do
-          pdf.text_box @legend,
-                        at: [center_x - (@legend_width / 2), center_y + (@font_size / 2)],
-                        width: @legend_width,
-                        height: @font_size + 4,
-                        valign: :center
-        end
+        # Calculate center point in points for rotation
+        center_x = grid.x(center_col)
+        center_y = grid.y(center_row)
+
+        # Height in boxes for the font size
+        height_boxes = (@font_size + 4) / grid.dot_spacing
+
+        text(0, 0, @legend,
+             size: @font_size, style: :bold, color: text_color,
+             width: @legend_width_boxes.ceil, height: height_boxes.ceil,
+             rotation: rotation, pt_x: center_x, pt_y: center_y, centered: true)
       end
 
       def reset_colors

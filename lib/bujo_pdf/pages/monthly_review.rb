@@ -121,14 +121,16 @@ module BujoPdf
       # @param border_color [String] Background color
       # @return [void]
       def draw_nav_link(col, link_text, dest, nav_color, border_color)
-        # Draw background using box verb
-        box(col, 0, 3, 1, fill: border_color, stroke: nil, opacity: 0.2, radius: 2)
+        bounds = GridRect.new(col, 0, 3, 1)
+
+        # Draw background using box verb with splatted GridRect
+        box(*bounds, fill: border_color, stroke: nil, opacity: 0.2, radius: 2)
 
         # Draw text
-        text(col, 0, link_text, size: NAV_FONT_SIZE, color: nav_color, align: :center, width: 3)
+        text(bounds.col, bounds.row, link_text, size: NAV_FONT_SIZE, color: nav_color, align: :center, width: bounds.width)
 
         # Link annotation using grid helper
-        @grid.link(col, 0, 3, 1, dest)
+        @grid.link(*bounds, dest)
       end
 
       # Draw the page header with month and year
