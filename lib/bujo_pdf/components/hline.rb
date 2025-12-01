@@ -12,20 +12,25 @@ module BujoPdf
     # appears cleanly without dots showing through. Useful for section
     # dividers and as a building block for fieldset-style components.
     #
+    # Supports both integer and float grid coordinates:
+    # - Integer positions: Line on grid, dots erased behind it
+    # - Float positions: Line between grid points, no dot erasure
+    #
     # Example usage in a page:
-    #   hline(2, 5, 20)                              # Default gray line
+    #   hline(2, 5, 20)                              # On-grid, dots erased
     #   hline(2, 5, 20, color: '333333', stroke: 1)  # Thick dark line
+    #   hline(2.5, 5.5, 20)                          # Sub-grid, no dot erasure
     #
     class HLine < Component
       include EraseDots::Mixin
 
       # Mixin providing the hline verb for pages and components
       module Mixin
-        # Render a horizontal line at a grid row
+        # Render a horizontal line at a grid position
         #
-        # @param col [Integer] Starting column (left edge)
-        # @param row [Integer] Row position (line sits on this grid row)
-        # @param width [Integer] Width in grid boxes
+        # @param col [Numeric] Starting column (left edge), supports floats
+        # @param row [Numeric] Row position, supports floats
+        # @param width [Numeric] Width in grid boxes, supports floats
         # @param color [String] Line color as hex string (default: 'CCCCCC')
         # @param stroke [Float] Line width in points (default: 0.5)
         # @return [void]
@@ -45,9 +50,9 @@ module BujoPdf
       # Initialize a new HLine component
       #
       # @param canvas [Canvas] The canvas wrapping pdf and grid
-      # @param col [Integer] Starting column (left edge)
-      # @param row [Integer] Row position
-      # @param width [Integer] Width in grid boxes
+      # @param col [Numeric] Starting column (left edge)
+      # @param row [Numeric] Row position
+      # @param width [Numeric] Width in grid boxes
       # @param color [String] Line color as hex string
       # @param stroke [Float] Line width in points
       def initialize(canvas:, col:, row:, width:, color: 'CCCCCC', stroke: 0.5)
@@ -59,12 +64,14 @@ module BujoPdf
         @stroke = stroke
       end
 
-      # Render the horizontal line with dots erased behind it
+      # Render the horizontal line, erasing dots if on-grid
       #
       # @return [void]
       def render
-        # Erase dots along the line first
-        erase_dots(@col, @row, @width)
+        # Only erase dots if positioned exactly on grid intersections
+        if on_grid?
+          erase_dots(@col.to_i, @row.to_i, @width.to_i)
+        end
 
         # Draw the line
         y = grid.y(@row)
@@ -78,6 +85,23 @@ module BujoPdf
         # Restore defaults
         pdf.stroke_color '000000'
         pdf.line_width 0.5
+      end
+
+      private
+
+      # Check if all positions are on grid (integer values)
+      #
+      # @return [Boolean]
+      def on_grid?
+        integer?(@col) && integer?(@row) && integer?(@width)
+      end
+
+      # Check if a number is effectively an integer
+      #
+      # @param num [Numeric] Number to check
+      # @return [Boolean]
+      def integer?(num)
+        num == num.to_i
       end
     end
   end
