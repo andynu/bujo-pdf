@@ -64,7 +64,8 @@ module BujoPdf
 
         tabs.each do |tab|
           # Calculate tab height based on text width (since it will be rotated)
-          tab_height = calculate_tab_height(tab[:label])
+          is_current = tab[:current] || false
+          tab_height = calculate_tab_height(tab[:label], bold: is_current)
 
           # Render this tab at current_y position
           render_tab_at_y(current_y, tab_height, tab)
@@ -74,11 +75,12 @@ module BujoPdf
         end
       end
 
-      def calculate_tab_height(label)
+      def calculate_tab_height(label, bold: false)
         # Measure text width (which becomes height when rotated)
-        # Save current font, set measurement font, then restore
+        # Bold text is wider, so use correct font for accurate measurement
+        font_name = bold ? "Helvetica-Bold" : "Helvetica"
         text_width = nil
-        pdf.font("Helvetica", size: FONT_SIZE) do
+        pdf.font(font_name, size: FONT_SIZE) do
           text_width = pdf.width_of(label)
         end
         text_width + (TAB_PADDING_PT * 2)
