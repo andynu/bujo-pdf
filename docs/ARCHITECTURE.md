@@ -575,11 +575,263 @@ Tests help verify:
 
 ---
 
+## Value Objects
+
+### Canvas
+
+The `Canvas` class (`lib/bujo_pdf/canvas.rb`) bundles a PDF document with its grid system:
+
+```ruby
+# Canvas provides both pdf and grid access
+def initialize(canvas:)
+  @pdf = canvas.pdf
+  @grid = canvas.grid
+end
+
+# Convenience delegators allow direct coordinate access
+canvas.x(5)       # instead of canvas.grid.x(5)
+canvas.rect(...)  # instead of canvas.grid.rect(...)
+```
+
+### GridRect
+
+`GridRect` (`lib/bujo_pdf/utilities/grid_rect.rb`) represents rectangular grid regions with Ruby splatting support:
+
+```ruby
+rect = GridRect.new(5, 10, 20, 15)  # col, row, width, height
+
+# Positional splatting into method calls
+ruled_lines(*rect, color: 'red')  # => ruled_lines(5, 10, 20, 15, color: 'red')
+
+# Keyword splatting into constructors
+Component.new(**rect)  # => Component.new(col: 5, row: 10, width: 20, height: 15)
+```
+
+---
+
+## Page Types Reference
+
+Each page type in `lib/bujo_pdf/pages/`:
+
+| Page | File | Named Destination | Description |
+|------|------|-------------------|-------------|
+| Index | `index_pages.rb` | `index_N` | Hand-built TOC pages (default: 4) |
+| Future Log | `future_log.rb` | `future_log_N` | 6-month event capture (2 pages) |
+| Collection | `collection_page.rb` | `collection_<id>` | User-configured titled pages |
+| Monthly Review | `monthly_review.rb` | `review_N` | Reflection prompts (12 pages) |
+| Quarterly Planning | `quarterly_planning.rb` | `quarter_N` | 12-week goal cycles (4 pages) |
+| Seasonal Calendar | `seasonal_calendar.rb` | `seasonal` | Year-at-a-glance by seasons |
+| Year Events | `year_events.rb` | `year_events` | 12×31 event grid |
+| Year Highlights | `year_highlights.rb` | `year_highlights` | 12×31 highlights grid |
+| Weekly | `weekly_page.rb` | `week_N` | Daily section + Cornell notes (52-53 pages) |
+| Grid Showcase | `grid_showcase.rb` | `grid_showcase` | All grid types in quadrants |
+| Grids Overview | `grids_overview.rb` | `grids_overview` | Clickable grid samples |
+| Dot/Graph/Lined/etc | `grids/*.rb` | `grid_*` | Full-page grid templates |
+| Tracker Example | `tracker_example.rb` | `tracker_example` | Usage inspiration |
+| Reference | `reference_calibration.rb` | `reference` | Grid calibration |
+
+---
+
+## Component Verb System Details
+
+### Available Verbs
+
+```ruby
+# Drawing primitives
+box(col, row, width, height, stroke:, stroke_width:, fill:, radius:, opacity:)
+hline(col, row, width, color:, stroke:)
+vline(col, row, height, color:, stroke:)
+
+# Text rendering
+text(col, row, content, size:, height:, color:, style:, position:, align:, width:, rotation:)
+h1(col, row, content, color:, style:, position:, align:, width:)
+h2(col, row, content, color:, style:)
+
+# Grid background effects
+grid_dots(col, row, width, height, color:)
+erase_dots(col, row, width, height:)
+ruled_lines(col, row, width, height, color:, stroke:)
+
+# Complex components
+mini_month(col, row, width, month:, year:, align:, show_links:, show_weekend_bg:, quantize:)
+ruled_list(col, row, width, entries:, start_num:, show_page_box:, line_color:, num_color:)
+fieldset(col, row, width, height, legend:, position:, **options)
+
+# Layout helpers
+margins(col, row, width, height, left:, right:, top:, bottom:, all:)
+```
+
+### Adding a New Component
+
+1. Create `lib/bujo_pdf/components/my_component.rb`:
+```ruby
+module BujoPdf
+  module Components
+    class MyComponent
+      module Mixin
+        def my_verb(col, row, width, height, **options)
+          MyComponent.new(
+            canvas: @canvas,
+            col: col, row: row, width: width, height: height,
+            **options
+          ).render
+        end
+      end
+
+      def initialize(canvas:, col:, row:, width:, height:, **options)
+        @canvas = canvas
+        @pdf = canvas.pdf
+        @grid = canvas.grid
+      end
+
+      def render
+        # Use @pdf and @grid for drawing
+      end
+    end
+  end
+end
+```
+
+2. Add to `lib/bujo_pdf/components/all.rb`:
+```ruby
+module All
+  def self.included(base)
+    base.include GridDots::Mixin
+    base.include RuledLines::Mixin
+    base.include MyComponent::Mixin  # Add this
+  end
+end
+```
+
+3. Add require to `lib/bujo_pdf.rb`
+
+---
+
+## Navigation System Details
+
+### Multi-tap Tab Cycling
+
+Right sidebar tabs can cycle through multiple pages:
+
+```ruby
+# In StandardWithSidebarsLayout#build_top_tabs
+{ label: "Grids", dest: [:grid_showcase, :grids_overview, :grid_dot, :grid_graph, ...] }
+```
+
+**Behavior:**
+- Not on any page in cycle → goes to first page (entry point)
+- On a page in cycle → advances to next page
+- After last page → wraps to first
+- Tab highlighted when on any page in cycle
+
+### Sidebar Tab Overrides
+
+Pages can customize tab destinations based on context (`lib/bujo_pdf/dsl/sidebar_overrides.rb`):
+
+```ruby
+# "Future" tab goes to different pages based on current week
+overrides.set(from: :week_1, tab: :future, to: :future_log_1)
+overrides.set(from: :week_27, tab: :future, to: :future_log_2)
+```
+
+---
+
+## Common Prawn Patterns
+
+### Drawing in Grid Coordinates
+
+```ruby
+box = grid_rect(5, 10, 20, 15)  # col, row, width_boxes, height_boxes
+@pdf.bounding_box([box[:x], box[:y]], width: box[:width], height: box[:height]) do
+  # Draw content using local coordinates
+end
+```
+
+### Clickable Link Areas
+
+```ruby
+cell_x = grid_x(col)
+cell_y = grid_y(row)
+cell_width = grid_width(boxes)
+cell_height = grid_height(boxes)
+
+# Link uses bottom coordinate
+link_bottom = cell_y - cell_height
+@pdf.link_annotation([cell_x, link_bottom, cell_x + cell_width, cell_y],
+                    Dest: "week_#{week_num}",
+                    Border: [0, 0, 0])
+```
+
+### Text Positioning
+
+```ruby
+@pdf.text_box "Content",
+              at: [grid_x(5), grid_y(10)],  # Top-left corner
+              width: grid_width(10),
+              height: grid_height(2),
+              align: :center,
+              valign: :center
+```
+
+### Rotated Text
+
+```ruby
+# Clockwise rotation for top-to-bottom reading
+@pdf.rotate(-90, origin: [x, y]) do
+  @pdf.text_box "Label", at: [x, y], width: 50, height: 20
+end
+```
+
+**Rotation conventions:**
+- `+90` = counter-clockwise (text reads bottom-to-top)
+- `-90` = clockwise (text reads top-to-bottom)
+
+---
+
+## WeekGrid Component
+
+The `WeekGrid` component (`lib/bujo_pdf/components/week_grid.rb`) renders 7-column grids with optional quantization:
+
+```ruby
+# Basic usage with quantization
+grid.week_grid(5, 10, 35, 15, quantize: true).render
+
+# With custom cell rendering
+grid.week_grid(5, 10, 35, 15) do |day_index, cell_rect|
+  # day_index: 0-6 (Monday-Sunday)
+  pdf.text_box "Day #{day_index}", at: [cell_rect[:x], cell_rect[:y]]
+end
+```
+
+**Parameters:**
+- `quantize`: Box-aligned column widths (default: true)
+- `show_headers`: M/T/W/T/F/S/S labels (default: true)
+- `first_day`: `:monday` or `:sunday` (default: :monday)
+
+**Quantization:** When width is divisible by 7, columns align exactly with dot grid.
+
+---
+
+## Date Calculations
+
+Week numbering system (critical for navigation):
+- Week 1 starts on Monday on or before January 1
+- Total weeks: 52-53 depending on year
+
+```ruby
+# See lib/bujo_pdf/utilities/date_calculator.rb
+first_day = Date.new(@year, 1, 1)
+days_back = (first_day.wday + 6) % 7  # Monday-based
+year_start_monday = first_day - days_back
+week_num = ((date - year_start_monday).to_i / 7) + 1
+```
+
+---
+
 ## Related Documentation
 
-- **CLAUDE.md** - Project overview, development commands, component details
-- **CLAUDE.local.md** - Detailed grid system documentation and examples
-- **REFACTORING_PLAN.md** - Future architectural improvements
+- **CLAUDE.md** - Quick reference for development
+- **CLAUDE.local.md** - Local environment notes
 - **idea.md** - Original design specification
 
 ---
