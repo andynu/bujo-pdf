@@ -29,7 +29,9 @@ COMPONENTS = {
   'HLine' => { params: 'width: 25' },
   'VLine' => { params: 'height: 8' },
   'Text' => { params: 'content: "Body text content goes here"' },
-  'RuledList' => { params: 'width: 25, entries: 4' }
+  'RuledList' => { params: 'width: 25, entries: 4' },
+  'CornellNotes' => { params: 'cues_cols: 8, notes_cols: 28, notes_main_rows: 18, summary_rows: 4' },
+  'DailySection' => { params: 'content_width_boxes: 35, daily_rows: 6' }
 }.freeze
 
 def main(args)
