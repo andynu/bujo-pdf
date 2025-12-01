@@ -436,39 +436,4 @@ class TestWeekColumnWithEventStore < Minitest::Test
   end
 end
 
-# Mock classes for date_config and event_store testing
-class MockDateConfig
-  HighlightedDate = Struct.new(:label, :category, :priority, keyword_init: true)
-  CategoryStyle = { 'color' => 'FF6B6B', 'text_color' => 'FFFFFF' }
-  PriorityStyle = { 'bold' => true }
-
-  def date_for_day(date)
-    HighlightedDate.new(label: "Meeting", category: "work", priority: "high")
-  end
-
-  def category_style(category)
-    CategoryStyle
-  end
-
-  def priority_style(priority)
-    PriorityStyle
-  end
-end
-
-class MockEventStore
-  MockEvent = Struct.new(:color, keyword_init: true) do
-    def display_label(include_icon: false)
-      "Calendar Event"
-    end
-  end
-
-  def events_for_date(date, limit: nil)
-    [MockEvent.new(color: '4285F4')]
-  end
-end
-
-class MockEventStoreEmpty
-  def events_for_date(date, limit: nil)
-    []
-  end
-end
+# Mock classes for date_config and event_store testing are in test_helper.rb
