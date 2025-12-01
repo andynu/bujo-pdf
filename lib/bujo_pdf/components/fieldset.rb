@@ -138,7 +138,7 @@ module BujoPdf
       private
 
       def border_color
-        @border_color ||= @border_color_option || Themes.current[:colors][:border]
+        @border_color ||= @border_color_option || Themes.current[:colors][:borders]
       end
 
       def text_color
