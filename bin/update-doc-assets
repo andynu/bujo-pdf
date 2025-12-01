@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Update all documentation assets
+#
+# This meta-script runs all asset generation scripts in sequence:
+# 1. generate-downloadable-pdfs - 6 PDFs for examples/
+# 2. generate-page-snapshots    - Page images and thumbnails
+# 3. generate-component-examples - Component example images
+#
+# Usage:
+#   bin/update-doc-assets           # Run all generators
+#   bin/update-doc-assets --quick   # Skip PDFs (faster for dev)
+
+require 'benchmark'
+
+SCRIPT_DIR = File.expand_path(__dir__)
+
+GENERATORS = [
+  {
+    name: 'Downloadable PDFs',
+    script: 'generate-downloadable-pdfs',
+    skip_on_quick: true
+  },
+  {
+    name: 'Page Snapshots & Thumbnails',
+    script: 'generate-page-snapshots',
+    args: ['--thumbnails']
+  },
+  {
+    name: 'Component Examples',
+    script: 'generate-component-examples'
+  }
+].freeze
+
+def main(args)
+  if args.include?('--help') || args.include?('-h')
+    show_help
+    return
+  end
+
+  quick_mode = args.include?('--quick') || args.include?('-q')
+
+  puts "Updating documentation assets..."
+  puts "(Quick mode - skipping PDFs)" if quick_mode
+  puts
+
+  results = []
+  total_time = Benchmark.realtime do
+    GENERATORS.each do |gen|
+      next if quick_mode && gen[:skip_on_quick]
+
+      puts "=" * 60
+      puts "Running: #{gen[:name]}"
+      puts "=" * 60
+      puts
+
+      script_path = File.join(SCRIPT_DIR, gen[:script])
+      cmd = [script_path] + (gen[:args] || [])
+
+      elapsed = Benchmark.realtime do
+        success = system(*cmd)
+        results << { name: gen[:name], success: success }
+      end
+
+      puts
+      puts "Completed in #{elapsed.round(1)}s"
+      puts
+    end
+  end
+
+  puts "=" * 60
+  puts "Summary"
+  puts "=" * 60
+  puts
+
+  results.each do |r|
+    status = r[:success] ? "OK" : "FAILED"
+    puts "  #{r[:name]}: #{status}"
+  end
+
+  successful = results.count { |r| r[:success] }
+  puts
+  puts "#{successful}/#{results.size} generators completed in #{total_time.round(1)}s"
+end
+
+def show_help
+  puts <<~HELP
+    bin/update-doc-assets - Update all documentation assets
+
+    Usage:
+      bin/update-doc-assets [OPTIONS]
+
+    Options:
+      --quick, -q     Skip PDF generation (faster for development)
+      --help, -h      Show this help message
+
+    This script runs the following generators in sequence:
+      1. generate-downloadable-pdfs  - 6 example PDFs (2 years x 3 themes)
+      2. generate-page-snapshots     - Full-res pages + thumbnails
+      3. generate-component-examples - Component documentation images
+
+    Output directories:
+      examples/           - Downloadable PDF planners
+      assets/pages/       - Full-resolution page snapshots
+      assets/thumbnails/  - Scaled thumbnails for README
+      assets/components/  - Component example images for COMPONENTS.md
+  HELP
+end
+
+main(ARGV)
