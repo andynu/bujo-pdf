@@ -57,12 +57,6 @@ module BujoPdf
 
       private
 
-      # Check if destination matches current page
-      def current_page?(dest)
-        return false unless @page_context
-        @page_context.respond_to?(:current_page?) && @page_context.current_page?(dest)
-      end
-
       def render_tabs_from_top(tabs)
         # Start from top of page with small offset
         page_top = grid.y(0)
@@ -73,7 +67,7 @@ module BujoPdf
           tab_height = calculate_tab_height(tab[:label])
 
           # Render this tab at current_y position
-          render_tab_at_y(current_y, tab_height, tab[:label], tab[:dest])
+          render_tab_at_y(current_y, tab_height, tab)
 
           # Move down for next tab (add gap)
           current_y -= (tab_height + TAB_GAP_PT)
@@ -90,9 +84,11 @@ module BujoPdf
         text_width + (TAB_PADDING_PT * 2)
       end
 
-      def render_tab_at_y(top_y, height, label, dest)
-        # Check if this tab's destination matches current page
-        is_current = current_page?(dest)
+      def render_tab_at_y(top_y, height, tab)
+        label = tab[:label]
+        dest = tab[:dest]
+        # Use current flag from layout (handles cycling tabs correctly)
+        is_current = tab[:current] || false
 
         # Calculate tab rectangle coordinates
         tab_width = grid.width(1)
