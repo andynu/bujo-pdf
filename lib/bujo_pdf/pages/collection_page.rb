@@ -104,11 +104,7 @@ module BujoPdf
 
         # Draw a subtle divider line below header
         line_row = @subtitle ? 6 : 4
-        line_y = @grid_system.y(line_row)
-        @pdf.stroke_color 'CCCCCC'
-        @pdf.line_width 0.5
-        @pdf.stroke_line [@grid_system.x(2), line_y], [@grid_system.x(41), line_y]
-        @pdf.stroke_color '000000'
+        hline(2, line_row, 39, color: 'CCCCCC', stroke: 0.5)
       end
     end
   end
