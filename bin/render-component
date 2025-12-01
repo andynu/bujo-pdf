@@ -308,12 +308,14 @@ module BujoPdf
         grid = GridSystem.new(pdf)
         canvas = Canvas.new(pdf, grid)
 
-        # Draw subtle page boundary for context
-        pdf.stroke_color 'EEEEEE'
-        pdf.stroke_rectangle([0, pdf.bounds.height], pdf.bounds.width, pdf.bounds.height)
+        if @show_grid
+          # Draw subtle page boundary for context
+          pdf.stroke_color 'EEEEEE'
+          pdf.stroke_rectangle([0, pdf.bounds.height], pdf.bounds.width, pdf.bounds.height)
 
-        # Draw dot grid background (optional, helps visualize alignment)
-        draw_dot_grid(pdf, grid) if @show_grid
+          # Draw dot grid background (helps visualize alignment)
+          draw_dot_grid(pdf, grid)
+        end
 
         # Render the component
         component = create_component(config, canvas, params)
