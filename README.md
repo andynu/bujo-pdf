@@ -211,20 +211,26 @@ Free holiday calendar URLs available from:
 The generated PDF includes:
 
 1. **Seasonal Calendar** - Overview page with all four seasons
-2. **Year Events** - 12×31 grid for tracking events throughout the year
-3. **Year Highlights** - 12×31 grid for noting daily highlights
-4. **Multi-Year Overview** - 4-year calendar spread
-5. **Weekly Pages** (52-53 pages) - One page per week with:
+2. **Index Pages** (2) - Numbered lines for hand-built table of contents
+3. **Future Log** (2) - 6-month spreads for long-term event capture
+4. **Year Events** - 12×31 grid for tracking events throughout the year
+5. **Year Highlights** - 12×31 grid for noting daily highlights
+6. **Multi-Year Overview** - 4-year calendar spread
+7. **Quarterly Planning** (4) - 12-week goal-setting pages interleaved with weeks
+8. **Monthly Reviews** (12) - Reflection templates interleaved with weeks
+9. **Weekly Pages** (52-53) - One page per week with:
    - Daily section (7 columns for Mon-Sun)
    - Cornell notes section (Cues, Notes, Summary)
    - Navigation links to previous/next week
-6. **Grid Pages** (8 pages) - Full-page templates:
-   - Grid Showcase (all types in quadrants)
-   - Grids Overview, Dot, Graph, Lined, Isometric, Perspective, Hexagon
-7. **Reference Page** - Grid calibration and measurement guide
-8. **Wheel Pages** - Daily Wheel and Year Wheel templates
+10. **Grid Pages** (8) - Full-page templates:
+    - Grid Showcase (all types in quadrants)
+    - Grids Overview, Dot, Graph, Lined, Isometric, Perspective, Hexagon
+11. **Tracker Example** - Habit and mood tracking inspiration
+12. **Reference Page** - Grid calibration and measurement guide
+13. **Wheel Pages** - Daily Wheel and Year Wheel templates
+14. **Collection Pages** - User-configured via `config/collections.yml`
 
-Total pages: 68 (varies slightly by year)
+Total pages: ~88+ (varies by year and collections)
 
 ## Development
 
@@ -263,7 +269,7 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for detailed technical documentation.
 
 ## Testing
 
-The project includes a comprehensive test suite with 98 tests covering unit and integration testing.
+The project includes a comprehensive test suite with 342 tests covering unit and integration testing.
 
 ### Running Tests
 
@@ -287,23 +293,24 @@ rake test_integration
 
 ### Test Coverage
 
-**Unit Tests** (88 tests, 2408 assertions)
-- **GridSystem**: Coordinate conversion (grid_x, grid_y), dimension calculations (grid_width, grid_height), helpers (grid_rect, grid_inset, grid_bottom), text/link positioning
-- **DotGrid**: Dot drawing at intersections, radius and color customization, position calculations
-- **DateCalculator**: Week numbering system, year_start_monday calculations for all weekdays, total_weeks across multiple years, week_start/week_end boundaries, week_number_for_date including leap days, season calculations and month abbreviations, edge cases (leap years, year boundaries, week gaps)
-- **RenderContext**: Initialization, current_page? and weekly_page? methods, destination string conversion, bracket accessor, immutability and serialization
+**Unit Tests** (318 tests, 3091 assertions)
+- **GridSystem**: Coordinate conversion, dimension calculations, helpers (grid_rect, grid_inset, grid_bottom), text/link positioning
+- **DateCalculator**: Week numbering, year boundaries, leap years, season calculations
+- **Components**: Fieldset, RuledLines, MiniMonth, WeekGrid, sidebars
+- **DSL**: Builder, Context, Registry, PageFactory, RenderContext
+- **Pages**: Page classes, layout integration, navigation
 
-**Integration Tests** (10 tests, 20 assertions)
-- **PlannerGeneration**: Successful generation without errors, PDF file size validation (100KB-10MB), generation performance (<10 seconds), multi-year generation (2024-2026), leap year handling, custom output paths, independent multi-year generation, generation idempotency, nested directory creation
+**Integration Tests** (24 tests, 39 assertions)
+- **PlannerGeneration**: Full PDF generation, file validation, multi-year support, leap year handling, performance benchmarks
 
 ### Test Results
 
 ```
-98 tests, 2428 assertions
+342 tests, 3130 assertions
 0 failures, 0 errors, 1 skip
-Completed in ~38 seconds
+Completed in ~76 seconds
 
-Code Coverage: 84.13% (1267 / 1506 lines)
+Code Coverage: 86.53% (4650 / 5374 lines)
 ```
 
 ### Code Coverage
