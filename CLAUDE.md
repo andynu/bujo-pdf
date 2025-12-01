@@ -166,11 +166,28 @@ Components provide **verb methods** that pages can call directly for common rend
 
 **Available verbs:**
 ```ruby
-# Render dots over a grid region (for z-index layering)
-grid_dots(col, row, width, height, color: nil)
+# Drawing primitives
+box(col, row, width, height, stroke:, stroke_width:, fill:, radius:, opacity:)
+hline(col, row, width, color:, stroke:)
+vline(col, row, height, color:, stroke:)
 
-# Render ruled lines with dots on top
-ruled_lines(col, row, width, height, color: 'E5E5E5', stroke: 0.5)
+# Text rendering
+text(col, row, content, size:, height:, color:, style:, position:, align:, width:, rotation:)
+h1(col, row, content, color:, style:, position:, align:, width:)
+h2(col, row, content, color:, style:)
+
+# Grid background effects
+grid_dots(col, row, width, height, color:)   # Render dots over region
+erase_dots(col, row, width, height:)          # Clear dots in region
+ruled_lines(col, row, width, height, color:, stroke:)  # Ruled lines with dots on top
+
+# Complex components
+mini_month(col, row, width, month:, year:, align:, show_links:, show_weekend_bg:, quantize:)
+ruled_list(col, row, width, entries:, start_num:, show_page_box:, line_color:, num_color:)
+fieldset(col, row, width, height, legend:, position:, **options)
+
+# Layout helpers
+margins(col, row, width, height, left:, right:, top:, bottom:, all:)  # Returns Cell struct
 ```
 
 **Usage in pages:**
@@ -549,4 +566,4 @@ end
 - **Gemfile** - Dependencies specification
 
 ---
-Last updated: b2211d9
+Last updated: 18e8f80
