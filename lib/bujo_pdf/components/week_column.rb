@@ -133,35 +133,32 @@ module BujoPdf
 
       # Draw day header with day name and date
       # Header is 1 box high with:
-      # - Three-letter weekday in gray on top left
+      # - Three-letter weekday in gray on top left (slight inset)
       # - Month/day centered
       def draw_header(date, day_name)
-        # Three-letter weekday abbreviation in gray, top left
+        # Small inset from column edges (0.2 boxes ~ 3pt)
+        inset = 0.2
+
+        # Three-letter weekday abbreviation in gray, top left with inset
         short_day = day_name[0..2] if day_name
         if short_day
-          # Position slightly inset from top-left corner using pixel offsets
-          text(0, 0, short_day,
+          # Left portion of column, grid-aligned with inset
+          text(@col + inset, @row, short_day,
                size: @day_header_font_size,
                color: effective_header_color,
                align: :left,
-               position: :superscript,
-               pt_x: grid.x(@col) + 2,
-               pt_y: grid.y(@row) - 2,
-               pt_width: grid.width(@width_boxes) / 2,
-               pt_height: grid.height(@header_height_boxes))
+               width: @width_boxes.ceil.to_i,
+               height: @header_height_boxes)
         end
 
-        # Month/day centered
+        # Month/day centered in full column width (no inset for centered text)
         if date
           date_str = date.strftime('%-m/%-d')
-          text(0, 0, date_str,
+          text(@col, @row, date_str,
                size: @day_header_font_size,
                align: :center,
-               position: :superscript,
-               pt_x: grid.x(@col),
-               pt_y: grid.y(@row) - 2,
-               pt_width: grid.width(@width_boxes),
-               pt_height: grid.height(@header_height_boxes))
+               width: @width_boxes.ceil.to_i,
+               height: @header_height_boxes)
         end
       end
 
@@ -192,20 +189,19 @@ module BujoPdf
       def draw_time_labels
         return unless @first_line_row
 
+        # Same inset as header text (0.2 boxes ~ 3pt)
+        inset = 0.2
         labels = ['AM', 'PM', 'EVE']
 
         labels.each_with_index do |label, idx|
           # Each section is 2 boxes high, label goes at top of each section
           section_row = @first_line_row + (idx * 2)
-          # Slight pixel offset from edge
-          text(0, 0, label,
+          text(@col + inset, section_row, label,
                size: @time_label_font_size,
                color: effective_border_color,
                align: :left,
-               pt_x: grid.x(@col) + 3,
-               pt_y: grid.y(section_row) - 2,
-               pt_width: 20,
-               pt_height: 10)
+               width: 2,
+               height: 1)
         end
       end
 
