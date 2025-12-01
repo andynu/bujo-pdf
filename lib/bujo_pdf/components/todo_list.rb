@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../base/component'
+require_relative '../canvas'
 require_relative '../utilities/styling'
 
 module BujoPdf
@@ -16,28 +18,22 @@ module BujoPdf
     # - Optional row dividers (none, solid, dashed)
     # - Theme-aware colors
     #
-    # Example usage:
+    # Example usage (standard canvas/grid interface):
     #   todo = TodoList.new(
-    #     pdf: @pdf,
-    #     x: 100,
-    #     y: 700,
-    #     width: 200,
+    #     canvas: canvas,
+    #     col: 5,
+    #     row: 10,
+    #     width: 20,
     #     rows: 8,
     #     bullet_style: :bullet,
     #     divider: :dashed
     #   )
     #   todo.render
     #
-    # Or using grid coordinates via the class method:
-    #   todo = TodoList.from_grid(
-    #     pdf: @pdf,
-    #     grid: grid,
-    #     col: 5,
-    #     row: 10,
-    #     width_boxes: 20,
-    #     rows: 8
-    #   )
-    class TodoList
+    # Or using the grid helper:
+    #   grid.todo_list(5, 10, 20, 8).render
+    #
+    class TodoList < Component
       # Default bullet radius in points (larger than 1pt dot grid dots)
       BULLET_RADIUS = 2.0
 
@@ -52,21 +48,21 @@ module BujoPdf
 
       # Initialize a new TodoList component
       #
-      # @param pdf [Prawn::Document] The PDF document to render into
-      # @param x [Float] Left edge x-coordinate in points
-      # @param y [Float] Top edge y-coordinate in points
-      # @param width [Float] Total width in points
+      # @param canvas [Canvas] The canvas wrapping pdf and grid
+      # @param col [Integer] Starting column in grid coordinates
+      # @param row [Integer] Starting row in grid coordinates
+      # @param width [Integer] Width in grid boxes
       # @param rows [Integer] Number of to-do items (rows)
       # @param bullet_style [Symbol] Marker style :bullet, :checkbox, or :circle (default: :bullet)
       # @param divider [Symbol] Row divider style :none, :solid, or :dashed (default: :none)
       # @param divider_color [String, nil] Hex color for dividers (default: theme BORDERS color)
       # @param bullet_color [String, nil] Hex color for bullets (default: theme TEXT_BLACK)
-      def initialize(pdf:, x:, y:, width:, rows:, bullet_style: :bullet,
+      def initialize(canvas:, col:, row:, width:, rows:, bullet_style: :bullet,
                      divider: :none, divider_color: nil, bullet_color: nil)
-        @pdf = pdf
-        @x = x
-        @y = y
-        @width = width
+        super(canvas: canvas)
+        @col = col
+        @row = row
+        @width_boxes = width
         @rows = rows
         @bullet_style = bullet_style
         @divider = divider
@@ -84,7 +80,7 @@ module BujoPdf
       # @return [void]
       def render
         @rows.times do |row_index|
-          row_y = @y - (row_index * @row_height)
+          row_y = grid.y(@row + row_index)
           draw_marker(row_index, row_y)
           draw_divider(row_index, row_y) if @divider != :none
         end
@@ -98,12 +94,7 @@ module BujoPdf
       def row_rect(row_index)
         raise ArgumentError, "row_index must be 0-#{@rows - 1}, got #{row_index}" unless (0...@rows).cover?(row_index)
 
-        {
-          x: @x,
-          y: @y - (row_index * @row_height),
-          width: @width,
-          height: @row_height
-        }
+        grid.rect(@col, @row + row_index, @width_boxes, 1)
       end
 
       # Get the text area rectangle (excluding marker column) for a row
@@ -111,14 +102,9 @@ module BujoPdf
       # @param row_index [Integer] Row index (0-based)
       # @return [Hash] Rectangle with :x, :y, :width, :height keys in points
       def text_rect(row_index)
-        rect = row_rect(row_index)
-        marker_width = MARKER_COLUMN_BOXES * @row_height
-        {
-          x: rect[:x] + marker_width,
-          y: rect[:y],
-          width: rect[:width] - marker_width,
-          height: rect[:height]
-        }
+        raise ArgumentError, "row_index must be 0-#{@rows - 1}, got #{row_index}" unless (0...@rows).cover?(row_index)
+
+        grid.rect(@col + MARKER_COLUMN_BOXES, @row + row_index, @width_boxes - MARKER_COLUMN_BOXES, 1)
       end
 
       # Total height of the todo list in points
@@ -128,9 +114,10 @@ module BujoPdf
         @rows * @row_height
       end
 
-      # Create a TodoList using grid coordinates
+      # Create a TodoList using grid coordinates (legacy adapter)
       #
       # Accepts either a canvas or separate pdf/grid parameters.
+      # This method exists for backward compatibility with the grid.todo_list helper.
       #
       # @param canvas [Canvas, nil] The canvas wrapping pdf and grid
       # @param pdf [Prawn::Document, nil] The PDF document (deprecated, use canvas)
@@ -143,19 +130,13 @@ module BujoPdf
       # @return [TodoList] New TodoList instance
       def self.from_grid(canvas: nil, pdf: nil, grid: nil, col:, row:, width_boxes:, rows:, **opts)
         # Support both canvas and legacy pdf/grid parameters
-        if canvas
-          actual_pdf = canvas.pdf
-          actual_grid = canvas.grid
-        else
-          actual_pdf = pdf
-          actual_grid = grid
-        end
+        actual_canvas = canvas || Canvas.new(pdf, grid)
 
         new(
-          pdf: actual_pdf,
-          x: actual_grid.x(col),
-          y: actual_grid.y(row),
-          width: actual_grid.width(width_boxes),
+          canvas: actual_canvas,
+          col: col,
+          row: row,
+          width: width_boxes,
           rows: rows,
           **opts
         )
@@ -168,8 +149,8 @@ module BujoPdf
       # @raise [ArgumentError] if any parameters are invalid
       # @return [void]
       def validate_parameters
-        raise ArgumentError, 'pdf is required' if @pdf.nil?
-        raise ArgumentError, 'width must be positive' if @width <= 0
+        raise ArgumentError, 'canvas is required' if @canvas.nil?
+        raise ArgumentError, 'width must be positive' if @width_boxes <= 0
         raise ArgumentError, 'rows must be positive' if @rows <= 0
         raise ArgumentError, 'bullet_style must be :bullet, :checkbox, or :circle' unless %i[bullet checkbox circle].include?(@bullet_style)
         raise ArgumentError, 'divider must be :none, :solid, or :dashed' unless %i[none solid dashed].include?(@divider)
@@ -181,12 +162,13 @@ module BujoPdf
       # @param row_y [Float] Top Y coordinate of the row
       # @return [void]
       def draw_marker(row_index, row_y)
-        marker_center_x = @x + (@row_height / 2)
+        # Center of first box in the row
+        marker_center_x = grid.x(@col) + (@row_height / 2)
         marker_center_y = row_y - (@row_height / 2)
 
-        @pdf.save_graphics_state do
-          @pdf.fill_color(bullet_color)
-          @pdf.stroke_color(bullet_color)
+        pdf.save_graphics_state do
+          pdf.fill_color(bullet_color)
+          pdf.stroke_color(bullet_color)
 
           case @bullet_style
           when :bullet
@@ -205,7 +187,7 @@ module BujoPdf
       # @param cy [Float] Center y
       # @return [void]
       def draw_bullet(cx, cy)
-        @pdf.fill_circle([cx, cy], BULLET_RADIUS)
+        pdf.fill_circle([cx, cy], BULLET_RADIUS)
       end
 
       # Draw an empty checkbox square
@@ -215,8 +197,8 @@ module BujoPdf
       # @return [void]
       def draw_checkbox(cx, cy)
         half = CHECKBOX_SIZE / 2
-        @pdf.line_width = 0.5
-        @pdf.stroke_rectangle([cx - half, cy + half], CHECKBOX_SIZE, CHECKBOX_SIZE)
+        pdf.line_width = 0.5
+        pdf.stroke_rectangle([cx - half, cy + half], CHECKBOX_SIZE, CHECKBOX_SIZE)
       end
 
       # Draw an empty circle
@@ -225,8 +207,8 @@ module BujoPdf
       # @param cy [Float] Center y
       # @return [void]
       def draw_circle(cx, cy)
-        @pdf.line_width = 0.5
-        @pdf.stroke_circle([cx, cy], CIRCLE_RADIUS)
+        pdf.line_width = 0.5
+        pdf.stroke_circle([cx, cy], CIRCLE_RADIUS)
       end
 
       # Draw a divider line at the bottom of a row
@@ -239,20 +221,20 @@ module BujoPdf
         return if row_index >= @rows - 1
 
         line_y = row_y - @row_height
-        marker_width = MARKER_COLUMN_BOXES * @row_height
-        line_start_x = @x + marker_width
+        line_start_x = grid.x(@col + MARKER_COLUMN_BOXES)
+        line_end_x = grid.x(@col + @width_boxes)
 
-        @pdf.save_graphics_state do
-          @pdf.stroke_color(divider_color)
-          @pdf.line_width = 0.5
+        pdf.save_graphics_state do
+          pdf.stroke_color(divider_color)
+          pdf.line_width = 0.5
 
           case @divider
           when :solid
-            @pdf.stroke_line([line_start_x, line_y], [@x + @width, line_y])
+            pdf.stroke_line([line_start_x, line_y], [line_end_x, line_y])
           when :dashed
-            @pdf.dash(3, space: 2)
-            @pdf.stroke_line([line_start_x, line_y], [@x + @width, line_y])
-            @pdf.undash
+            pdf.dash(3, space: 2)
+            pdf.stroke_line([line_start_x, line_y], [line_end_x, line_y])
+            pdf.undash
           end
         end
       end
