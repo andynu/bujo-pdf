@@ -115,48 +115,20 @@ module BujoPdf
       # Draw a navigation link with background
       #
       # @param col [Integer] Column position
-      # @param text [String] Link text
+      # @param link_text [String] Link text
       # @param dest [String] Named destination
       # @param nav_color [String] Text color
       # @param border_color [String] Background color
       # @return [void]
-      def draw_nav_link(col, text, dest, nav_color, border_color)
-        link_width = @grid_system.width(3)
-        link_height = @grid_system.height(1)
-        link_x = @grid_system.x(col)
-        link_y = @grid_system.y(0)
-
-        # Draw background
-        inset = 2
-        @pdf.transparent(0.2) do
-          @pdf.fill_color border_color
-          @pdf.fill_rounded_rectangle(
-            [link_x + inset, link_y - inset],
-            link_width - (inset * 2),
-            link_height - (inset * 2),
-            2
-          )
-        end
+      def draw_nav_link(col, link_text, dest, nav_color, border_color)
+        # Draw background using box verb
+        box(col, 0, 3, 1, fill: border_color, stroke: nil, opacity: 0.2, radius: 2)
 
         # Draw text
-        @pdf.font "Helvetica", size: NAV_FONT_SIZE
-        @pdf.fill_color nav_color
-        @pdf.text_box text,
-                      at: [link_x, link_y],
-                      width: link_width,
-                      height: link_height,
-                      align: :center,
-                      valign: :center
+        text(col, 0, link_text, size: NAV_FONT_SIZE, color: nav_color, align: :center, width: 3)
 
-        # Link annotation
-        @pdf.link_annotation(
-          [link_x, link_y - link_height, link_x + link_width, link_y],
-          Dest: dest,
-          Border: [0, 0, 0]
-        )
-
-        # Reset color
-        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+        # Link annotation using grid helper
+        @grid.link(col, 0, 3, 1, dest)
       end
 
       # Draw the page header with month and year
@@ -262,17 +234,10 @@ module BujoPdf
       # @param num_rows [Integer] Number of lines
       # @return [void]
       def draw_writing_lines(start_row, num_rows)
-        @pdf.stroke_color 'E5E5E5'
-        @pdf.line_width 0.5
-
         num_rows.times do |i|
-          row = start_row + i
-          line_y = @grid_system.y(row + 1) + 3
-
-          @pdf.stroke_line [@grid_system.x(2), line_y], [@grid_system.x(41), line_y]
+          # Offset by 3pt (~0.2 boxes) within each row for better text baseline alignment
+          hline(2, start_row + i + 1 + 0.2, 39, color: 'E5E5E5', stroke: 0.5)
         end
-
-        @pdf.stroke_color '000000'
       end
 
       # Draw a subtle horizontal divider
@@ -280,11 +245,7 @@ module BujoPdf
       # @param row [Integer] Row for the divider
       # @return [void]
       def draw_section_divider(row)
-        line_y = @grid_system.y(row)
-        @pdf.stroke_color 'CCCCCC'
-        @pdf.line_width 0.5
-        @pdf.stroke_line [@grid_system.x(10), line_y], [@grid_system.x(33), line_y]
-        @pdf.stroke_color '000000'
+        hline(10, row, 23, color: 'CCCCCC', stroke: 0.5)
       end
     end
   end

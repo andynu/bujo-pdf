@@ -128,48 +128,20 @@ module BujoPdf
       # Draw a navigation link with background
       #
       # @param col [Integer] Column position
-      # @param text [String] Link text
+      # @param link_text [String] Link text
       # @param dest [String] Named destination
       # @param nav_color [String] Text color
       # @param border_color [String] Background color
       # @return [void]
-      def draw_nav_link(col, text, dest, nav_color, border_color)
-        link_width = @grid_system.width(3)
-        link_height = @grid_system.height(1)
-        link_x = @grid_system.x(col)
-        link_y = @grid_system.y(0)
+      def draw_nav_link(col, link_text, dest, nav_color, border_color)
+        # Draw background using box verb
+        box(col, 0, 3, 1, fill: border_color, stroke: nil, opacity: 0.2, radius: 2)
 
-        # Draw background
-        inset = 2
-        @pdf.transparent(0.2) do
-          @pdf.fill_color border_color
-          @pdf.fill_rounded_rectangle(
-            [link_x + inset, link_y - inset],
-            link_width - (inset * 2),
-            link_height - (inset * 2),
-            2
-          )
-        end
+        # Draw text using text verb
+        text(col, 0, link_text, size: NAV_FONT_SIZE, color: nav_color, align: :center, width: 3)
 
-        # Draw text
-        @pdf.font "Helvetica", size: NAV_FONT_SIZE
-        @pdf.fill_color nav_color
-        @pdf.text_box text,
-                      at: [link_x, link_y],
-                      width: link_width,
-                      height: link_height,
-                      align: :center,
-                      valign: :center
-
-        # Link annotation
-        @pdf.link_annotation(
-          [link_x, link_y - link_height, link_x + link_width, link_y],
-          Dest: dest,
-          Border: [0, 0, 0]
-        )
-
-        # Reset color
-        @pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+        # Link annotation using grid helper
+        @grid.link(col, 0, 3, 1, dest)
       end
 
       # Draw the quarter header with date range
