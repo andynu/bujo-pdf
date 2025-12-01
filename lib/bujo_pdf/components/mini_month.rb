@@ -91,12 +91,12 @@ module BujoPdf
 
         # Create WeekGrid for column layout (used for headers row position)
         # The WeekGrid handles quantization: grid-aligned widths when divisible by 7
-        @week_grid = WeekGrid.from_grid(
+        @week_grid = WeekGrid.new(
           canvas: @canvas,
           col: @col,
           row: @row + 1, # Headers are at row + 1 (after title)
-          width_boxes: @width,
-          height_boxes: 1,
+          width: @width,
+          height: 1,
           quantize: @quantize,
           show_headers: false # We'll draw our own headers with custom font size
         )

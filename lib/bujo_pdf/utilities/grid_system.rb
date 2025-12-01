@@ -228,7 +228,7 @@ class GridSystem
   # @option options [Boolean] :quantize Enable grid-aligned column widths (default: true)
   # @option options [Symbol] :first_day Week start day :monday or :sunday (default: :monday)
   # @option options [Boolean] :show_headers Render day labels (default: true)
-  # @option options [Float] :header_height Height for headers in points (default: DOT_SPACING)
+  # @option options [Integer] :header_height Height for headers in grid boxes (default: 1)
   # @option options [Proc] :cell_callback Optional callback for custom cell rendering
   # @return [BujoPdf::Components::WeekGrid] WeekGrid instance ready to render
   #
@@ -247,17 +247,18 @@ class GridSystem
   #   monday_rect = week.cell_rect(0)
   def week_grid(col, row, width_boxes, height_boxes, **options, &block)
     require_relative '../components/week_grid'
+    require_relative '../canvas'
 
     # If a block is provided, use it as cell_callback
     options[:cell_callback] = block if block_given?
 
-    BujoPdf::Components::WeekGrid.from_grid(
-      pdf: @pdf,
-      grid: self,
+    canvas = BujoPdf::Canvas.new(@pdf, self)
+    BujoPdf::Components::WeekGrid.new(
+      canvas: canvas,
       col: col,
       row: row,
-      width_boxes: width_boxes,
-      height_boxes: height_boxes,
+      width: width_boxes,
+      height: height_boxes,
       **options
     )
   end
