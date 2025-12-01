@@ -94,6 +94,16 @@ module BujoPdf
         klass: BujoPdf::Components::RuledList,
         factory: :new,
         defaults: { col: 5, row: 5, width: 20, entries: 5 }
+      },
+      'CornellNotes' => {
+        klass: BujoPdf::Components::CornellNotes,
+        factory: :new,
+        defaults: { content_start_col: 2, notes_start_row: 2, cues_cols: 8, notes_cols: 30, notes_main_rows: 20, summary_rows: 5 }
+      },
+      'DailySection' => {
+        klass: BujoPdf::Components::DailySection,
+        factory: :new,
+        defaults: { week_start: Date.today - Date.today.wday + 1, content_start_col: 2, content_start_row: 2, content_width_boxes: 38, daily_rows: 8 }
       }
     }.freeze
 
@@ -387,9 +397,13 @@ module BujoPdf
     def create_component(config, canvas, params)
       klass = config[:klass]
 
-      if config[:factory] == :from_grid
+      case config[:factory]
+      when :from_grid
         # WeekGrid-style factory
         klass.from_grid(canvas: canvas, **params)
+      when :raw_coords
+        # Components that take raw PDF coordinates (like TodoList)
+        klass.new(pdf: canvas.pdf, **params)
       else
         # Standard component constructor
         klass.new(canvas: canvas, **params)

@@ -232,14 +232,18 @@ Renders previous/next week navigation buttons.
 ## Specialized Components
 
 ### CornellNotes
-**Location**: `lib/bujo_pdf/components/cornell_notes.rb`
-
 Cornell notes layout with cues, notes, and summary sections.
 
-### DailySection
-**Location**: `lib/bujo_pdf/components/daily_section.rb`
+> ![CornellNotes](assets/components/cornellnotes.png)
 
+**Location**: `lib/bujo_pdf/components/cornell_notes.rb`
+
+### DailySection
 7-day section for weekly pages with day headers and ruled lines.
+
+> ![DailySection](assets/components/dailysection.png)
+
+**Location**: `lib/bujo_pdf/components/daily_section.rb`
 
 ### WeekGrid
 7-column grid for week-based displays. Supports quantization for grid alignment.
