@@ -4,6 +4,7 @@ require_relative '../base/component'
 require_relative '../utilities/styling'
 require_relative 'hline'
 require_relative 'box'
+require_relative 'text'
 
 module BujoPdf
   module Components
@@ -23,6 +24,7 @@ module BujoPdf
     class RuledList < Component
       include HLine::Mixin
       include Box::Mixin
+      include Text::Mixin
 
       # Height of each entry line in grid boxes
       LINE_HEIGHT = 2
@@ -109,23 +111,20 @@ module BujoPdf
         draw_page_box(row) if @show_page_box
       end
 
-      # Draw the entry number (right-aligned in its column)
+      # Draw the entry number (right-aligned, bottom of 2-box area)
       #
-      # @param row [Integer] Grid row
+      # @param row [Integer] Grid row (line sits at this row)
       # @param entry_num [Integer] Number to display
       # @return [void]
       def draw_entry_number(row, entry_num)
-        num_rect = grid.rect(@col, row - 1, NUM_WIDTH, LINE_HEIGHT)
-
-        pdf.bounding_box([num_rect[:x], num_rect[:y]],
-                          width: num_rect[:width],
-                          height: num_rect[:height]) do
-          pdf.text entry_num.to_s,
-                    size: 9,
-                    color: @num_color,
-                    align: :right,
-                    valign: :bottom
-        end
+        # Position text in the bottom box of the 2-box entry area
+        # Entry area is from (row - 1) to (row + 1), so bottom box starts at row
+        text(@col, row, entry_num.to_s,
+             size: 9,
+             color: @num_color,
+             align: :right,
+             width: NUM_WIDTH,
+             height: 1)
       end
 
       # Draw the ruled line for the entry title
@@ -147,7 +146,7 @@ module BujoPdf
       # @return [void]
       def draw_page_box(row)
         box_col = @col + @width - PAGE_BOX_WIDTH
-        box(@col + @width - PAGE_BOX_WIDTH, row, PAGE_BOX_WIDTH, LINE_HEIGHT,
+        box(box_col, row, PAGE_BOX_WIDTH, LINE_HEIGHT,
             stroke: 'DDDDDD', fill: nil, radius: 0)
       end
     end
