@@ -4,6 +4,7 @@ require_relative '../base/component'
 require_relative '../utilities/styling'
 require_relative '../utilities/date_calculator'
 require_relative 'h1'
+require_relative 'text'
 require_relative 'week_grid'
 
 module BujoPdf
@@ -27,6 +28,7 @@ module BujoPdf
     #
     class MiniMonth < Component
       include H1::Mixin
+      include Text::Mixin
       include Styling::Colors
 
       # Standard height for a mini month (title + headers + 6 calendar rows)
@@ -120,17 +122,16 @@ module BujoPdf
       # Draw weekday headers (M T W T F S S) using WeekGrid's each_cell pattern
       def draw_weekday_headers
         day_names = %w[M T W T F S S]
-
-        pdf.font 'Helvetica', size: 7
-        pdf.fill_color Styling::Colors.TEXT_BLACK
+        headers_height = grid.height(1)
 
         @week_grid.each_cell do |day_index, cell_rect|
-          pdf.text_box day_names[day_index],
-                        at: [cell_rect[:x], cell_rect[:y]],
-                        width: cell_rect[:width],
-                        height: grid.height(1),
-                        align: :center,
-                        valign: :center
+          text(0, 0, day_names[day_index],
+               size: 7,
+               align: :center,
+               pt_x: cell_rect[:x],
+               pt_y: cell_rect[:y],
+               pt_width: cell_rect[:width],
+               pt_height: headers_height)
         end
       end
 
