@@ -50,7 +50,7 @@ module BujoPdf
         end
 
         events
-      rescue Icalendar::InvalidStructure => e
+      rescue Icalendar::Parser::ParseError => e
         warn "Failed to parse iCal data for #{@calendar_name}: #{e.message}"
         []
       rescue StandardError => e
@@ -110,9 +110,6 @@ module BujoPdf
         start_date = convert_to_date(dtstart)
         return dates unless start_date
 
-        # Filter by year if specified
-        return dates if @year && start_date.year != @year
-
         # Handle multi-day events
         if dtend
           end_date = convert_to_date(dtend)
@@ -125,7 +122,8 @@ module BujoPdf
           end
         end
 
-        # Single-day event
+        # Single-day event - filter by year if specified
+        return dates if @year && start_date.year != @year
         dates << start_date
       end
 
