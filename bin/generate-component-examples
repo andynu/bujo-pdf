@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generate component example images for documentation
+#
+# This script renders each component in isolation to create example images
+# for COMPONENTS.md documentation.
+#
+# Usage:
+#   bin/generate-component-examples              # Generate all components
+#   bin/generate-component-examples WeekGrid Box # Generate specific components
+
+require 'fileutils'
+
+SCRIPT_DIR = File.expand_path(__dir__)
+OUTPUT_DIR = File.expand_path('../assets/components', __dir__)
+RENDER_COMPONENT = File.join(SCRIPT_DIR, 'render-component')
+
+# Components to render with their custom parameters (if any)
+COMPONENTS = {
+  'WeekGrid' => { params: 'width_boxes: 35, height_boxes: 8' },
+  'Box' => { params: 'width: 15, height: 8, fill: "F5F5F5"' },
+  'RuledLines' => { params: 'width: 25, height: 8' },
+  'GridDots' => { params: 'width: 20, height: 8' },
+  'Fieldset' => { params: 'width: 25, height: 12, legend: "Section Title"' },
+  'MiniMonth' => {},
+  'H1' => { params: 'content: "Page Title"' },
+  'H2' => { params: 'content: "Section Header"' },
+  'HLine' => { params: 'width: 25' },
+  'VLine' => { params: 'height: 8' },
+  'Text' => { params: 'content: "Body text content goes here"' },
+  'RuledList' => { params: 'width: 25, entries: 4' }
+}.freeze
+
+def main(args)
+  if args.include?('--help') || args.include?('-h')
+    show_help
+    return
+  end
+
+  FileUtils.mkdir_p(OUTPUT_DIR)
+
+  # Determine which components to generate
+  components = if args.empty?
+                 COMPONENTS.keys
+               else
+                 args.select { |a| COMPONENTS.key?(a) }
+               end
+
+  if components.empty?
+    warn "No valid components specified. Use --help to see options."
+    exit 1
+  end
+
+  puts "Generating #{components.length} component example(s)..."
+  puts "Output: #{OUTPUT_DIR}"
+  puts
+
+  results = []
+
+  components.each do |name|
+    config = COMPONENTS[name]
+    output_file = File.join(OUTPUT_DIR, "#{name.downcase}.png")
+
+    print "  #{name}... "
+
+    cmd = [RENDER_COMPONENT, name, '-o', output_file, '--no-grid']
+    cmd += ['-p', config[:params]] if config[:params]
+
+    if system(*cmd, out: File::NULL, err: File::NULL)
+      size_kb = (File.size(output_file) / 1024.0).round(1)
+      puts "OK (#{size_kb} KB)"
+      results << { name: name, success: true, size: size_kb }
+    else
+      puts "FAILED"
+      results << { name: name, success: false }
+    end
+  end
+
+  puts
+  successful = results.count { |r| r[:success] }
+  puts "Generated #{successful}/#{results.size} component images"
+  puts "Output directory: #{OUTPUT_DIR}"
+end
+
+def show_help
+  puts <<~HELP
+    bin/generate-component-examples - Generate component images for documentation
+
+    Usage:
+      bin/generate-component-examples [COMPONENTS...]
+
+    Arguments:
+      COMPONENTS          Specific components to generate (default: all)
+
+    Options:
+      --help, -h          Show this help message
+
+    Available components:
+      #{COMPONENTS.keys.join(', ')}
+
+    Output:
+      assets/components/  - Component example images for COMPONENTS.md
+
+    Examples:
+      bin/generate-component-examples                    # All components
+      bin/generate-component-examples WeekGrid MiniMonth # Specific components
+  HELP
+end
+
+main(ARGV)
