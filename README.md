@@ -27,59 +27,16 @@ Or generate your own with custom calendars using `bin/generate-examples`.
 - **Dot Grid Backgrounds** - 5mm dot spacing throughout for handwriting guidance
 - **Grid-Based Layout** - Precise 43×55 grid system for consistent alignment
 
-## Sample Pages
+## Page Gallery
 
-### Seasonal Calendar
-The opening page provides a year-at-a-glance view organized by seasons, with mini month calendars for each month.
-
-![Seasonal Calendar](docs/seasonal_calendar.png)
-
-### Year-at-a-Glance: Events
-A 12×31 grid for tracking events throughout the year. Each day is clickable and links to the corresponding weekly page. (A similar Highlights page is also included.)
-
-![Year Events](docs/year_events.png)
-
-### Multi-Year Overview
-A comprehensive view spanning multiple years with monthly indicators for long-term planning and navigation.
-
-![Multi-Year Overview](docs/multi_year_overview.png)
-
-### Weekly Pages
-One page per week with daily sections (Mon-Sun) and Cornell notes layout (Cues, Notes, Summary). Includes navigation to previous/next weeks.
-
-![Weekly Page](docs/weekly.png)
-
-### Grid Showcase
-All grid types displayed in quadrants: dot, isometric, perspective, and hexagon grids.
-
-![Grid Showcase](docs/grid_showcase.png)
-
-### Wheel Templates
-Circular planning templates for daily and yearly visualization.
-
-<details>
-<summary>View wheel templates</summary>
-
-**Daily Wheel** - 24-hour circular layout for daily planning:
-
-![Daily Wheel](docs/daily_wheel.png)
-
-**Year Wheel** - 365-day circular calendar with week markers:
-
-![Year Wheel](docs/year_wheel.png)
-
-</details>
-
-### Reference Page
-
-Grid calibration page with measurements and coordinate system documentation.
-
-<details>
-<summary>View reference page</summary>
-
-![Reference Page](docs/reference.png)
-
-</details>
+| | | | |
+|:--:|:--:|:--:|:--:|
+| Seasonal Calendar | Year at a Glance | Multi-Year Overview | Weekly Page |
+| [![Seasonal](assets/thumbnails/seasonal.png)](assets/pages/seasonal.png) | [![Year Events](assets/thumbnails/year_events.png)](assets/pages/year_events.png) | [![Multi-Year](assets/thumbnails/multi_year.png)](assets/pages/multi_year.png) | [![Weekly](assets/thumbnails/weekly.png)](assets/pages/weekly.png) |
+| Quarterly Planning | Monthly Review | Future Log | Index |
+| [![Quarterly](assets/thumbnails/quarterly.png)](assets/pages/quarterly.png) | [![Monthly Review](assets/thumbnails/monthly_review.png)](assets/pages/monthly_review.png) | [![Future Log](assets/thumbnails/future_log.png)](assets/pages/future_log.png) | [![Index](assets/thumbnails/index.png)](assets/pages/index.png) |
+| Grid Showcase | Daily Wheel | Year Wheel | Reference |
+| [![Grid Showcase](assets/thumbnails/grid_showcase.png)](assets/pages/grid_showcase.png) | [![Daily Wheel](assets/thumbnails/daily_wheel.png)](assets/pages/daily_wheel.png) | [![Year Wheel](assets/thumbnails/year_wheel.png)](assets/pages/year_wheel.png) | [![Reference](assets/thumbnails/reference.png)](assets/pages/reference.png) |
 
 ## Installation
 
