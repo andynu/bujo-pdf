@@ -70,11 +70,6 @@ module BujoPdf
       # Weekly page layout constants
       WEEKLY_TITLE_FONT_SIZE = 14
       WEEKLY_DAY_HEADER_FONT_SIZE = 9
-      WEEKLY_DAY_DATE_FONT_SIZE = 8
-      WEEKLY_DAY_HEADER_HEIGHT = 30
-      WEEKLY_DAY_HEADER_PADDING = 2
-      WEEKLY_DAY_LINES_START = 35
-      WEEKLY_DAY_LINES_PADDING = 40
       WEEKLY_DAY_LINES_COUNT = 4.0
       WEEKLY_DAY_LINE_MARGIN = 3
       WEEKLY_NOTES_HEADER_FONT_SIZE = 10
@@ -153,13 +148,8 @@ module BujoPdf
           content_width_boxes: 40,
           daily_rows: 9,
           line_count: WEEKLY_DAY_LINES_COUNT.to_i,
-          header_height: WEEKLY_DAY_HEADER_HEIGHT,
-          header_padding: WEEKLY_DAY_HEADER_PADDING,
-          lines_start: WEEKLY_DAY_LINES_START,
-          lines_padding: WEEKLY_DAY_LINES_PADDING,
           line_margin: WEEKLY_DAY_LINE_MARGIN,
-          day_header_font_size: WEEKLY_DAY_HEADER_FONT_SIZE,
-          day_date_font_size: WEEKLY_DAY_DATE_FONT_SIZE,
+          header_font_size: WEEKLY_DAY_HEADER_FONT_SIZE,
           date_config: context.date_config
         )
         section.render
