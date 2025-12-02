@@ -31,9 +31,8 @@ module BujoPdf
     class DailySection < Component
       def initialize(canvas:, week_start:, content_start_col:, content_start_row:,
                      content_width_boxes:, daily_rows:, line_count: 4,
-                     header_height: 30, header_padding: 2, lines_start: 35,
-                     lines_padding: 40, line_margin: 3, day_header_font_size: 9,
-                     day_date_font_size: 8, date_config: nil, event_store: nil)
+                     line_margin: 3, header_font_size: 9,
+                     date_config: nil, event_store: nil)
         super(canvas: canvas)
         @week_start = week_start
         @content_start_col = content_start_col
@@ -41,13 +40,8 @@ module BujoPdf
         @content_width_boxes = content_width_boxes
         @daily_rows = daily_rows
         @line_count = line_count
-        @header_height = header_height
-        @header_padding = header_padding
-        @lines_start = lines_start
-        @lines_padding = lines_padding
         @line_margin = line_margin
-        @day_header_font_size = day_header_font_size
-        @day_date_font_size = day_date_font_size
+        @header_font_size = header_font_size
         @date_config = date_config
         @event_store = event_store
       end
@@ -93,8 +87,7 @@ module BujoPdf
           show_time_labels: (day_index == 0),  # Show time labels on Monday only
           line_count: @line_count,
           line_margin: @line_margin,
-          day_header_font_size: @day_header_font_size,
-          day_date_font_size: @day_date_font_size,
+          header_font_size: @header_font_size,
           date_config: @date_config,
           event_store: @event_store
         )

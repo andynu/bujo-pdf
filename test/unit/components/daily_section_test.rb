@@ -34,13 +34,8 @@ class TestDailySection < Minitest::Test
       content_width_boxes: 39,
       daily_rows: 9,
       line_count: 5,
-      header_height: 25,
-      header_padding: 3,
-      lines_start: 40,
-      lines_padding: 35,
       line_margin: 4,
-      day_header_font_size: 10,
-      day_date_font_size: 9
+      header_font_size: 10
     )
 
     section.render
