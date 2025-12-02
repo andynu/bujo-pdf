@@ -286,13 +286,14 @@ class GridSystem
   #   grid.todo_list(5, 10, 20, 8, bullet_style: :checkbox, divider: :dashed).render
   def todo_list(col, row, width_boxes, rows, **options)
     require_relative '../components/todo_list'
+    require_relative '../canvas'
 
-    BujoPdf::Components::TodoList.from_grid(
-      pdf: @pdf,
-      grid: self,
+    canvas = BujoPdf::Canvas.new(@pdf, self)
+    BujoPdf::Components::TodoList.new(
+      canvas: canvas,
       col: col,
       row: row,
-      width_boxes: width_boxes,
+      width: width_boxes,
       rows: rows,
       **options
     )

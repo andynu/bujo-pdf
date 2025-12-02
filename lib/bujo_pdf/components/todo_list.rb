@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
-require_relative '../canvas'
 require_relative '../utilities/styling'
 require_relative 'ruled_lines'
 
@@ -30,9 +29,6 @@ module BujoPdf
     #     divider: :dashed
     #   )
     #   todo.render
-    #
-    # Or using the grid helper:
-    #   grid.todo_list(5, 10, 20, 8).render
     #
     class TodoList < Component
       include RuledLines::Mixin
@@ -88,7 +84,7 @@ module BujoPdf
         # Draw markers for each row
         @rows.times do |row_index|
           row_y = grid.y(@row + row_index)
-          draw_marker(row_index, row_y)
+          draw_marker(row_y)
         end
       end
 
@@ -120,34 +116,6 @@ module BujoPdf
         @rows * @row_height
       end
 
-      # Create a TodoList using grid coordinates (legacy adapter)
-      #
-      # Accepts either a canvas or separate pdf/grid parameters.
-      # This method exists for backward compatibility with the grid.todo_list helper.
-      #
-      # @param canvas [Canvas, nil] The canvas wrapping pdf and grid
-      # @param pdf [Prawn::Document, nil] The PDF document (deprecated, use canvas)
-      # @param grid [GridSystem, nil] The grid system instance (deprecated, use canvas)
-      # @param col [Integer] Starting column in grid coordinates
-      # @param row [Integer] Starting row in grid coordinates
-      # @param width_boxes [Integer] Width in grid boxes
-      # @param rows [Integer] Number of to-do items
-      # @param opts [Hash] Additional options to pass to TodoList constructor
-      # @return [TodoList] New TodoList instance
-      def self.from_grid(canvas: nil, pdf: nil, grid: nil, col:, row:, width_boxes:, rows:, **opts)
-        # Support both canvas and legacy pdf/grid parameters
-        actual_canvas = canvas || Canvas.new(pdf, grid)
-
-        new(
-          canvas: actual_canvas,
-          col: col,
-          row: row,
-          width: width_boxes,
-          rows: rows,
-          **opts
-        )
-      end
-
       private
 
       # Validate constructor parameters
@@ -164,10 +132,9 @@ module BujoPdf
 
       # Draw a marker (bullet, checkbox, or circle) for a row
       #
-      # @param row_index [Integer] Row index
       # @param row_y [Float] Top Y coordinate of the row
       # @return [void]
-      def draw_marker(row_index, row_y)
+      def draw_marker(row_y)
         # Center of first box in the row
         marker_center_x = grid.x(@col) + (@row_height / 2)
         marker_center_y = row_y - (@row_height / 2)

@@ -104,7 +104,7 @@ module BujoPdf
         h2(LEFT_MARGIN, HEADER_ROW, 'Index')
       end
 
-      # Draw the two-column layout with entry lines using RuledList
+      # Draw the two-column layout with entry lines using List component
       #
       # @return [void]
       def draw_two_column_layout
@@ -113,15 +113,21 @@ module BujoPdf
         # Starting entry number for this page
         base_entry = (@index_page_num - 1) * ENTRIES_PER_PAGE
 
-        # Draw left column
-        ruled_list(left.col, CONTENT_START_ROW, left.width,
-                   entries: LINES_PER_COLUMN,
-                   start_num: base_entry + 1)
+        # Draw left column (index entries: numbers + page box, 2-row height)
+        list(left.col, CONTENT_START_ROW, left.width,
+             rows: LINES_PER_COLUMN,
+             show_numbers: true,
+             start_num: base_entry + 1,
+             show_page_box: true,
+             row_height: 2)
 
         # Draw right column
-        ruled_list(right.col, CONTENT_START_ROW, right.width,
-                   entries: LINES_PER_COLUMN,
-                   start_num: base_entry + LINES_PER_COLUMN + 1)
+        list(right.col, CONTENT_START_ROW, right.width,
+             rows: LINES_PER_COLUMN,
+             show_numbers: true,
+             start_num: base_entry + LINES_PER_COLUMN + 1,
+             show_page_box: true,
+             row_height: 2)
       end
 
       # Draw vertical divider between columns

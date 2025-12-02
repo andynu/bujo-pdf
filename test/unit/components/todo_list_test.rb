@@ -258,55 +258,6 @@ class TestTodoList < Minitest::Test
     assert_in_delta expected_height, todo.height, 0.01
   end
 
-  # Grid factory method tests
-
-  def test_from_grid
-    todo = BujoPdf::Components::TodoList.from_grid(
-      pdf: @pdf,
-      grid: @grid,
-      col: 5,
-      row: 10,
-      width_boxes: 20,
-      rows: 8
-    )
-
-    assert_instance_of BujoPdf::Components::TodoList, todo
-
-    rect = todo.row_rect(0)
-    assert_in_delta @grid.x(5), rect[:x], 0.01
-    assert_in_delta @grid.y(10), rect[:y], 0.01
-    assert_in_delta @grid.width(20), rect[:width], 0.01
-  end
-
-  def test_from_grid_with_options
-    todo = BujoPdf::Components::TodoList.from_grid(
-      pdf: @pdf,
-      grid: @grid,
-      col: 5,
-      row: 10,
-      width_boxes: 20,
-      rows: 8,
-      bullet_style: :checkbox,
-      divider: :solid
-    )
-
-    # Should render without error
-    todo.render
-  end
-
-  def test_from_grid_with_canvas
-    todo = BujoPdf::Components::TodoList.from_grid(
-      canvas: @canvas,
-      col: 5,
-      row: 10,
-      width_boxes: 20,
-      rows: 8
-    )
-
-    assert_instance_of BujoPdf::Components::TodoList, todo
-    todo.render  # Should render without error
-  end
-
   # Grid helper method tests
 
   def test_grid_helper_method
