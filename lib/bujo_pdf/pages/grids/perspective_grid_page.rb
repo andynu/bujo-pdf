@@ -40,8 +40,11 @@ module BujoPdf
 
         # Render full-page perspective grid
         def render
+          # Draw perspective grid using pre-created stamp (efficient)
+          draw_grid(:perspective)
+
+          # Draw title/label at top
           draw_title
-          draw_perspective_grid
         end
 
         private
@@ -57,23 +60,6 @@ module BujoPdf
                             height: title_box[:height] - 10) do
             @pdf.text 'Perspective Grid (1-point)', size: 8, color: 'AAAAAA'
           end
-        end
-
-        # Draw perspective grid across entire page
-        #
-        # @return [void]
-        def draw_perspective_grid
-          renderer = Utilities::GridFactory.create(
-            :perspective,
-            @pdf,
-            Styling::Grid::PAGE_WIDTH,
-            Styling::Grid::PAGE_HEIGHT,
-            num_points: 1,
-            draw_guide_rectangles: true,
-            num_converging: 24,
-            line_width: 0.35
-          )
-          renderer.render
         end
       end
     end

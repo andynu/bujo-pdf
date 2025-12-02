@@ -46,8 +46,8 @@ module BujoPdf
         # Create PDF document
         pdf = create_document(context)
 
-        # Create dot grid stamp for efficiency
-        create_dot_grid_stamp(pdf)
+        # Create grid stamps for all grid types for efficiency
+        create_grid_stamps(pdf)
 
         # Build render context base
         base_context = build_base_context(params, context)
@@ -118,18 +118,52 @@ module BujoPdf
         )
       end
 
-      # Create the dot grid stamp for efficient rendering.
+      # Create stamps for all grid types for efficient rendering.
+      #
+      # Creates a reusable stamp for each supported grid type. This reduces
+      # PDF file size significantly when multiple pages use the same grid.
+      #
+      # Stamp naming convention:
+      # - :dots -> 'page_dots' (for backward compatibility)
+      # - :graph -> 'grid_graph'
+      # - :lined -> 'grid_lined'
+      # - :isometric -> 'grid_isometric'
+      # - :perspective -> 'grid_perspective'
+      # - :hexagon -> 'grid_hexagon'
       #
       # @param pdf [Prawn::Document] The PDF document
-      def create_dot_grid_stamp(pdf)
+      def create_grid_stamps(pdf)
         require_relative '../utilities/dot_grid'
+        require_relative '../utilities/grid_factory'
 
-        pdf.create_stamp('page_dots') do
-          DotGrid.draw(
-            pdf,
-            Styling::Grid::PAGE_WIDTH,
-            Styling::Grid::PAGE_HEIGHT
-          )
+        Utilities::GridFactory.supported_types.each do |type|
+          # Use 'page_dots' for dots (backward compatibility), 'grid_<type>' for others
+          stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+          options = grid_stamp_options(type)
+          DotGrid.create_stamp(pdf, stamp_name, type: type, **options)
+        end
+      end
+
+      # Get default options for creating stamps for each grid type.
+      #
+      # Different grid types have different rendering defaults that need
+      # to match the original page implementations.
+      #
+      # @param type [Symbol] Grid type
+      # @return [Hash] Options to pass to the renderer
+      def grid_stamp_options(type)
+        case type
+        when :perspective
+          # 1-point perspective with guide rectangles (matching original PerspectiveGridPage)
+          { num_points: 1, draw_guide_rectangles: true, num_converging: 24, line_width: 0.35 }
+        when :hexagon
+          # Flat-top orientation with slightly thicker lines (matching original HexagonGridPage)
+          { line_width: 0.35, orientation: :flat_top }
+        when :isometric
+          # Standard isometric with default line width
+          { line_width: 0.25 }
+        else
+          {}
         end
       end
 

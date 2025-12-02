@@ -40,11 +40,11 @@ module BujoPdf
 
         # Render full-page graph grid
         def render
+          # Draw graph grid using pre-created stamp (efficient)
+          draw_grid(:graph)
+
           # Draw title/label at top
           draw_title
-
-          # Draw graph grid (vertical and horizontal lines at every grid position)
-          draw_graph_grid
         end
 
         private
@@ -62,29 +62,6 @@ module BujoPdf
                             height: title_box[:height] - 10) do
             @pdf.text 'Graph Grid (5mm)', size: 8, color: 'AAAAAA'
           end
-        end
-
-        # Draw graph grid by rendering lines at every grid intersection
-        #
-        # @return [void]
-        def draw_graph_grid
-          @pdf.stroke_color 'CCCCCC'  # Light gray matching dot grid
-          @pdf.line_width 0.25
-
-          # Draw vertical lines at each column
-          (0..43).each do |col|
-            x = @grid_system.x(col)
-            @pdf.line [x, 0], [x, @grid_system.page_height]
-          end
-
-          # Draw horizontal lines at each row
-          (0..55).each do |row|
-            y = @grid_system.y(row)
-            @pdf.line [0, y], [@grid_system.page_width, y]
-          end
-
-          @pdf.stroke
-          @pdf.stroke_color '000000'  # Reset to black
         end
       end
     end

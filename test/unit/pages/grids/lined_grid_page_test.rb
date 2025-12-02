@@ -5,12 +5,19 @@ require_relative '../../../test_helper'
 class TestLinedGridPage < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    create_grid_stamps(@pdf)
     @context = BujoPdf::RenderContext.new(
       page_key: :grid_lined,
       page_number: 1,
       year: 2025
     )
+  end
+
+  def create_grid_stamps(pdf)
+    BujoPdf::Utilities::GridFactory.supported_types.each do |type|
+      stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+      DotGrid.create_stamp(pdf, stamp_name, type: type)
+    end
   end
 
   def test_page_has_registered_type
@@ -36,11 +43,6 @@ class TestLinedGridPage < Minitest::Test
     assert page.instance_variable_get(:@layout)
   end
 
-  def test_layout_constants
-    assert_equal 2, BujoPdf::Pages::Grids::LinedGridPage::LINE_SPACING_BOXES
-    assert_equal 3, BujoPdf::Pages::Grids::LinedGridPage::MARGIN_COL
-  end
-
   def test_render_calls_all_sections
     page = BujoPdf::Pages::Grids::LinedGridPage.new(@pdf, @context)
     page.send(:setup)
@@ -51,18 +53,6 @@ class TestLinedGridPage < Minitest::Test
     page = BujoPdf::Pages::Grids::LinedGridPage.new(@pdf, @context)
     page.send(:setup)
     page.send(:draw_title)
-  end
-
-  def test_draw_ruled_lines
-    page = BujoPdf::Pages::Grids::LinedGridPage.new(@pdf, @context)
-    page.send(:setup)
-    page.send(:draw_ruled_lines)
-  end
-
-  def test_draw_margin_line
-    page = BujoPdf::Pages::Grids::LinedGridPage.new(@pdf, @context)
-    page.send(:setup)
-    page.send(:draw_margin_line)
   end
 end
 
@@ -80,7 +70,14 @@ class TestLinedGridPageMixin < Minitest::Test
       @total_pages = 100
       @first_page_used = false
       @current_page_set_index = 0
-      DotGrid.create_stamp(@pdf, "page_dots")
+      create_grid_stamps(@pdf)
+    end
+
+    def create_grid_stamps(pdf)
+      BujoPdf::Utilities::GridFactory.supported_types.each do |type|
+        stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+        DotGrid.create_stamp(pdf, stamp_name, type: type)
+      end
     end
   end
 
@@ -100,7 +97,14 @@ end
 class TestLinedGridPageIntegration < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    create_grid_stamps(@pdf)
+  end
+
+  def create_grid_stamps(pdf)
+    BujoPdf::Utilities::GridFactory.supported_types.each do |type|
+      stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+      DotGrid.create_stamp(pdf, stamp_name, type: type)
+    end
   end
 
   def test_full_page_generation

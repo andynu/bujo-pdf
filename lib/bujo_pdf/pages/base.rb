@@ -413,6 +413,25 @@ module BujoPdf
         @pdf.stamp("page_dots")
       end
 
+      # Draw a grid of the specified type across the entire page.
+      #
+      # Uses pre-created stamps for efficiency. Available grid types:
+      # - :dots - Standard dot grid (5mm)
+      # - :graph - Square grid with lines
+      # - :lined - Ruled lines with margin
+      # - :isometric - Isometric grid (30-60-90°)
+      # - :perspective - Perspective grid
+      # - :hexagon - Hexagon grid
+      #
+      # @param type [Symbol] Grid type to draw
+      # @return [void]
+      # @raise [ArgumentError] if grid type is not supported
+      def draw_grid(type)
+        # Use 'page_dots' for dots (backward compatibility), 'grid_<type>' for others
+        stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+        @pdf.stamp(stamp_name)
+      end
+
       # Draw diagnostic grid overlay for layout debugging.
       #
       # This is a convenience method that delegates to the Diagnostics utility.

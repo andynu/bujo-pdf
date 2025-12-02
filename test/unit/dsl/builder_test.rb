@@ -129,13 +129,18 @@ class TestPdfBuilderPrivateMethods < Minitest::Test
     assert_kind_of Prawn::Document, document
   end
 
-  def test_create_dot_grid_stamp
+  def test_create_grid_stamps
     pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
 
-    @builder.send(:create_dot_grid_stamp, pdf)
+    @builder.send(:create_grid_stamps, pdf)
 
-    # Stamp should be defined (can stamp without error)
+    # All grid stamps should be defined (can stamp without error)
     pdf.stamp('page_dots')
+    pdf.stamp('grid_graph')
+    pdf.stamp('grid_lined')
+    pdf.stamp('grid_isometric')
+    pdf.stamp('grid_perspective')
+    pdf.stamp('grid_hexagon')
   end
 
   def test_build_base_context
