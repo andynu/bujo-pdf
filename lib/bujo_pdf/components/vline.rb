@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
-require_relative '../utilities/styling'
+require_relative '../utilities/grid_rect'
 require_relative 'erase_dots'
 
 module BujoPdf
@@ -33,8 +33,9 @@ module BujoPdf
         # @param height [Numeric] Height in grid boxes, supports floats
         # @param color [String] Line color as hex string (default: 'CCCCCC')
         # @param stroke [Float] Line width in points (default: 0.5)
+        # @param align [Symbol] Alignment within the grid box: :left, :center, :right (default: :left)
         # @return [void]
-        def vline(col, row, height, color: 'CCCCCC', stroke: 0.5)
+        def vline(col, row, height, color: 'CCCCCC', stroke: 0.5, align: :left)
           c = @canvas || Canvas.new(@pdf, @grid)
           VLine.new(
             canvas: c,
@@ -42,7 +43,8 @@ module BujoPdf
             row: row,
             height: height,
             color: color,
-            stroke: stroke
+            stroke: stroke,
+            align: align
           ).render
         end
       end
@@ -55,13 +57,13 @@ module BujoPdf
       # @param height [Numeric] Height in grid boxes
       # @param color [String] Line color as hex string
       # @param stroke [Float] Line width in points
-      def initialize(canvas:, col:, row:, height:, color: 'CCCCCC', stroke: 0.5)
+      # @param align [Symbol] Alignment within the grid box: :left, :center, :right
+      def initialize(canvas:, col:, row:, height:, color: 'CCCCCC', stroke: 0.5, align: :left)
         super(canvas: canvas)
-        @col = col
-        @row = row
-        @height = height
+        @rect = GridRect.new(col, row, 1, height)
         @color = color
         @stroke = stroke
+        @align = align
       end
 
       # Render the vertical line, erasing dots if on-grid
@@ -70,17 +72,14 @@ module BujoPdf
       def render
         # Only erase dots if positioned exactly on grid intersections
         if on_grid?
-          erase_dots(@col.to_i, @row.to_i, 0, @height.to_i)
+          erase_dots(@rect.col.to_i, @rect.row.to_i, 0, @rect.height.to_i)
         end
 
-        # Draw the line
-        x = grid.x(@col)
-        y_start = grid.y(@row)
-        y_end = grid.y(@row + @height)
-
+        # Draw the line at the aligned x position
+        x = aligned_x
         pdf.stroke_color @color
         pdf.line_width @stroke
-        pdf.stroke_line [x, y_start], [x, y_end]
+        pdf.stroke_line [x, @rect.y], [x, @rect.y - @rect.height_pt]
 
         # Restore defaults
         pdf.stroke_color '000000'
@@ -89,19 +88,23 @@ module BujoPdf
 
       private
 
+      # Calculate x position based on alignment within the grid box
+      #
+      # @return [Float]
+      def aligned_x
+        case @align
+        when :left then @rect.x
+        when :center then @rect.x + (@rect.width_pt / 2)
+        when :right then @rect.x + @rect.width_pt
+        else raise ArgumentError, "Unknown align: #{@align.inspect}"
+        end
+      end
+
       # Check if all positions are on grid (integer values)
       #
       # @return [Boolean]
       def on_grid?
-        integer?(@col) && integer?(@row) && integer?(@height)
-      end
-
-      # Check if a number is effectively an integer
-      #
-      # @param num [Numeric] Number to check
-      # @return [Boolean]
-      def integer?(num)
-        num == num.to_i
+        [@rect.col, @rect.row, @rect.height].all? { |n| n == n.to_i }
       end
     end
   end
