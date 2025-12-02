@@ -18,6 +18,10 @@ class MockPDFForGridSystem
   def link_annotation(*args)
     @calls << [:link_annotation, args]
   end
+
+  def fill_color(*args)
+    @calls << [:fill_color, args]
+  end
 end
 
 class TestGridSystem < Minitest::Test
