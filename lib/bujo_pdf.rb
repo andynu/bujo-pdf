@@ -58,6 +58,7 @@ require_relative 'bujo_pdf/components/h2'
 require_relative 'bujo_pdf/components/mini_month'
 require_relative 'bujo_pdf/components/ruled_list'
 require_relative 'bujo_pdf/components/layout_helpers'
+require_relative 'bujo_pdf/components/link_box'
 require_relative 'bujo_pdf/components/all'
 
 # Load layouts
