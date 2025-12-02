@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../utilities/styling'
 require_relative '../utilities/grid_rect'
 
 module BujoPdf
