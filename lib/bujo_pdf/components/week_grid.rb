@@ -160,6 +160,10 @@ module BujoPdf
       #
       # @return [void]
       def draw_headers
+        require_relative '../themes/theme_registry'
+        text_color = BujoPdf::Themes.current[:colors][:text_black]
+
+        @pdf.fill_color text_color
         @column_widths.each_with_index do |col_width, i|
           x_offset = @column_widths[0...i].sum
           @pdf.text_box DAY_LABELS[i],
