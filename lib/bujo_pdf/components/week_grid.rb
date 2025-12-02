@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../utilities/styling'
+require_relative '../utilities/grid_rect'
 
 module BujoPdf
   module Components
@@ -56,10 +57,7 @@ module BujoPdf
       def initialize(canvas:, col:, row:, width:, height:, quantize: true, first_day: :monday,
                      show_headers: true, header_height: 1, cell_callback: nil)
         @canvas = canvas
-        @col = col
-        @row = row
-        @width = width
-        @height = height
+        @rect = GridRect.new(col, row, width, height)
         @quantize = quantize
         @first_day = first_day
         @show_headers = show_headers
@@ -69,7 +67,6 @@ module BujoPdf
         validate_parameters
 
         @pdf = canvas.pdf
-        @grid = canvas.grid
         @column_widths = calculate_column_widths
       end
 
@@ -92,9 +89,9 @@ module BujoPdf
       def cell_rect(day_index)
         raise ArgumentError, "day_index must be 0-6, got #{day_index}" unless (0..6).cover?(day_index)
 
-        col_x = x_pt + @column_widths[0...day_index].sum
-        cell_y = @show_headers ? y_pt - header_height_pt : y_pt
-        cell_height = height_pt - (@show_headers ? header_height_pt : 0)
+        col_x = @rect.x + @column_widths[0...day_index].sum
+        cell_y = @show_headers ? @rect.y - header_height_pt : @rect.y
+        cell_height = @rect.height_pt - (@show_headers ? header_height_pt : 0)
 
         {
           x: col_x,
@@ -121,29 +118,9 @@ module BujoPdf
 
       private
 
-      # Convert grid column to x-coordinate in points
-      def x_pt
-        @grid.x(@col)
-      end
-
-      # Convert grid row to y-coordinate in points
-      def y_pt
-        @grid.y(@row)
-      end
-
-      # Convert grid width to points
-      def width_pt
-        @grid.width(@width)
-      end
-
-      # Convert grid height to points
-      def height_pt
-        @grid.height(@height)
-      end
-
       # Convert header height from grid boxes to points
       def header_height_pt
-        @grid.height(@header_height)
+        @header_height * GridRect::DOT_SPACING
       end
 
       # Validate constructor parameters
@@ -152,12 +129,12 @@ module BujoPdf
       # @return [void]
       def validate_parameters
         raise ArgumentError, 'canvas is required' if @canvas.nil?
-        raise ArgumentError, 'width must be positive' if @width <= 0
-        raise ArgumentError, 'height must be positive' if @height <= 0
+        raise ArgumentError, 'width must be positive' if @rect.width <= 0
+        raise ArgumentError, 'height must be positive' if @rect.height <= 0
         raise ArgumentError, 'header_height must be non-negative' if @header_height.negative?
         raise ArgumentError, 'first_day must be :monday or :sunday' unless %i[monday sunday].include?(@first_day)
 
-        if @show_headers && @header_height > @height
+        if @show_headers && @header_height > @rect.height
           raise ArgumentError, 'header_height cannot exceed total height when show_headers is true'
         end
       end
@@ -170,14 +147,13 @@ module BujoPdf
       #
       # @return [Array<Float>] Array of 7 column widths in points
       def calculate_column_widths
-        if @quantize && (@width % DAYS_IN_WEEK).zero?
+        if @quantize && (@rect.width % DAYS_IN_WEEK).zero?
           # Quantized mode: equal box-aligned widths
-          boxes_per_column = @width / DAYS_IN_WEEK
-          Array.new(DAYS_IN_WEEK, @grid.width(boxes_per_column))
+          boxes_per_column = @rect.width / DAYS_IN_WEEK
+          Array.new(DAYS_IN_WEEK, boxes_per_column * GridRect::DOT_SPACING)
         else
           # Proportional mode: divide available space equally
-          width_per_column = width_pt / DAYS_IN_WEEK.to_f
-          Array.new(DAYS_IN_WEEK, width_per_column)
+          Array.new(DAYS_IN_WEEK, @rect.width_pt / DAYS_IN_WEEK.to_f)
         end
       end
 
@@ -188,7 +164,7 @@ module BujoPdf
         @column_widths.each_with_index do |col_width, i|
           x_offset = @column_widths[0...i].sum
           @pdf.text_box DAY_LABELS[i],
-                        at: [x_pt + x_offset, y_pt],
+                        at: [@rect.x + x_offset, @rect.y],
                         width: col_width,
                         height: header_height_pt,
                         align: :center,
