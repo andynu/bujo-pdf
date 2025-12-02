@@ -31,8 +31,10 @@ module BujoPdf
         # @param height [Integer] Number of lines/rows
         # @param color [String] Line color as hex string (default: 'E5E5E5')
         # @param stroke [Float] Line width in points (default: 0.5)
+        # @param dash [Array, nil] Dash pattern [length, space] or nil for solid (default: nil)
+        # @param redraw_dots [Boolean] Whether to redraw dots on top of lines (default: true)
         # @return [void]
-        def ruled_lines(col, row, width, height, color: 'E5E5E5', stroke: 0.5)
+        def ruled_lines(col, row, width, height, color: 'E5E5E5', stroke: 0.5, dash: nil, redraw_dots: true)
           c = @canvas || Canvas.new(@pdf, @grid)
           RuledLines.new(
             canvas: c,
@@ -41,7 +43,9 @@ module BujoPdf
             width: width,
             height: height,
             color: color,
-            stroke: stroke
+            stroke: stroke,
+            dash: dash,
+            redraw_dots: redraw_dots
           ).render
         end
       end
@@ -55,7 +59,9 @@ module BujoPdf
       # @param height [Integer] Number of lines/rows
       # @param color [String] Line color as hex string
       # @param stroke [Float] Line width in points
-      def initialize(canvas:, col:, row:, width:, height:, color: 'E5E5E5', stroke: 0.5)
+      # @param dash [Array, nil] Dash pattern [length, space] or nil for solid
+      # @param redraw_dots [Boolean] Whether to redraw dots on top of lines
+      def initialize(canvas:, col:, row:, width:, height:, color: 'E5E5E5', stroke: 0.5, dash: nil, redraw_dots: true)
         super(canvas: canvas)
         @col = col
         @row = row
@@ -63,14 +69,16 @@ module BujoPdf
         @height = height
         @color = color
         @stroke = stroke
+        @dash = dash
+        @redraw_dots = redraw_dots
       end
 
-      # Render ruled lines with dots on top
+      # Render ruled lines with optional dots on top
       #
       # @return [void]
       def render
         draw_lines
-        redraw_dots
+        redraw_dots_if_enabled
       end
 
       private
@@ -78,6 +86,11 @@ module BujoPdf
       def draw_lines
         pdf.stroke_color @color
         pdf.line_width @stroke
+
+        # Apply dash pattern if specified
+        if @dash
+          pdf.dash(@dash[0], space: @dash[1])
+        end
 
         # Draw one line per grid row, aligned exactly with grid positions
         @height.times do |i|
@@ -88,12 +101,13 @@ module BujoPdf
         end
 
         # Restore defaults
+        pdf.undash if @dash
         pdf.stroke_color '000000'
         pdf.line_width 0.5
       end
 
-      def redraw_dots
-        grid_dots(@col, @row, @width, @height)
+      def redraw_dots_if_enabled
+        grid_dots(@col, @row, @width, @height) if @redraw_dots
       end
     end
   end

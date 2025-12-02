@@ -274,6 +274,130 @@ class TestRuledLinesMixin < Minitest::Test
   end
 end
 
+class TestRuledLinesDashOption < Minitest::Test
+  def setup
+    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+    @grid = GridSystem.new(@pdf)
+    @canvas = BujoPdf::Canvas.new(@pdf, @grid)
+  end
+
+  def test_initialize_with_dash
+    ruled = BujoPdf::Components::RuledLines.new(
+      canvas: @canvas,
+      col: 2,
+      row: 5,
+      width: 20,
+      height: 10,
+      dash: [3, 2]
+    )
+    ruled.render
+  end
+
+  def test_dash_calls_dash_method
+    mock_pdf = MockPDF.new
+    grid = GridSystem.new(mock_pdf)
+    canvas = BujoPdf::Canvas.new(mock_pdf, grid)
+
+    ruled = BujoPdf::Components::RuledLines.new(
+      canvas: canvas,
+      col: 2,
+      row: 5,
+      width: 20,
+      height: 5,
+      dash: [3, 2]
+    )
+    ruled.render
+
+    assert mock_pdf.called?(:dash), "Expected dash to be called"
+    dash_call = mock_pdf.last_call(:dash)
+    assert_equal 3, dash_call[:args][0], "Expected dash length 3"
+    assert_equal({ space: 2 }, dash_call[:kwargs], "Expected space: 2")
+  end
+
+  def test_dash_resets_with_undash
+    mock_pdf = MockPDF.new
+    grid = GridSystem.new(mock_pdf)
+    canvas = BujoPdf::Canvas.new(mock_pdf, grid)
+
+    ruled = BujoPdf::Components::RuledLines.new(
+      canvas: canvas,
+      col: 2,
+      row: 5,
+      width: 20,
+      height: 5,
+      dash: [3, 2]
+    )
+    ruled.render
+
+    assert mock_pdf.called?(:undash), "Expected undash to be called"
+  end
+
+  def test_no_dash_by_default
+    mock_pdf = MockPDF.new
+    grid = GridSystem.new(mock_pdf)
+    canvas = BujoPdf::Canvas.new(mock_pdf, grid)
+
+    ruled = BujoPdf::Components::RuledLines.new(
+      canvas: canvas,
+      col: 2,
+      row: 5,
+      width: 20,
+      height: 5
+    )
+    ruled.render
+
+    refute mock_pdf.called?(:dash), "Expected no dash call for solid lines"
+  end
+end
+
+class TestRuledLinesRedrawDotsOption < Minitest::Test
+  def setup
+    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+    @grid = GridSystem.new(@pdf)
+    @canvas = BujoPdf::Canvas.new(@pdf, @grid)
+  end
+
+  def test_redraw_dots_true_by_default
+    mock_pdf = MockPDF.new
+    grid = GridSystem.new(mock_pdf)
+    canvas = BujoPdf::Canvas.new(mock_pdf, grid)
+
+    ruled = BujoPdf::Components::RuledLines.new(
+      canvas: canvas,
+      col: 2,
+      row: 5,
+      width: 20,
+      height: 10
+    )
+    ruled.render
+
+    assert mock_pdf.called?(:fill_circle), "Expected dots to be redrawn by default"
+  end
+
+  def test_redraw_dots_false
+    mock_pdf = MockPDF.new
+    grid = GridSystem.new(mock_pdf)
+    canvas = BujoPdf::Canvas.new(mock_pdf, grid)
+
+    ruled = BujoPdf::Components::RuledLines.new(
+      canvas: canvas,
+      col: 2,
+      row: 5,
+      width: 20,
+      height: 10,
+      redraw_dots: false
+    )
+    ruled.render
+
+    refute mock_pdf.called?(:fill_circle), "Expected no dots when redraw_dots: false"
+  end
+
+  def test_mixin_with_dash_and_redraw_dots
+    component = TestRuledLinesMixin::TestComponent.new
+    component.ruled_lines(2, 5, 20, 10, dash: [3, 2], redraw_dots: false)
+  end
+end
+
 class TestRuledLinesEdgeCases < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
