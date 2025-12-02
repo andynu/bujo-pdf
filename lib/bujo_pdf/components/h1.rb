@@ -10,10 +10,10 @@ module BujoPdf
     # Simple header component that renders bold text positioned at a grid
     # location. Width can be explicit or determined by text content.
     #
-    # Supports three vertical positions:
+    # Supports three vertical alignments:
     # - :center (default) - centered within the grid box
-    # - :superscript - centered on the top dot row (half box up)
-    # - :subscript - centered on the bottom dot row (half box down)
+    # - :top - centered on the top dot row (half box up)
+    # - :bottom - centered on the bottom dot row (half box down)
     #
     # Supports text alignment:
     # - :left (default) - left-aligned
@@ -23,7 +23,7 @@ module BujoPdf
     # Example usage in a page:
     #   h1(2, 1, "Index")
     #   h1(2, 1, "January 2025", color: '333333')
-    #   h1(2, 1, "Legend", position: :subscript)
+    #   h1(2, 1, "Legend", valign: :bottom)
     #   h1(2, 1, "Centered", width: 20, align: :center)
     #
     class H1 < Component
@@ -43,11 +43,11 @@ module BujoPdf
         # @param content [String] Header text
         # @param color [String, nil] Text color as hex string (default: theme text_black)
         # @param style [Symbol] Font style :bold, :normal, :italic (default: :bold)
-        # @param position [Symbol] Vertical position :center, :superscript, :subscript (default: :center)
+        # @param valign [Symbol] Vertical alignment :center, :top, :bottom (default: :center)
         # @param align [Symbol] Text alignment :left, :center, :right (default: :left)
         # @param width [Integer, nil] Width in grid boxes (default: nil, auto-sized)
         # @return [void]
-        def h1(col, row, content, color: nil, style: :bold, position: :center, align: :left, width: nil)
+        def h1(col, row, content, color: nil, style: :bold, valign: :center, align: :left, width: nil)
           c = @canvas || Canvas.new(@pdf, @grid)
           H1.new(
             canvas: c,
@@ -56,7 +56,7 @@ module BujoPdf
             content: content,
             color: color,
             style: style,
-            position: position,
+            valign: valign,
             align: align,
             width: width
           ).render
@@ -71,17 +71,17 @@ module BujoPdf
       # @param content [String] Header text
       # @param color [String, nil] Text color as hex string
       # @param style [Symbol] Font style
-      # @param position [Symbol] Vertical position :center, :superscript, :subscript
+      # @param valign [Symbol] Vertical alignment :center, :top, :bottom
       # @param align [Symbol] Text alignment :left, :center, :right
       # @param width [Integer, nil] Width in grid boxes
-      def initialize(canvas:, col:, row:, content:, color: nil, style: :bold, position: :center, align: :left, width: nil)
+      def initialize(canvas:, col:, row:, content:, color: nil, style: :bold, valign: :center, align: :left, width: nil)
         super(canvas: canvas)
         @col = col
         @row = row
         @content = content
         @color = color
         @style = style
-        @position = position
+        @valign = valign
         @align = align
         @width = width
       end
@@ -95,7 +95,7 @@ module BujoPdf
              height: 1,
              color: @color,
              style: @style,
-             position: @position,
+             valign: @valign,
              align: @align,
              width: @width)
       end

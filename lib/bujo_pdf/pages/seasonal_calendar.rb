@@ -133,9 +133,9 @@ module BujoPdf
         box(start_col, start_row, width_boxes, height_boxes,
             stroke: Styling::Colors.BORDERS, fill: nil)
 
-        # Draw season label with superscript positioning (centered on top border)
+        # Draw season label with top positioning (centered on top border)
         h1(start_col + 1, start_row, legend,
-           position: :superscript,
+           valign: :top,
            color: Styling::Colors.BORDERS)
       end
 

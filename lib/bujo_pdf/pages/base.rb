@@ -348,7 +348,7 @@ module BujoPdf
 
         text(col, row, context.set.label,
              size: 9, color: '999999', width: width,
-             align: :center, position: :subscript)
+             align: :center, valign: :bottom)
       end
 
       # Add a component to be rendered.

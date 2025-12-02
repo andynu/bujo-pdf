@@ -150,13 +150,13 @@ module BujoPdf
       def draw_header
         # Main title: Q1 2025
         text(2, HEADER_ROW, "Q#{@quarter} #{@year}",
-             size: 20, style: :bold, height: 2, position: :subscript)
+             size: 20, style: :bold, height: 2, valign: :bottom)
 
         # Subtitle: date range
         start_month = Date::MONTHNAMES[@start_date.month]
         end_month = Date::MONTHNAMES[@end_date.month]
         text(2, HEADER_ROW + 2, "#{start_month} - #{end_month}",
-             size: 12, color: '666666', height: 1, position: :center)
+             size: 12, color: '666666', height: 1, valign: :center)
       end
 
       # Draw the goals section with prompts
@@ -164,7 +164,7 @@ module BujoPdf
       # @return [void]
       def draw_goals_section
         # h1 header for "Quarter Goals"
-        h1(2, GOALS_START_ROW, "Quarter Goals", position: :subscript)
+        h1(2, GOALS_START_ROW, "Quarter Goals", valign: :bottom)
 
         # Prompt text
         prompt_row = GOALS_START_ROW + GOALS_HEADER_HEIGHT
@@ -191,7 +191,7 @@ module BujoPdf
         # Number prefix (right-aligned)
         text(2, row, "#{number}.", size: 10, color: '999999',
              width: GOALS_NUM_COL_WIDTH, height: GOALS_LINE_HEIGHT,
-             align: :right, position: :subscript)
+             align: :right, valign: :bottom)
 
         # Ruled line for writing - single line at bottom of entry area
         line_col = 2 + GOALS_NUM_COL_WIDTH + 1
@@ -204,7 +204,7 @@ module BujoPdf
       # @return [void]
       def draw_week_grid
         # h1 header for "12-Week Focus"
-        h1(2, WEEK_GRID_START_ROW, "12-Week Focus", position: :subscript)
+        h1(2, WEEK_GRID_START_ROW, "12-Week Focus", valign: :bottom)
 
         # Calculate first week number of this quarter
         first_week = calculate_first_week_of_quarter
@@ -236,7 +236,7 @@ module BujoPdf
         # Week label - right-aligned to col 4 (matching goals list indent)
         text(2, row, "Week #{week_num}", size: 9, color: '666666',
              width: GOALS_NUM_COL_WIDTH, height: 1,
-             align: :right, position: :center)
+             align: :right, valign: :center)
 
         # Ruled line for notes - at bottom of row area, starting at col 6
         line_col = 6
