@@ -40,8 +40,11 @@ module BujoPdf
 
         # Render full-page hexagon grid
         def render
+          # Draw hexagon grid using pre-created stamp (efficient)
+          draw_grid(:hexagon)
+
+          # Draw title/label at top
           draw_title
-          draw_hexagon_grid
         end
 
         private
@@ -57,21 +60,6 @@ module BujoPdf
                             height: title_box[:height] - 10) do
             @pdf.text 'Hexagon Grid', size: 8, color: 'AAAAAA'
           end
-        end
-
-        # Draw hexagon grid across entire page
-        #
-        # @return [void]
-        def draw_hexagon_grid
-          renderer = Utilities::GridFactory.create(
-            :hexagon,
-            @pdf,
-            Styling::Grid::PAGE_WIDTH,
-            Styling::Grid::PAGE_HEIGHT,
-            line_width: 0.35,
-            orientation: :flat_top
-          )
-          renderer.render
         end
       end
     end

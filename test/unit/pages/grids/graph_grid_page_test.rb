@@ -5,12 +5,20 @@ require_relative '../../../test_helper'
 class TestGraphGridPage < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    create_grid_stamps(@pdf)
     @context = BujoPdf::RenderContext.new(
       page_key: :grid_graph,
       page_number: 1,
       year: 2025
     )
+  end
+
+  def create_grid_stamps(pdf)
+    # Create stamps for all grid types
+    BujoPdf::Utilities::GridFactory.supported_types.each do |type|
+      stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+      DotGrid.create_stamp(pdf, stamp_name, type: type)
+    end
   end
 
   def test_page_has_registered_type
@@ -48,11 +56,6 @@ class TestGraphGridPage < Minitest::Test
     page.send(:draw_title)
   end
 
-  def test_draw_graph_grid
-    page = BujoPdf::Pages::Grids::GraphGridPage.new(@pdf, @context)
-    page.send(:setup)
-    page.send(:draw_graph_grid)
-  end
 end
 
 class TestGraphGridPageMixin < Minitest::Test
@@ -69,7 +72,14 @@ class TestGraphGridPageMixin < Minitest::Test
       @total_pages = 100
       @first_page_used = false
       @current_page_set_index = 0
-      DotGrid.create_stamp(@pdf, "page_dots")
+      create_grid_stamps(@pdf)
+    end
+
+    def create_grid_stamps(pdf)
+      BujoPdf::Utilities::GridFactory.supported_types.each do |type|
+        stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+        DotGrid.create_stamp(pdf, stamp_name, type: type)
+      end
     end
   end
 
@@ -89,7 +99,14 @@ end
 class TestGraphGridPageIntegration < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    create_grid_stamps(@pdf)
+  end
+
+  def create_grid_stamps(pdf)
+    BujoPdf::Utilities::GridFactory.supported_types.each do |type|
+      stamp_name = type == :dots ? 'page_dots' : "grid_#{type}"
+      DotGrid.create_stamp(pdf, stamp_name, type: type)
+    end
   end
 
   def test_full_page_generation

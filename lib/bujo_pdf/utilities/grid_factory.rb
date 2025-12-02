@@ -13,6 +13,8 @@ module BujoPdf
     #
     # Supported grid types:
     # - :dots - Standard dot grid (default)
+    # - :graph - Square grid with vertical/horizontal lines
+    # - :lined - Ruled lines with optional margin
     # - :isometric - Isometric grid with 30-60-90° triangles
     # - :perspective - Perspective grid with vanishing points
     # - :hexagon - Tessellating hexagon grid
@@ -49,6 +51,12 @@ module BujoPdf
         when :dots
           require_relative 'grid_renderers/dot_grid_renderer'
           GridRenderers::DotGridRenderer.new(pdf, width, height, options)
+        when :graph
+          require_relative 'grid_renderers/graph_grid_renderer'
+          GridRenderers::GraphGridRenderer.new(pdf, width, height, options)
+        when :lined
+          require_relative 'grid_renderers/lined_grid_renderer'
+          GridRenderers::LinedGridRenderer.new(pdf, width, height, options)
         when :isometric
           require_relative 'grid_renderers/isometric_grid_renderer'
           GridRenderers::IsometricGridRenderer.new(pdf, width, height, options)
@@ -60,7 +68,7 @@ module BujoPdf
           GridRenderers::HexagonGridRenderer.new(pdf, width, height, options)
         else
           raise ArgumentError, "Unknown grid type: #{type}. " \
-                               "Supported types: :dots, :isometric, :perspective, :hexagon"
+                               "Supported types: #{supported_types.map(&:inspect).join(', ')}"
         end
       end
 
@@ -68,7 +76,7 @@ module BujoPdf
       #
       # @return [Array<Symbol>] Array of supported grid type symbols
       def self.supported_types
-        [:dots, :isometric, :perspective, :hexagon]
+        [:dots, :graph, :lined, :isometric, :perspective, :hexagon]
       end
 
       # Check if a grid type is supported

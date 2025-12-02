@@ -40,8 +40,11 @@ module BujoPdf
 
         # Render full-page isometric grid
         def render
+          # Draw isometric grid using pre-created stamp (efficient)
+          draw_grid(:isometric)
+
+          # Draw title/label at top
           draw_title
-          draw_isometric_grid
         end
 
         private
@@ -57,20 +60,6 @@ module BujoPdf
                             height: title_box[:height] - 10) do
             @pdf.text 'Isometric Grid', size: 8, color: 'AAAAAA'
           end
-        end
-
-        # Draw isometric grid across entire page
-        #
-        # @return [void]
-        def draw_isometric_grid
-          renderer = Utilities::GridFactory.create(
-            :isometric,
-            @pdf,
-            Styling::Grid::PAGE_WIDTH,
-            Styling::Grid::PAGE_HEIGHT,
-            line_width: 0.25
-          )
-          renderer.render
         end
       end
     end
