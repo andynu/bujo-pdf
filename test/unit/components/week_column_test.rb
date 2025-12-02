@@ -201,9 +201,9 @@ class TestWeekColumn < Minitest::Test
     assert_equal 4, defaults[:line_count]
     assert_equal 1, defaults[:header_height_boxes]
     assert_equal 3, defaults[:line_margin]
-    assert_equal 8, defaults[:day_header_font_size]
-    assert_equal 8, defaults[:day_date_font_size]
+    assert_equal 8, defaults[:header_font_size]
     assert_equal 6, defaults[:time_label_font_size]
+    assert_equal 0.2, defaults[:text_inset]
     assert_equal false, defaults[:show_time_labels]
     assert_equal false, defaults[:weekend]
   end
@@ -329,20 +329,16 @@ class TestWeekColumn < Minitest::Test
       line_count: 5,
       header_height_boxes: 2,
       line_margin: 5,
-      day_header_font_size: 10,
-      day_date_font_size: 10,
+      header_font_size: 10,
       time_label_font_size: 7,
+      text_inset: 0.3,
       header_color: 'CCCCCC',
       border_color: 'DDDDDD',
       weekend_bg_color: 'F0F0F0',
       show_time_labels: true,
       weekend: false,
       date_config: nil,
-      event_store: nil,
-      header_height: nil,
-      header_padding: nil,
-      lines_start: nil,
-      lines_padding: nil
+      event_store: nil
     )
 
     column.render
