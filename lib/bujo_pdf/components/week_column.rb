@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
+require_relative '../utilities/grid_rect'
 require_relative '../utilities/styling'
 require_relative 'box'
 require_relative 'hline'
@@ -73,10 +74,7 @@ module BujoPdf
                      header_height: nil, header_padding: nil, lines_start: nil,
                      lines_padding: nil)
         super(canvas: canvas)
-        @col = col
-        @row = row
-        @width_boxes = width
-        @height_boxes = height
+        @rect = GridRect.new(col, row, width, height)
         @date = date
         @day_name = day_name || date&.strftime('%A')
         @line_count = line_count
@@ -121,14 +119,12 @@ module BujoPdf
 
       # Draw subtle weekend background
       def draw_weekend_background
-        box(@col, @row, @width_boxes, @height_boxes,
-            fill: effective_weekend_bg_color, stroke: nil, opacity: 0.1)
+        box(*@rect, fill: effective_weekend_bg_color, stroke: nil, opacity: 0.1)
       end
 
       # Draw column border
       def draw_border
-        box(@col, @row, @width_boxes, @height_boxes,
-            stroke: effective_border_color, fill: nil)
+        box(*@rect, stroke: effective_border_color, fill: nil)
       end
 
       # Draw day header with day name and date
@@ -143,21 +139,21 @@ module BujoPdf
         short_day = day_name[0..2] if day_name
         if short_day
           # Left portion of column, grid-aligned with inset
-          text(@col + inset, @row, short_day,
+          text(@rect.col + inset, @rect.row, short_day,
                size: @day_header_font_size,
                color: effective_header_color,
                align: :left,
-               width: @width_boxes.ceil.to_i,
+               width: @rect.width.ceil.to_i,
                height: @header_height_boxes)
         end
 
         # Month/day centered in full column width (no inset for centered text)
         if date
           date_str = date.strftime('%-m/%-d')
-          text(@col, @row, date_str,
+          text(@rect.col, @rect.row, date_str,
                size: @day_header_font_size,
                align: :center,
-               width: @width_boxes.ceil.to_i,
+               width: @rect.width.ceil.to_i,
                height: @header_height_boxes)
         end
       end
@@ -170,15 +166,15 @@ module BujoPdf
 
         # Calculate line margin in grid boxes (approximate from pixels)
         margin_boxes = @line_margin.to_f / grid.width(1)
-        line_width = @width_boxes - (margin_boxes * 2)
+        line_width = @rect.width - (margin_boxes * 2)
 
         # First line is at the bottom of the header row
-        first_line_row = @row + @header_height_boxes
+        first_line_row = @rect.row + @header_height_boxes
 
         # Draw lines every 2 boxes
         @line_count.to_i.times do |line_num|
           line_row = first_line_row + (line_num * 2)
-          hline(@col + margin_boxes, line_row, line_width, color: effective_border_color)
+          hline(@rect.col + margin_boxes, line_row, line_width, color: effective_border_color)
         end
 
         # Store row info for time labels
@@ -196,7 +192,7 @@ module BujoPdf
         labels.each_with_index do |label, idx|
           # Each section is 2 boxes high, label goes at top of each section
           section_row = @first_line_row + (idx * 2)
-          text(@col + inset, section_row, label,
+          text(@rect.col + inset, section_row, label,
                size: @time_label_font_size,
                color: effective_border_color,
                align: :left,
@@ -229,14 +225,14 @@ module BujoPdf
         # Label box positioned 1 box below header (grid-aligned)
         # Label is 0.85 boxes high
         label_height_boxes = 0.85
-        label_row = @row + @header_height_boxes + 1  # Skip 1 box after header
+        label_row = @rect.row + @header_height_boxes + 1  # Skip 1 box after header
 
         label_height = grid.height(label_height_boxes)
         label_y = grid.y(label_row)
 
         # Horizontal padding (2pt on each side)
         h_padding = 2
-        width = grid.width(@width_boxes)
+        width = @rect.width_pt
 
         # Determine colors and label text based on source
         if highlighted_date
@@ -257,7 +253,7 @@ module BujoPdf
         end
 
         # Background
-        label_x = grid.x(@col) + h_padding
+        label_x = @rect.x + h_padding
         pdf.fill_color bg_color
         pdf.fill_rectangle [label_x, label_y], width - (h_padding * 2), label_height
         pdf.fill_color '000000'
