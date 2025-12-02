@@ -3,6 +3,7 @@
 require_relative '../base/component'
 require_relative '../canvas'
 require_relative '../utilities/styling'
+require_relative 'ruled_lines'
 
 module BujoPdf
   module Components
@@ -34,6 +35,7 @@ module BujoPdf
     #   grid.todo_list(5, 10, 20, 8).render
     #
     class TodoList < Component
+      include RuledLines::Mixin
       # Default bullet radius in points (larger than 1pt dot grid dots)
       BULLET_RADIUS = 2.0
 
@@ -76,13 +78,17 @@ module BujoPdf
       # Render the todo list
       #
       # Draws the markers and optional dividers for each row.
+      # Dividers are rendered using the RuledLines component for consistency.
       #
       # @return [void]
       def render
+        # Draw dividers first (if any) so markers draw on top
+        draw_dividers if @divider != :none
+
+        # Draw markers for each row
         @rows.times do |row_index|
           row_y = grid.y(@row + row_index)
           draw_marker(row_index, row_y)
-          draw_divider(row_index, row_y) if @divider != :none
         end
       end
 
@@ -211,32 +217,33 @@ module BujoPdf
         pdf.stroke_circle([cx, cy], CIRCLE_RADIUS)
       end
 
-      # Draw a divider line at the bottom of a row
+      # Draw divider lines between rows using RuledLines component
       #
-      # @param row_index [Integer] Row index
-      # @param row_y [Float] Top Y coordinate of the row
+      # Dividers are drawn between rows (not after the last row).
+      # Uses RuledLines for consistency and code reuse.
+      #
       # @return [void]
-      def draw_divider(row_index, row_y)
-        # Don't draw divider after last row
-        return if row_index >= @rows - 1
+      def draw_dividers
+        # Number of dividers is one less than number of rows
+        return if @rows <= 1
 
-        line_y = row_y - @row_height
-        line_start_x = grid.x(@col + MARKER_COLUMN_BOXES)
-        line_end_x = grid.x(@col + @width_boxes)
+        divider_count = @rows - 1
+        divider_col = @col + MARKER_COLUMN_BOXES
+        divider_width = @width_boxes - MARKER_COLUMN_BOXES
 
-        pdf.save_graphics_state do
-          pdf.stroke_color(divider_color)
-          pdf.line_width = 0.5
+        # Map divider style to dash pattern
+        dash_pattern = @divider == :dashed ? [3, 2] : nil
 
-          case @divider
-          when :solid
-            pdf.stroke_line([line_start_x, line_y], [line_end_x, line_y])
-          when :dashed
-            pdf.dash(3, space: 2)
-            pdf.stroke_line([line_start_x, line_y], [line_end_x, line_y])
-            pdf.undash
-          end
-        end
+        ruled_lines(
+          divider_col,
+          @row,
+          divider_width,
+          divider_count,
+          color: divider_color,
+          stroke: 0.5,
+          dash: dash_pattern,
+          redraw_dots: false
+        )
       end
 
       # Get the effective bullet color
