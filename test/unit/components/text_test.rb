@@ -28,7 +28,7 @@ class TestText < Minitest::Test
     assert_equal 1, text.instance_variable_get(:@height)
     assert_nil text.instance_variable_get(:@color)
     assert_equal :normal, text.instance_variable_get(:@style)
-    assert_equal :center, text.instance_variable_get(:@position)
+    assert_equal :center, text.instance_variable_get(:@valign)
     assert_equal :left, text.instance_variable_get(:@align)
     assert_nil text.instance_variable_get(:@width)
     assert_equal 0, text.instance_variable_get(:@rotation)
@@ -48,7 +48,7 @@ class TestText < Minitest::Test
       height: 2,
       color: 'FF0000',
       style: :bold,
-      position: :superscript,
+      valign: :top,
       align: :center,
       width: 20,
       rotation: 90,
@@ -63,7 +63,7 @@ class TestText < Minitest::Test
     assert_equal 2, text.instance_variable_get(:@height)
     assert_equal 'FF0000', text.instance_variable_get(:@color)
     assert_equal :bold, text.instance_variable_get(:@style)
-    assert_equal :superscript, text.instance_variable_get(:@position)
+    assert_equal :top, text.instance_variable_get(:@valign)
     assert_equal :center, text.instance_variable_get(:@align)
     assert_equal 20, text.instance_variable_get(:@width)
     assert_equal 90, text.instance_variable_get(:@rotation)
@@ -164,23 +164,23 @@ class TestText < Minitest::Test
     text.render
   end
 
-  def test_render_with_superscript_position
+  def test_render_with_top_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
-      content: "Superscript",
-      position: :superscript
+      content: "Top",
+      valign: :top
     )
 
     text.render
   end
 
-  def test_render_with_subscript_position
+  def test_render_with_bottom_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
-      content: "Subscript",
-      position: :subscript
+      content: "Bottom",
+      valign: :bottom
     )
 
     text.render
@@ -301,12 +301,12 @@ class TestTextDotErasure < Minitest::Test
   end
 
   def test_no_erasure_for_centered_single_row
-    # Position :center with height 1 should not erase
+    # valign :center with height 1 should not erase
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
       content: "No Erase",
-      position: :center,
+      valign: :center,
       height: 1
     )
 
@@ -314,23 +314,23 @@ class TestTextDotErasure < Minitest::Test
     # Should complete without error
   end
 
-  def test_erase_for_superscript_position
+  def test_erase_for_top_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
-      content: "Superscript",
-      position: :superscript
+      content: "Top",
+      valign: :top
     )
 
     text.render
   end
 
-  def test_erase_for_subscript_position
+  def test_erase_for_bottom_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
-      content: "Subscript",
-      position: :subscript
+      content: "Bottom",
+      valign: :bottom
     )
 
     text.render
@@ -341,7 +341,7 @@ class TestTextDotErasure < Minitest::Test
       canvas: @canvas,
       col: 5, row: 10,
       content: "Multi Row",
-      position: :center,
+      valign: :center,
       height: 3  # Should erase middle rows
     )
 
@@ -354,7 +354,7 @@ class TestTextDotErasure < Minitest::Test
       col: 5, row: 10,
       content: "Left",
       align: :left,
-      position: :superscript
+      valign: :top
     )
 
     # Left align starts erasure at col
@@ -369,7 +369,7 @@ class TestTextDotErasure < Minitest::Test
       content: "Center",
       align: :center,
       width: 20,
-      position: :superscript
+      valign: :top
     )
 
     # Center align calculates offset
@@ -385,7 +385,7 @@ class TestTextDotErasure < Minitest::Test
       content: "Right",
       align: :right,
       width: 20,
-      position: :superscript
+      valign: :top
     )
 
     # Right align: col + width - text_width
@@ -401,7 +401,7 @@ class TestTextDotErasure < Minitest::Test
       content: "No Width",
       align: :center,  # Align ignored without width
       width: nil,
-      position: :superscript
+      valign: :top
     )
 
     # Without width, returns col regardless of alignment
@@ -417,24 +417,24 @@ class TestTextYOffset < Minitest::Test
     @canvas = BujoPdf::Canvas.new(@pdf, @grid)
   end
 
-  def test_y_offset_for_center_position
+  def test_y_offset_for_center_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
       content: "Center",
-      position: :center
+      valign: :center
     )
 
     offset = text.send(:calculate_y_offset)
     assert_equal 0, offset
   end
 
-  def test_y_offset_for_superscript_position
+  def test_y_offset_for_top_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
-      content: "Super",
-      position: :superscript
+      content: "Top",
+      valign: :top
     )
 
     offset = text.send(:calculate_y_offset)
@@ -442,12 +442,12 @@ class TestTextYOffset < Minitest::Test
     assert_equal expected, offset
   end
 
-  def test_y_offset_for_subscript_position
+  def test_y_offset_for_bottom_valign
     text = BujoPdf::Components::Text.new(
       canvas: @canvas,
       col: 5, row: 10,
-      content: "Sub",
-      position: :subscript
+      content: "Bottom",
+      valign: :bottom
     )
 
     offset = text.send(:calculate_y_offset)

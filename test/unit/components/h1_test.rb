@@ -31,7 +31,7 @@ class TestH1 < Minitest::Test
       content: "Header",
       color: 'FF0000',
       style: :normal,
-      position: :superscript,
+      valign: :top,
       align: :center,
       width: 20
     )
@@ -106,7 +106,7 @@ class TestH1 < Minitest::Test
     h1.render
   end
 
-  def test_render_with_center_position_default
+  def test_render_with_center_valign_default
     h1 = BujoPdf::Components::H1.new(
       canvas: @canvas,
       col: 5,
@@ -116,24 +116,24 @@ class TestH1 < Minitest::Test
     h1.render
   end
 
-  def test_render_with_superscript_position
+  def test_render_with_top_valign
     h1 = BujoPdf::Components::H1.new(
       canvas: @canvas,
       col: 5,
       row: 10,
       content: "Header",
-      position: :superscript
+      valign: :top
     )
     h1.render
   end
 
-  def test_render_with_subscript_position
+  def test_render_with_bottom_valign
     h1 = BujoPdf::Components::H1.new(
       canvas: @canvas,
       col: 5,
       row: 10,
       content: "Header",
-      position: :subscript
+      valign: :bottom
     )
     h1.render
   end
@@ -206,7 +206,7 @@ class TestH1 < Minitest::Test
       content: "Chapter 1",
       color: '333333',
       style: :bold,
-      position: :center,
+      valign: :center,
       align: :left
     )
     h1.render
@@ -255,7 +255,7 @@ class TestH1Mixin < Minitest::Test
     component.h1(5, 10, "Header",
                  color: 'FF0000',
                  style: :normal,
-                 position: :superscript,
+                 valign: :top,
                  align: :center,
                  width: 20)
   end

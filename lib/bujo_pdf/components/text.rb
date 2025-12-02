@@ -34,7 +34,7 @@ module BujoPdf
         # @param height [Integer] Height in grid boxes (default: 1)
         # @param color [String, nil] Text color as hex string (default: theme text_black)
         # @param style [Symbol] Font style :normal, :bold, :italic (default: :normal)
-        # @param position [Symbol] Vertical position :center, :superscript, :subscript (default: :center)
+        # @param valign [Symbol] Vertical alignment :center, :top, :bottom (default: :center)
         # @param align [Symbol] Text alignment :left, :center, :right (default: :left)
         # @param width [Integer, nil] Width in grid boxes (default: nil, auto-sized)
         # @param rotation [Integer] Rotation in degrees: 0, 90, -90 (default: 0)
@@ -45,7 +45,7 @@ module BujoPdf
         # @param centered [Boolean] When true with rotation, pt_x/pt_y specify the center
         #   point of the text box (and rotation origin) instead of top-left (default: false)
         # @return [void]
-        def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil, centered: false)
+        def text(col, row, content, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, valign: :center, align: :left, width: nil, rotation: 0, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil, centered: false)
           c = @canvas || Canvas.new(@pdf, @grid)
           Text.new(
             canvas: c,
@@ -56,7 +56,7 @@ module BujoPdf
             height: height,
             color: color,
             style: style,
-            position: position,
+            valign: valign,
             align: align,
             width: width,
             rotation: rotation,
@@ -79,7 +79,7 @@ module BujoPdf
       # @param height [Integer] Height in grid boxes
       # @param color [String, nil] Text color as hex string
       # @param style [Symbol] Font style
-      # @param position [Symbol] Vertical position :center, :superscript, :subscript
+      # @param valign [Symbol] Vertical alignment :center, :top, :bottom
       # @param align [Symbol] Text alignment :left, :center, :right
       # @param width [Integer, nil] Width in grid boxes
       # @param rotation [Integer] Rotation in degrees: 0, 90, -90
@@ -88,7 +88,7 @@ module BujoPdf
       # @param pt_width [Float, nil] Width in points (overrides width when set)
       # @param pt_height [Float, nil] Height in points (overrides height when set)
       # @param centered [Boolean] When true, pt_x/pt_y specify the center point
-      def initialize(canvas:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, position: :center, align: :left, width: nil, rotation: 0, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil, centered: false)
+      def initialize(canvas:, col:, row:, content:, size: DEFAULT_SIZE, height: 1, color: nil, style: :normal, valign: :center, align: :left, width: nil, rotation: 0, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil, centered: false)
         super(canvas: canvas)
         @col = col
         @row = row
@@ -97,7 +97,7 @@ module BujoPdf
         @height = height
         @color = color
         @style = style
-        @position = position
+        @valign = valign
         @align = align
         @width = width
         @rotation = rotation
@@ -218,33 +218,33 @@ module BujoPdf
         end
       end
 
-      # Calculate vertical offset based on position
+      # Calculate vertical offset based on valign
       #
       # @return [Float] Y offset in points
       def calculate_y_offset
         half_box = grid.height(0.5)
-        case @position
-        when :superscript
+        case @valign
+        when :top
           half_box
-        when :subscript
+        when :bottom
           -half_box
         else
           0
         end
       end
 
-      # Erase dots/lines if position shifts text onto a grid row
+      # Erase dots/lines if valign shifts text onto a grid row
       #
       # @param text_width_boxes [Integer] Width of text in grid boxes
       # @param bg_color [String] Background color for erasing
       # @return [void]
       def erase_dots_if_needed(text_width_boxes, bg_color)
-        return if @position == :center && @height == 1
+        return if @valign == :center && @height == 1
 
-        if @position != :center
-          # Superscript text overlaps the top dot row (@row)
-          # Subscript text overlaps the bottom dot row (@row + @height)
-          erase_row = @position == :superscript ? @row : @row + @height
+        if @valign != :center
+          # Top-aligned text overlaps the top dot row (@row)
+          # Bottom-aligned text overlaps the bottom dot row (@row + @height)
+          erase_row = @valign == :top ? @row : @row + @height
           erase_col = calculate_erase_col(text_width_boxes)
           hline(erase_col, erase_row, text_width_boxes, color: bg_color, stroke: 3)
         elsif @height >= 2
