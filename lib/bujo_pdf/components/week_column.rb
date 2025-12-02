@@ -47,9 +47,9 @@ module BujoPdf
         line_count: 4,
         header_height_boxes: 1, # Header is 1 box high
         line_margin: 3,
-        day_header_font_size: 8,
-        day_date_font_size: 8,
+        header_font_size: 8,
         time_label_font_size: 6,
+        text_inset: 0.2,          # Inset from column edges in grid boxes (~3pt)
         header_color: nil,        # Will use Styling::Colors.SECTION_HEADERS if nil
         border_color: nil,        # Will use Styling::Colors.BORDERS if nil
         weekend_bg_color: nil,    # Will use Styling::Colors.WEEKEND_BG if nil
@@ -62,17 +62,15 @@ module BujoPdf
                      line_count: DEFAULTS[:line_count],
                      header_height_boxes: DEFAULTS[:header_height_boxes],
                      line_margin: DEFAULTS[:line_margin],
-                     day_header_font_size: DEFAULTS[:day_header_font_size],
-                     day_date_font_size: DEFAULTS[:day_date_font_size],
+                     header_font_size: DEFAULTS[:header_font_size],
                      time_label_font_size: DEFAULTS[:time_label_font_size],
+                     text_inset: DEFAULTS[:text_inset],
                      header_color: DEFAULTS[:header_color],
                      border_color: DEFAULTS[:border_color],
                      weekend_bg_color: DEFAULTS[:weekend_bg_color],
                      show_time_labels: DEFAULTS[:show_time_labels],
                      weekend: DEFAULTS[:weekend],
-                     date_config: nil, event_store: nil,
-                     header_height: nil, header_padding: nil, lines_start: nil,
-                     lines_padding: nil)
+                     date_config: nil, event_store: nil)
         super(canvas: canvas)
         @rect = GridRect.new(col, row, width, height)
         @date = date
@@ -80,9 +78,9 @@ module BujoPdf
         @line_count = line_count
         @header_height_boxes = header_height_boxes
         @line_margin = line_margin
-        @day_header_font_size = day_header_font_size
-        @day_date_font_size = day_date_font_size
+        @header_font_size = header_font_size
         @time_label_font_size = time_label_font_size
+        @text_inset = text_inset
         @header_color = header_color
         @border_color = border_color
         @weekend_bg_color = weekend_bg_color
@@ -132,15 +130,11 @@ module BujoPdf
       # - Three-letter weekday in gray on top left (slight inset)
       # - Month/day centered
       def draw_header(date, day_name)
-        # Small inset from column edges (0.2 boxes ~ 3pt)
-        inset = 0.2
-
         # Three-letter weekday abbreviation in gray, top left with inset
         short_day = day_name[0..2] if day_name
         if short_day
-          # Left portion of column, grid-aligned with inset
-          text(@rect.col + inset, @rect.row, short_day,
-               size: @day_header_font_size,
+          text(@rect.col + @text_inset, @rect.row, short_day,
+               size: @header_font_size,
                color: effective_header_color,
                align: :left,
                width: @rect.width.ceil.to_i,
@@ -151,7 +145,7 @@ module BujoPdf
         if date
           date_str = date.strftime('%-m/%-d')
           text(@rect.col, @rect.row, date_str,
-               size: @day_header_font_size,
+               size: @header_font_size,
                align: :center,
                width: @rect.width.ceil.to_i,
                height: @header_height_boxes)
@@ -161,44 +155,36 @@ module BujoPdf
       # Draw ruled lines that divide content into 2-box-high rows
       # Lines start at the bottom edge of the 1-box header
       def draw_ruled_lines
-        # Lines are positioned at grid rows below the header
-        # Each section is 2 boxes high, lines are at bottom of header + 2n boxes
-
-        # Calculate line margin in grid boxes (approximate from pixels)
-        margin_boxes = @line_margin.to_f / grid.width(1)
+        # Calculate line margin in grid boxes (from pixels)
+        margin_boxes = @line_margin.to_f / GridRect::DOT_SPACING
         line_width = @rect.width - (margin_boxes * 2)
 
-        # First line is at the bottom of the header row
-        first_line_row = @rect.row + @header_height_boxes
-
-        # Draw lines every 2 boxes
+        # Draw lines every 2 boxes, starting at bottom of header
         @line_count.to_i.times do |line_num|
-          line_row = first_line_row + (line_num * 2)
+          line_row = content_start_row + (line_num * 2)
           hline(@rect.col + margin_boxes, line_row, line_width, color: effective_border_color)
         end
-
-        # Store row info for time labels
-        @first_line_row = first_line_row
       end
 
       # Draw time period labels (AM/PM/EVE) for Monday column
       def draw_time_labels
-        return unless @first_line_row
-
-        # Same inset as header text (0.2 boxes ~ 3pt)
-        inset = 0.2
         labels = ['AM', 'PM', 'EVE']
 
         labels.each_with_index do |label, idx|
           # Each section is 2 boxes high, label goes at top of each section
-          section_row = @first_line_row + (idx * 2)
-          text(@rect.col + inset, section_row, label,
+          section_row = content_start_row + (idx * 2)
+          text(@rect.col + @text_inset, section_row, label,
                size: @time_label_font_size,
                color: effective_border_color,
                align: :left,
                width: 2,
                height: 1)
         end
+      end
+
+      # Row where content starts (after header)
+      def content_start_row
+        @rect.row + @header_height_boxes
       end
 
       # Draw highlighted date label below day header
@@ -223,9 +209,8 @@ module BujoPdf
         return unless highlighted_date || !calendar_events.empty?
 
         # Label box positioned 1 box below header (grid-aligned)
-        # Label is 0.85 boxes high
         label_height_boxes = 0.85
-        label_row = @rect.row + @header_height_boxes + 1  # Skip 1 box after header
+        label_row = content_start_row + 1  # Skip 1 box after header
 
         label_height = grid.height(label_height_boxes)
         label_y = grid.y(label_row)
