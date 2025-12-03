@@ -37,8 +37,8 @@ module BujoPdf
     RENDERABLE_COMPONENTS = {
       'WeekGrid' => {
         klass: BujoPdf::Components::WeekGrid,
-        factory: :from_grid,
-        defaults: { col: 5, row: 5, width_boxes: 35, height_boxes: 10, quantize: true, show_headers: true }
+        factory: :new,
+        defaults: { col: 5, row: 5, width: 35, height: 10, quantize: true, show_headers: true }
       },
       'Box' => {
         klass: BujoPdf::Components::Box,
@@ -398,9 +398,6 @@ module BujoPdf
       klass = config[:klass]
 
       case config[:factory]
-      when :from_grid
-        # WeekGrid-style factory
-        klass.from_grid(canvas: canvas, **params)
       when :raw_coords
         # Components that take raw PDF coordinates (like TodoList)
         klass.new(pdf: canvas.pdf, **params)
