@@ -18,7 +18,7 @@ RENDER_COMPONENT = File.join(SCRIPT_DIR, 'render-component')
 
 # Components to render with their custom parameters (if any)
 COMPONENTS = {
-  'WeekGrid' => { params: 'width_boxes: 35, height_boxes: 8' },
+  'WeekGrid' => { params: 'width: 35, height: 8' },
   'Box' => { params: 'width: 15, height: 8, fill: "F5F5F5"' },
   'RuledLines' => { params: 'width: 25, height: 8' },
   'GridDots' => { params: 'width: 20, height: 8' },
@@ -30,7 +30,7 @@ COMPONENTS = {
   'VLine' => { params: 'height: 8' },
   'Text' => { params: 'content: "Body text content goes here"' },
   'RuledList' => { params: 'width: 25, entries: 4' },
-  'CornellNotes' => { params: 'cues_cols: 8, notes_cols: 28, notes_main_rows: 18, summary_rows: 4' },
+  'CornellNotes' => { params: 'bounds: BujoPdf::GridRect.new(2, 2, 36, 22), cues_cols: 8, summary_rows: 4' },
   'DailySection' => { params: 'content_width_boxes: 35, daily_rows: 6' }
 }.freeze
 
