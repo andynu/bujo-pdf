@@ -5,8 +5,7 @@ require_relative '../../test_helper'
 
 class TestSeasonalCalendar < Minitest::Test
   def setup
-    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    @pdf = create_fast_test_pdf  # Use stub stamp for speed
     @context = BujoPdf::RenderContext.new(
       page_key: :seasonal,
       page_number: 1,
@@ -233,8 +232,7 @@ class TestSeasonalCalendarIntegration < Minitest::Test
 
   def test_page_generation_for_different_years
     [2024, 2025, 2026].each do |year|
-      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-      DotGrid.create_stamp(pdf, "page_dots")
+      pdf = create_fast_test_pdf  # Use stub stamp for speed
       total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(year)
 
       context = BujoPdf::RenderContext.new(
@@ -252,8 +250,7 @@ class TestSeasonalCalendarIntegration < Minitest::Test
   end
 
   def test_page_generation_for_leap_year
-    pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(pdf, "page_dots")
+    pdf = create_fast_test_pdf  # Use stub stamp for speed
 
     context = BujoPdf::RenderContext.new(
       page_key: :seasonal,

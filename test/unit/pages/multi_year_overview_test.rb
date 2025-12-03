@@ -91,8 +91,7 @@ class TestMultiYearOverview < Minitest::Test
 
   def test_with_different_year_counts
     [2, 3, 4, 5].each do |year_count|
-      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-      DotGrid.create_stamp(pdf, "page_dots")
+      pdf = create_fast_test_pdf  # Use stub stamp for speed
       context = BujoPdf::RenderContext.new(
         page_key: :multi_year,
         page_number: 1,

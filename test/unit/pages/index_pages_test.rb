@@ -228,8 +228,7 @@ class TestIndexPageIntegration < Minitest::Test
 
   def test_both_pages_generate_correctly
     [1, 2].each do |page_num|
-      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-      DotGrid.create_stamp(pdf, "page_dots")
+      pdf = create_fast_test_pdf  # Use stub stamp for speed
       context = BujoPdf::RenderContext.new(
         page_key: :"index_#{page_num}",
         page_number: page_num,

@@ -133,8 +133,7 @@ class TestMonthlyReview < Minitest::Test
 
   def test_all_months
     (1..12).each do |month|
-      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-      DotGrid.create_stamp(pdf, "page_dots")
+      pdf = create_fast_test_pdf  # Use stub stamp for speed
       context = BujoPdf::RenderContext.new(
         page_key: :"monthly_review_#{month}",
         page_number: month,
