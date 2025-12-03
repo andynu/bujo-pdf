@@ -154,8 +154,8 @@ class TestTopNavigation < Minitest::Test
       week_end: @week_end
     )
 
-    nav_box = @grid.rect(3, 0, 39, 2)
-    nav.send(:draw_year_link, nav_box)
+    # draw_year_link now uses link_box internally - no parameters needed
+    nav.send(:draw_year_link)
   end
 
   def test_draw_prev_week_link
@@ -168,8 +168,8 @@ class TestTopNavigation < Minitest::Test
       week_end: @week_end
     )
 
-    nav_box = @grid.rect(3, 0, 39, 2)
-    nav.send(:draw_prev_week_link, nav_box)
+    # draw_prev_week_link now uses link_box internally - no parameters needed
+    nav.send(:draw_prev_week_link)
   end
 
   def test_draw_next_week_link
@@ -182,22 +182,11 @@ class TestTopNavigation < Minitest::Test
       week_end: @week_end
     )
 
-    nav_box = @grid.rect(3, 0, 39, 2)
-    nav.send(:draw_next_week_link, nav_box)
+    # draw_next_week_link now uses link_box internally - no parameters needed
+    nav.send(:draw_next_week_link)
   end
 
-  def test_draw_nav_background
-    nav = BujoPdf::Components::TopNavigation.new(
-      canvas: @canvas,
-      year: 2025,
-      week_num: 42,
-      total_weeks: 52,
-      week_start: @week_start,
-      week_end: @week_end
-    )
-
-    nav.send(:draw_nav_background, 100, 700, 50, 30)
-  end
+  # draw_nav_background was removed - background rendering is now handled by LinkBox
 
   def test_draw_title
     nav = BujoPdf::Components::TopNavigation.new(
