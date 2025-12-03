@@ -265,8 +265,7 @@ class TestFutureLogIntegration < Minitest::Test
 
   def test_both_pages_generate_correctly
     [1, 2].each do |page_num|
-      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-      DotGrid.create_stamp(pdf, "page_dots")
+      pdf = create_fast_test_pdf  # Use stub stamp for speed
       start_month = (page_num - 1) * 6 + 1
       context = BujoPdf::RenderContext.new(
         page_key: :"future_log_#{page_num}",

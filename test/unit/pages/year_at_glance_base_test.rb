@@ -16,8 +16,7 @@ end
 
 class TestYearAtGlanceBase < Minitest::Test
   def setup
-    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    @pdf = create_fast_test_pdf  # Use stub stamp for speed
     @context = BujoPdf::RenderContext.new(
       page_key: :test_year,
       page_number: 1,
@@ -117,8 +116,7 @@ end
 
 class TestYearAtGlanceDrawMethods < Minitest::Test
   def setup
-    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    @pdf = create_fast_test_pdf  # Use stub stamp for speed
     @context = BujoPdf::RenderContext.new(
       page_key: :test_year,
       page_number: 1,
@@ -187,8 +185,7 @@ end
 
 class TestYearAtGlanceWithDateConfig < Minitest::Test
   def setup
-    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    @pdf = create_fast_test_pdf  # Use stub stamp for speed
     @date_config = MockDateConfigForYear.new
     @context = BujoPdf::RenderContext.new(
       page_key: :test_year,
@@ -224,8 +221,7 @@ end
 
 class TestYearAtGlanceWithEventStore < Minitest::Test
   def setup
-    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    @pdf = create_fast_test_pdf  # Use stub stamp for speed
     @event_store = MockEventStoreForYear.new
     @context = BujoPdf::RenderContext.new(
       page_key: :test_year,
@@ -248,8 +244,7 @@ end
 
 class TestYearAtGlanceIntegration < Minitest::Test
   def setup
-    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-    DotGrid.create_stamp(@pdf, "page_dots")
+    @pdf = create_fast_test_pdf  # Use stub stamp for speed
   end
 
   def test_year_at_glance_events_page_generates

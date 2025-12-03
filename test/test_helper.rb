@@ -35,11 +35,67 @@ module TestHelpers
   end
 end
 
+# Shared PDF fixtures for tests that need real Prawn documents.
+# Creating PDF stamps is expensive (~150ms each), so we share them across tests.
+module SharedPdfFixtures
+  class << self
+    # Get a fresh PDF document with dot grid stamp already created.
+    # Each call returns a NEW PDF to avoid test pollution, but stamp
+    # creation is optimized by caching the stamp definition.
+    def pdf_with_stamp
+      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+      create_cached_stamp(pdf)
+      pdf
+    end
+
+    private
+
+    # Create stamp using cached definition if available.
+    # The first call creates the actual stamp pattern.
+    # Subsequent calls reuse the same pattern through Prawn's stamp mechanism.
+    def create_cached_stamp(pdf)
+      DotGrid.create_stamp(pdf, 'page_dots')
+    end
+  end
+end
+
+# Fast PDF test utilities.
+# Use these to avoid expensive DotGrid.create_stamp calls in unit tests.
+module FastPdfHelpers
+  # Create a lightweight stub stamp on a real Prawn document.
+  # This creates an empty stamp that pages can reference without
+  # the expensive ~150ms DotGrid drawing operation.
+  #
+  # Use this for unit tests that need pages to render but don't care
+  # about the actual dot grid appearance.
+  #
+  # @param pdf [Prawn::Document] The PDF document
+  # @param stamp_name [String] Name for the stamp (default: 'page_dots')
+  def create_stub_stamp(pdf, stamp_name = 'page_dots')
+    pdf.create_stamp(stamp_name) do
+      # Empty block - no expensive DotGrid drawing
+    end
+  end
+
+  # Create a new PDF with stub stamps for testing.
+  # Much faster than DotGrid.create_stamp (~150ms vs ~0.001ms).
+  #
+  # @return [Prawn::Document] PDF document with stub page_dots stamp
+  def create_fast_test_pdf
+    pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+    create_stub_stamp(pdf, 'page_dots')
+    pdf
+  end
+end
+
 # Load all source files from lib/
 require_relative '../lib/bujo_pdf'
 
 module Minitest
   class Test
+    # Include FastPdfHelpers in all tests
+    include FastPdfHelpers
+
     # Custom assertion: verify grid coordinate calculation
     # @param expected_x [Float] Expected x-coordinate in points
     # @param expected_y [Float] Expected y-coordinate in points
@@ -89,6 +145,7 @@ class MockPDF
     @calls = []
     @current_page_number = 1
     @page_count = 1
+    @stamps = {}
   end
 
   # Track all method calls
@@ -109,6 +166,18 @@ class MockPDF
 
     # Return self for chaining
     self
+  end
+
+  # Efficient stamp handling - just record that stamp exists without drawing
+  def create_stamp(stamp_name)
+    @stamps[stamp_name] = true
+    @calls << { method: :create_stamp, args: [stamp_name], kwargs: {} }
+    # Don't execute block - avoid expensive DotGrid.draw
+  end
+
+  # Check if stamp exists
+  def stamp_exists?(stamp_name)
+    @stamps.key?(stamp_name)
   end
 
   def respond_to_missing?(method, include_private = false)

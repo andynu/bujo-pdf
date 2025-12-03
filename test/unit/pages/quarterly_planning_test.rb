@@ -154,8 +154,7 @@ class TestQuarterlyPlanning < Minitest::Test
 
   def test_all_quarters
     (1..4).each do |quarter|
-      pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
-      DotGrid.create_stamp(pdf, "page_dots")
+      pdf = create_fast_test_pdf  # Use stub stamp for speed
       context = BujoPdf::RenderContext.new(
         page_key: :"quarter_#{quarter}",
         page_number: quarter,
