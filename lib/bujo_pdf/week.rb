@@ -9,15 +9,26 @@ module BujoPdf
   # Provides clean iteration over weeks with boundary detection for
   # interleaving monthly reviews and quarterly planning pages.
   #
+  # Uses Ruby 4.0's Data class for immutability, built-in equality,
+  # and pattern matching support.
+  #
   # @example Basic usage
-  #   week = Week.new(year: 2025, number: 1)
+  #   week = Week[year: 2025, number: 1]
   #   week.start_date  # => 2024-12-30 (Monday)
   #   week.end_date    # => 2025-01-05 (Sunday)
   #   week.month       # => 1 (January - based on start_date in target year)
   #   week.quarter     # => 1
   #
+  # @example Pattern matching (Ruby 4.0)
+  #   case week
+  #   in Week[year: 2025, number: 1..10]
+  #     puts "Early 2025 week"
+  #   in Week[year:, number:] if number > 50
+  #     puts "Late year week"
+  #   end
+  #
   # @example Iteration with boundary detection
-  #   generated_months = Set.new
+  #   generated_months = Set.new  # Set is now a core class in Ruby 4.0
   #   weeks_in(2025).each do |week|
   #     if week.in_year? && !generated_months.include?(week.month)
   #       monthly_review_page(month: week.month)
@@ -26,18 +37,26 @@ module BujoPdf
   #     weekly_page(week: week.number)
   #   end
   #
-  class Week
-    attr_reader :year, :number, :start_date, :end_date
-
-    # Create a new Week.
+  # Week value object using Ruby 4.0 Data class.
+  #
+  # Note: Data classes are immutable (frozen), so dates are computed at initialization.
+  Week = Data.define(:year, :number) do
+    # Get the start date (Monday) of this week.
     #
-    # @param year [Integer] The planner year
-    # @param number [Integer] Week number (1-based)
-    def initialize(year:, number:)
-      @year = year
-      @number = number
-      @start_date = Utilities::DateCalculator.week_start(year, number)
-      @end_date = Utilities::DateCalculator.week_end(year, number)
+    # Computed on each access. For frozen Data objects, we can't cache in instance variables.
+    #
+    # @return [Date] The Monday starting this week
+    def start_date
+      Utilities::DateCalculator.week_start(year, number)
+    end
+
+    # Get the end date (Sunday) of this week.
+    #
+    # Computed on each access. For frozen Data objects, we can't cache in instance variables.
+    #
+    # @return [Date] The Sunday ending this week
+    def end_date
+      Utilities::DateCalculator.week_end(year, number)
     end
 
     # Month number of the week's start date.
@@ -103,23 +122,16 @@ module BujoPdf
       }
     end
 
-    # Equality based on year and number.
-    def ==(other)
-      other.is_a?(Week) && year == other.year && number == other.number
-    end
-
-    def eql?(other)
-      self == other
-    end
-
-    def hash
-      [year, number].hash
-    end
-
+    # String representation.
+    #
+    # @return [String]
     def to_s
       "Week #{number} (#{start_date} - #{end_date})"
     end
 
+    # Inspection string.
+    #
+    # @return [String]
     def inspect
       "#<Week year=#{year} number=#{number} #{start_date}..#{end_date}>"
     end

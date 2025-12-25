@@ -77,9 +77,11 @@ module BujoPdf
 
       # Get all days in this week.
       #
+      # Uses Ruby 3.4+ 'it' parameter for cleaner mapping.
+      #
       # @return [Array<Date>] Array of 7 dates from Monday to Sunday
       def days
-        (0..6).map { |i| start_date + i }
+        (0..6).map { start_date + it }
       end
 
       # Get the date range as a formatted string.
@@ -187,48 +189,47 @@ module BujoPdf
 
     # Month represents a month for iteration purposes.
     #
-    # @example
+    # Uses Ruby 4.0's Data class for immutability and pattern matching.
+    #
+    # @example Basic usage
     #   months = Month.months_in(2025)
     #   months.first.name  # => "January"
     #
-    class Month
-      attr_reader :year, :number
-
-      # Initialize a new month.
-      #
-      # @param year [Integer] The year
-      # @param number [Integer] The month number (1-12)
-      def initialize(year, number)
-        @year = year
-        @number = number
-      end
-
+    # @example Pattern matching (Ruby 4.0)
+    #   case month
+    #   in Month[year: 2025, number: 1..3]
+    #     puts "Q1 2025"
+    #   in Month[number: 12]
+    #     puts "December"
+    #   end
+    #
+    Month = Data.define(:year, :number) do
       # Get the month name.
       #
       # @return [String] Full month name (e.g., "January")
       def name
-        Date::MONTHNAMES[@number]
+        Date::MONTHNAMES[number]
       end
 
       # Get the abbreviated month name.
       #
       # @return [String] Abbreviated name (e.g., "Jan")
       def abbrev
-        Date::ABBR_MONTHNAMES[@number]
+        Date::ABBR_MONTHNAMES[number]
       end
 
       # Get the first date of this month.
       #
       # @return [Date] First day of the month
       def start_date
-        Date.new(@year, @number, 1)
+        Date.new(year, number, 1)
       end
 
       # Get the last date of this month.
       #
       # @return [Date] Last day of the month
       def end_date
-        Date.new(@year, @number, -1)
+        Date.new(year, number, -1)
       end
 
       # Get all days in this month.
@@ -242,15 +243,15 @@ module BujoPdf
       #
       # @return [Array<Week>] Weeks overlapping this month
       def weeks
-        week_nums = BujoPdf::Utilities::DateCalculator.weeks_for_month(@year, @number)
-        week_nums.map { |n| Week.new(@year, n) }
+        week_nums = BujoPdf::Utilities::DateCalculator.weeks_for_month(year, number)
+        week_nums.map { |n| Week.new(year, n) }
       end
 
       # Get the season this month is in.
       #
       # @return [String] Season name
       def season
-        BujoPdf::Utilities::DateCalculator.season_for_month(@number)
+        BujoPdf::Utilities::DateCalculator.season_for_month(number)
       end
 
       # Get all months for a given year.
@@ -265,7 +266,7 @@ module BujoPdf
       #
       # @return [String] "Month YYYY"
       def to_s
-        "#{name} #{@year}"
+        "#{name} #{year}"
       end
     end
   end
