@@ -90,22 +90,22 @@ module BujoPdf
 
       # Get the season name for a given month.
       #
+      # Uses Ruby 4.0 pattern matching with ranges for cleaner code.
+      #
       # @param month [Integer] The month number (1-12)
       # @return [String] The season name ('Winter', 'Spring', 'Summer', 'Fall')
       def self.season_for_month(month)
         case month
-        when 12, 1, 2
-          'Winter'
-        when 3, 4, 5
-          'Spring'
-        when 6, 7, 8
-          'Summer'
-        when 9, 10, 11
-          'Fall'
+        in 12 | 1 | 2 then 'Winter'
+        in 3..5 then 'Spring'
+        in 6..8 then 'Summer'
+        in 9..11 then 'Fall'
         end
       end
 
       # Get the first date of the season containing the given month.
+      #
+      # Uses Ruby 4.0 pattern matching for cleaner seasonal logic.
       #
       # Seasons are defined as:
       #   - Winter: December 1
@@ -118,16 +118,13 @@ module BujoPdf
       # @return [Date] The first date of the season
       def self.season_start_date(year, month)
         case month
-        when 12, 1, 2
+        in 12 | 1 | 2
           # Winter starts December 1
           # If current month is Jan or Feb, winter started previous December
           Date.new(month == 12 ? year : year - 1, 12, 1)
-        when 3, 4, 5
-          Date.new(year, 3, 1)
-        when 6, 7, 8
-          Date.new(year, 6, 1)
-        when 9, 10, 11
-          Date.new(year, 9, 1)
+        in 3..5 then Date.new(year, 3, 1)
+        in 6..8 then Date.new(year, 6, 1)
+        in 9..11 then Date.new(year, 9, 1)
         end
       end
 
@@ -144,29 +141,29 @@ module BujoPdf
       # Get month abbreviation for a given week.
       # Returns the 3-letter abbreviation of the month if this week is the first week of that month.
       #
+      # Uses Ruby 3.4+ 'it' parameter for cleaner single-parameter blocks.
+      #
       # @param year [Integer] The year
       # @param week_num [Integer] The week number (1-based)
       # @return [String, nil] The month abbreviation (e.g., "Jan" for January) or nil
       def self.month_abbrev_for_week(year, week_num, char: 3)
-        (1..12).each do |month|
-          return Date::ABBR_MONTHNAMES[month][0..(char-1)] if first_week_of_month(year, month) == week_num
-        end
-        nil
+        (1..12).find { first_week_of_month(year, it) == week_num }
+               &.then { Date::ABBR_MONTHNAMES[it][0..(char-1)] }
       end
 
       # Build a hash mapping week numbers to month abbreviations.
       # Used for efficient lookup when rendering week sidebars.
       #
+      # Uses Ruby 3.4+ 'it' parameter for cleaner iteration.
+      #
       # @param year [Integer] The year
       # @return [Hash<Integer, String>] Mapping of week_num => month_abbrev
       def self.week_to_month_abbrev_map(year, char: 3)
-        map = {}
-        (1..12).each do |month|
-          week_num = first_week_of_month(year, month)
-          month_abbrev = Date::ABBR_MONTHNAMES[month][0..(char-1)]
-          map[week_num] = month_abbrev
+        (1..12).to_h do
+          week_num = first_week_of_month(year, it)
+          month_abbrev = Date::ABBR_MONTHNAMES[it][0..(char-1)]
+          [week_num, month_abbrev]
         end
-        map
       end
 
       # Get all week numbers that include any dates in the given month.
@@ -183,6 +180,20 @@ module BujoPdf
         last_week = week_number_for_date(year, last_of_month)
 
         (first_week..last_week).to_a
+      end
+
+      # Check if a week's date range overlaps with a month's date range.
+      #
+      # Uses Ruby 4.0's Range#overlap? for efficient range overlap detection.
+      #
+      # @param year [Integer] The year
+      # @param week_num [Integer] The week number
+      # @param month [Integer] The month number (1-12)
+      # @return [Boolean] True if week overlaps the month
+      def self.week_overlaps_month?(year, week_num, month)
+        week_range = week_start(year, week_num)..week_end(year, week_num)
+        month_range = Date.new(year, month, 1)..Date.new(year, month, -1)
+        week_range.overlap?(month_range)
       end
     end
   end
