@@ -90,8 +90,6 @@ module BujoPdf
 
       # Get the season name for a given month.
       #
-      # Uses Ruby 4.0 pattern matching with ranges for cleaner code.
-      #
       # @param month [Integer] The month number (1-12)
       # @return [String] The season name ('Winter', 'Spring', 'Summer', 'Fall')
       def self.season_for_month(month)
@@ -104,8 +102,6 @@ module BujoPdf
       end
 
       # Get the first date of the season containing the given month.
-      #
-      # Uses Ruby 4.0 pattern matching for cleaner seasonal logic.
       #
       # Seasons are defined as:
       #   - Winter: December 1
@@ -141,8 +137,6 @@ module BujoPdf
       # Get month abbreviation for a given week.
       # Returns the 3-letter abbreviation of the month if this week is the first week of that month.
       #
-      # Uses Ruby 3.4+ 'it' parameter for cleaner single-parameter blocks.
-      #
       # @param year [Integer] The year
       # @param week_num [Integer] The week number (1-based)
       # @return [String, nil] The month abbreviation (e.g., "Jan" for January) or nil
@@ -153,8 +147,6 @@ module BujoPdf
 
       # Build a hash mapping week numbers to month abbreviations.
       # Used for efficient lookup when rendering week sidebars.
-      #
-      # Uses Ruby 3.4+ 'it' parameter for cleaner iteration.
       #
       # @param year [Integer] The year
       # @return [Hash<Integer, String>] Mapping of week_num => month_abbrev
@@ -183,8 +175,6 @@ module BujoPdf
       end
 
       # Check if a week's date range overlaps with a month's date range.
-      #
-      # Uses Ruby 4.0's Range#overlap? for efficient range overlap detection.
       #
       # @param year [Integer] The year
       # @param week_num [Integer] The week number

@@ -9,9 +9,6 @@ module BujoPdf
   # Provides clean iteration over weeks with boundary detection for
   # interleaving monthly reviews and quarterly planning pages.
   #
-  # Uses Ruby 4.0's Data class for immutability, built-in equality,
-  # and pattern matching support.
-  #
   # @example Basic usage
   #   week = Week[year: 2025, number: 1]
   #   week.start_date  # => 2024-12-30 (Monday)
@@ -19,16 +16,8 @@ module BujoPdf
   #   week.month       # => 1 (January - based on start_date in target year)
   #   week.quarter     # => 1
   #
-  # @example Pattern matching (Ruby 4.0)
-  #   case week
-  #   in Week[year: 2025, number: 1..10]
-  #     puts "Early 2025 week"
-  #   in Week[year:, number:] if number > 50
-  #     puts "Late year week"
-  #   end
-  #
   # @example Iteration with boundary detection
-  #   generated_months = Set.new  # Set is now a core class in Ruby 4.0
+  #   generated_months = Set.new
   #   weeks_in(2025).each do |week|
   #     if week.in_year? && !generated_months.include?(week.month)
   #       monthly_review_page(month: week.month)
@@ -37,13 +26,8 @@ module BujoPdf
   #     weekly_page(week: week.number)
   #   end
   #
-  # Week value object using Ruby 4.0 Data class.
-  #
-  # Note: Data classes are immutable (frozen), so dates are computed at initialization.
   Week = Data.define(:year, :number) do
     # Get the start date (Monday) of this week.
-    #
-    # Computed on each access. For frozen Data objects, we can't cache in instance variables.
     #
     # @return [Date] The Monday starting this week
     def start_date
@@ -51,8 +35,6 @@ module BujoPdf
     end
 
     # Get the end date (Sunday) of this week.
-    #
-    # Computed on each access. For frozen Data objects, we can't cache in instance variables.
     #
     # @return [Date] The Sunday ending this week
     def end_date
