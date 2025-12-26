@@ -77,8 +77,6 @@ module BujoPdf
 
       # Get all days in this week.
       #
-      # Uses Ruby 3.4+ 'it' parameter for cleaner mapping.
-      #
       # @return [Array<Date>] Array of 7 dates from Monday to Sunday
       def days
         (0..6).map { start_date + it }
@@ -189,19 +187,9 @@ module BujoPdf
 
     # Month represents a month for iteration purposes.
     #
-    # Uses Ruby 4.0's Data class for immutability and pattern matching.
-    #
     # @example Basic usage
     #   months = Month.months_in(2025)
     #   months.first.name  # => "January"
-    #
-    # @example Pattern matching (Ruby 4.0)
-    #   case month
-    #   in Month[year: 2025, number: 1..3]
-    #     puts "Q1 2025"
-    #   in Month[number: 12]
-    #     puts "December"
-    #   end
     #
     Month = Data.define(:year, :number) do
       # Get the month name.
