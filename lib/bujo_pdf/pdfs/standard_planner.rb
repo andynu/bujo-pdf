@@ -62,49 +62,34 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   page :multi_year, id: :multi_year, year: year, year_count: 4, outline: true
 
   # 3. Weekly pages with interleaved monthly reviews and quarterly planning
-  generated_months = []
-
-  # First outline entry for Quarterly Planning (links to first quarter)
   outline_entry :quarter_1, 'Quarterly Planning'
-  # First outline entry for Monthly Reviews (links to first month)
   outline_entry :review_1, 'Monthly Reviews'
 
-  # Pre-calculate first week of each month for outline entries
+  generated_months = []
   first_week_of_month = {}
-  weeks_in(year).each do |week|
-    if week.in_year?
-      month = week.month
-      first_week_of_month[month] ||= week.number
-    end
-  end
 
   weeks_in(year).each do |week|
-    # Insert interleaved pages for weeks that start in the target year
-    if week.in_year?
-      month = week.month
+    next unless week.in_year?
 
-      unless generated_months.include?(month)
-        # Quarterly planning at start of each quarter (months 1, 4, 7, 10)
-        if [1, 4, 7, 10].include?(month)
-          quarter = ((month - 1) / 3) + 1
-          page :quarterly_planning, id: :"quarter_#{quarter}",
-               quarter: quarter,
-               year: year
-        end
+    month = week.month
+    first_week_of_month[month] ||= week.number
 
-        # Monthly review for this month
-        page :monthly_review, id: :"review_#{month}",
-             month: month,
-             review_month: month,
-             year: year
-
-        # Add month outline entry linking to first week of the month
-        month_name = Date::MONTHNAMES[month]
-        first_week = first_week_of_month[month]
-        outline_entry :"week_#{first_week}", "#{month_name} #{year}"
-
-        generated_months << month
+    # Insert monthly/quarterly pages at start of each month
+    unless generated_months.include?(month)
+      # Quarterly planning at start of each quarter
+      if [1, 4, 7, 10].include?(month)
+        quarter = ((month - 1) / 3) + 1
+        page :quarterly_planning, id: :"quarter_#{quarter}", quarter: quarter, year: year
       end
+
+      # Monthly review
+      page :monthly_review, id: :"review_#{month}", month: month, review_month: month, year: year
+
+      # Month outline entry
+      month_name = Date::MONTHNAMES[month]
+      outline_entry :"week_#{first_week_of_month[month]}", "#{month_name} #{year}"
+
+      generated_months << month
     end
 
     page :weekly, id: :"week_#{week.number}", week: week
