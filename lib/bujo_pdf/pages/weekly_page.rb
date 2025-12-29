@@ -150,7 +150,8 @@ module BujoPdf
           line_count: WEEKLY_DAY_LINES_COUNT.to_i,
           line_margin: WEEKLY_DAY_LINE_MARGIN,
           header_font_size: WEEKLY_DAY_HEADER_FONT_SIZE,
-          date_config: context.date_config
+          date_config: context.date_config,
+          event_store: context.event_store
         )
         section.render
       end

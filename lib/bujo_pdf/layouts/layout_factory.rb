@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'daily_with_sidebars_layout'
 require_relative 'full_page_layout'
 require_relative 'standard_with_sidebars_layout'
 
@@ -30,6 +31,7 @@ module BujoPdf
       #
       # Maps symbolic layout names to their corresponding class.
       LAYOUTS = {
+        daily_with_sidebars: DailyWithSidebarsLayout,
         full_page: FullPageLayout,
         standard_with_sidebars: StandardWithSidebarsLayout
       }.freeze
