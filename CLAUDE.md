@@ -95,6 +95,77 @@ PDF internal links use named destinations:
 - `grid_*` - Grid template pages
 - `collection_<id>` - User-configured collection pages
 
+## Convention-Based Outline System
+
+The DSL supports automatic PDF outline (bookmark) generation from page declarations.
+
+### Outline Modes
+
+Set the mode at the top of your recipe:
+
+```ruby
+BujoPdf.define_pdf :my_recipe do |year:|
+  outline_mode :auto    # Auto-generate outline entries from page titles
+  # ... pages
+end
+```
+
+- `:manual` - (Default) Only explicit `outline:` params create entries. Backward compatible.
+- `:auto` - Automatically generate outline entries from page registry titles.
+- `:none` - No outline entries generated, even if explicitly specified.
+
+### Per-Page Overrides
+
+Control individual page outline entries:
+
+```ruby
+# Explicit title
+page :seasonal_calendar, id: :seasonal, outline: 'Seasonal View', year: year
+
+# Suppress in auto mode
+page :reference, id: :ref, outline: false
+
+# Auto-derive title (uses page class's registered title)
+page :monthly_overview, id: :jan, outline: true, month: 1, year: year
+```
+
+### Group Hierarchy
+
+Groups create hierarchical outline sections in `:auto` mode:
+
+```ruby
+outline_mode :auto
+
+group :monthly_pages do
+  # Pages here become children of "Monthly Pages" section
+  page :monthly_overview, id: :jan, month: 1, year: year
+  page :monthly_overview, id: :feb, month: 2, year: year
+end
+# Creates outline: "Monthly Pages" > "January 2025", "February 2025"
+
+group :utilities, outline: false do
+  # No section - pages appear at root level
+  page :reference
+end
+
+group :front_matter, outline: 'Getting Started' do
+  # Custom section title
+  page :index, id: :index
+end
+```
+
+### Manual Sections
+
+For fine-grained control, use `outline_section` directly:
+
+```ruby
+outline_section 'Q1 Weeks', dest: :first do
+  weeks_in(year).first(13).each do |week|
+    page :weekly, id: :"week_#{week.number}", outline: "Week #{week.number}"
+  end
+end
+```
+
 ## Prawn Gotchas
 
 1. **Coordinate origin**: Bottom-left (0,0), Y increases upward
