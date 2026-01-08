@@ -94,6 +94,7 @@ require_relative 'bujo_pdf/pages/daily_wheel'
 require_relative 'bujo_pdf/pages/year_wheel'
 require_relative 'bujo_pdf/pages/grid_showcase'
 require_relative 'bujo_pdf/pages/grids_overview'
+require_relative 'bujo_pdf/pages/monthly_overview'
 
 # Load grid page classes
 require_relative 'bujo_pdf/pages/grids/dot_grid_page'
