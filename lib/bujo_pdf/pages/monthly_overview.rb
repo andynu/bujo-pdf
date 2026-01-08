@@ -23,7 +23,7 @@ module BujoPdf
       include Styling::Grid
 
       register_page :monthly_overview,
-        title: "%{month_name} Overview",
+        title: ->(p) { "#{Date::MONTHNAMES[p[:month]]} Overview" },
         dest: "month_%{month}"
 
       def setup

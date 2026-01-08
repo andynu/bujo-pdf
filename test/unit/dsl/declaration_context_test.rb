@@ -117,4 +117,76 @@ class TestDeclarationContext < Minitest::Test
     assert weeks.length >= 4
     assert weeks.length <= 6
   end
+
+  def test_outline_mode_defaults_to_manual
+    assert_equal :manual, @context.current_outline_mode
+  end
+
+  def test_outline_mode_can_be_set_to_auto
+    @context.outline_mode(:auto)
+    assert_equal :auto, @context.current_outline_mode
+  end
+
+  def test_outline_mode_can_be_set_to_none
+    @context.outline_mode(:none)
+    assert_equal :none, @context.current_outline_mode
+  end
+
+  def test_outline_mode_rejects_invalid_modes
+    assert_raises(ArgumentError) do
+      @context.outline_mode(:invalid)
+    end
+  end
+
+  def test_auto_outline_mode_generates_outline_for_standard_pages
+    @context.outline_mode(:auto)
+    @context.page(:seasonal_calendar, year: 2025)
+
+    assert_equal 1, @context.outline_entries.length
+    # Title depends on page registration, should be "Seasonal Calendar" or similar
+    assert @context.outline_entries.first.title
+  end
+
+  def test_auto_outline_mode_generates_outline_for_inline_pages
+    @context.outline_mode(:auto)
+    @context.page(id: :my_notes) do
+      layout :full_page
+      body { h1(2, 2, "Notes") }
+    end
+
+    assert_equal 1, @context.outline_entries.length
+    assert_equal "My Notes", @context.outline_entries.first.title
+  end
+
+  def test_manual_mode_requires_explicit_outline_param
+    # Manual mode (default) - no outline entry without explicit outline param
+    @context.page(:seasonal_calendar, year: 2025)
+    assert_equal 0, @context.outline_entries.length
+
+    # With explicit outline: true
+    @context.page(:seasonal_calendar, year: 2025, outline: true)
+    assert_equal 1, @context.outline_entries.length
+  end
+
+  def test_none_mode_never_generates_outline
+    @context.outline_mode(:none)
+
+    # Even with explicit outline: true, no entry should be added
+    @context.page(:seasonal_calendar, year: 2025, outline: true)
+    assert_equal 0, @context.outline_entries.length
+
+    @context.page(id: :notes, outline: "Notes") do
+      layout :full_page
+      body { h1(2, 2, "Notes") }
+    end
+    assert_equal 0, @context.outline_entries.length
+  end
+
+  def test_auto_mode_respects_explicit_outline_false
+    @context.outline_mode(:auto)
+
+    # Explicit false should suppress outline entry
+    @context.page(:seasonal_calendar, year: 2025, outline: false)
+    assert_equal 0, @context.outline_entries.length
+  end
 end

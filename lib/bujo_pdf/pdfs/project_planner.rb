@@ -11,8 +11,8 @@
 # - 12 monthly overview pages (January through December)
 # - Notes page (inline)
 #
-# Note: This recipe intentionally does NOT use `outline:` parameters on pages.
-# It serves as a baseline test before adding convention-based outline logic.
+# This recipe uses `outline_mode :auto` to automatically generate outline entries
+# from page registry titles (for standard pages) and id-derived titles (for inline pages).
 #
 # @example Generate a project planner
 #   BujoPdf.generate_from_recipe :project_planner, year: 2025, output: 'project_planner_2025.pdf'
@@ -26,6 +26,7 @@ BujoPdf.define_pdf :project_planner do |year:, theme: nil|
   end
 
   theme theme if theme
+  outline_mode :auto
 
   # Cover page (inline)
   page id: :cover do
