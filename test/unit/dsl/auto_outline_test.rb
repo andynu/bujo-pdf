@@ -172,4 +172,166 @@ class TestAutoOutline < Minitest::Test
     # No entry because there's no destination (id is nil)
     assert_equal 0, @context.outline_entries.length
   end
+
+  # ============================================
+  # Group Outline Hierarchy
+  # ============================================
+
+  def test_group_with_auto_mode_creates_parent_entry_from_group_name
+    @context.outline_mode(:auto)
+
+    @context.group :monthly_pages do
+      page(id: :page_1) do
+        layout :full_page
+        body { h1(2, 2, 'Page 1') }
+      end
+    end
+
+    # Should have one section entry with derived title "Monthly Pages"
+    assert_equal 1, @context.outline_entries.length
+    section = @context.outline_entries.first
+    assert_equal 'Monthly Pages', section.title
+    assert section.section?, 'Group should create a section with children'
+  end
+
+  def test_pages_inside_group_become_children_of_group_outline_entry
+    @context.outline_mode(:auto)
+
+    @context.group :months do
+      page(id: :january) do
+        layout :full_page
+        body { h1(2, 2, 'January') }
+      end
+      page(id: :february) do
+        layout :full_page
+        body { h1(2, 2, 'February') }
+      end
+    end
+
+    # Should have one section with two children
+    assert_equal 1, @context.outline_entries.length
+    section = @context.outline_entries.first
+    assert_equal 'Months', section.title
+    assert_equal 2, section.children.length
+    assert_equal 'January', section.children[0].title
+    assert_equal 'February', section.children[1].title
+  end
+
+  def test_group_with_explicit_outline_uses_that_title_as_parent
+    @context.outline_mode(:auto)
+
+    @context.group :months, outline: 'All Months' do
+      page(id: :january) do
+        layout :full_page
+        body { h1(2, 2, 'January') }
+      end
+    end
+
+    assert_equal 1, @context.outline_entries.length
+    section = @context.outline_entries.first
+    assert_equal 'All Months', section.title
+    assert_equal 1, section.children.length
+  end
+
+  def test_group_with_outline_false_suppresses_group_entry
+    @context.outline_mode(:auto)
+
+    @context.group :hidden_group, outline: false do
+      page(id: :page_1) do
+        layout :full_page
+        body { h1(2, 2, 'Page 1') }
+      end
+      page(id: :page_2) do
+        layout :full_page
+        body { h1(2, 2, 'Page 2') }
+      end
+    end
+
+    # Pages should appear at root level since group outline is suppressed
+    assert_equal 2, @context.outline_entries.length
+    assert_equal 'Page 1', @context.outline_entries[0].title
+    assert_equal 'Page 2', @context.outline_entries[1].title
+    # Neither should have children (they are leaf entries)
+    refute @context.outline_entries[0].section?, 'Page entries should not be sections'
+    refute @context.outline_entries[1].section?, 'Page entries should not be sections'
+  end
+
+  def test_nested_groups_create_nested_outline_hierarchy
+    @context.outline_mode(:auto)
+
+    @context.group :outer_group do
+      group :inner_group do
+        page(id: :deep_page) do
+          layout :full_page
+          body { h1(2, 2, 'Deep Page') }
+        end
+      end
+    end
+
+    # Should have "Outer Group" -> "Inner Group" -> "Deep Page"
+    assert_equal 1, @context.outline_entries.length
+    outer = @context.outline_entries.first
+    assert_equal 'Outer Group', outer.title
+    assert_equal 1, outer.children.length
+
+    inner = outer.children.first
+    assert_equal 'Inner Group', inner.title
+    assert_equal 1, inner.children.length
+
+    deep = inner.children.first
+    assert_equal 'Deep Page', deep.title
+  end
+
+  def test_group_section_destination_is_first_page
+    @context.outline_mode(:auto)
+
+    @context.group :months do
+      page(id: :january) do
+        layout :full_page
+        body { h1(2, 2, 'January') }
+      end
+      page(id: :february) do
+        layout :full_page
+        body { h1(2, 2, 'February') }
+      end
+    end
+
+    section = @context.outline_entries.first
+    # Section destination should be the first page's destination
+    assert_equal :january, section.dest
+  end
+
+  def test_group_in_manual_mode_does_not_auto_generate_section
+    # Default mode is :manual
+    @context.group :months do
+      page(id: :january, outline: 'January') do
+        layout :full_page
+        body { h1(2, 2, 'January') }
+      end
+    end
+
+    # In manual mode, group should NOT auto-generate a section
+    # Only the explicitly outlined page should appear at root level
+    assert_equal 1, @context.outline_entries.length
+    assert_equal 'January', @context.outline_entries.first.title
+    refute @context.outline_entries.first.section?
+  end
+
+  def test_group_with_explicit_outline_in_manual_mode_creates_section
+    # Default mode is :manual
+    @context.group :months, outline: 'All Months' do
+      page(id: :january, outline: 'January') do
+        layout :full_page
+        body { h1(2, 2, 'January') }
+      end
+    end
+
+    # Explicit outline on group should still create a section
+    assert_equal 1, @context.outline_entries.length
+    section = @context.outline_entries.first
+    assert_equal 'All Months', section.title
+    assert section.section?
+    assert_equal 1, section.children.length
+    assert_equal 'January', section.children.first.title
+  end
 end
