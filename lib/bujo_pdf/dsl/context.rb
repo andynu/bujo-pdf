@@ -11,6 +11,18 @@ module BujoPdf
   module PdfDSL
     # DeclarationContext provides the DSL methods for PDF definition evaluation.
     #
+    # ## Outline System
+    #
+    # The DSL supports three outline modes controlled by {#outline_mode}:
+    #
+    # - **:manual** (default): Only pages with explicit `outline:` params get entries.
+    #   Backward compatible with existing recipes.
+    # - **:auto**: Automatically generates outline entries from page registry titles.
+    #   Groups create hierarchical sections. Use `outline: false` to suppress.
+    # - **:none**: Disables all outline generation.
+    #
+    # See {#create_standard_page} and {#create_inline_page} for resolution logic.
+    #
     # When a PdfDefinition is evaluated, its block runs in the context of this
     # class, collecting page declarations, groups, and metadata.
     #
@@ -410,11 +422,22 @@ module BujoPdf
 
       # Create a standard page declaration referencing a predefined page type.
       #
-      # @param type [Symbol] The page type
-      # @param id [Symbol, nil] Optional explicit page ID
-      # @param outline [String, Boolean, nil] Outline entry
-      # @param params [Hash] Parameters for the page
+      # This method handles the outline resolution logic for standard pages:
+      #
+      # 1. **:none mode**: Never creates outline entries, regardless of outline param
+      # 2. **explicit false**: Suppresses outline even in :auto mode (takes precedence)
+      # 3. **:auto mode with nil**: Treats nil as true, auto-generates from registry
+      # 4. **:manual mode with nil**: No outline entry (backward compatible default)
+      # 5. **outline: true**: Resolves title from page class's generate_title method
+      # 6. **outline: "Title"**: Uses the explicit string
+      #
+      # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
+      # @param id [Symbol, nil] Optional explicit page ID for the destination
+      # @param outline [String, Boolean, nil] Outline entry specification
+      # @param params [Hash] Parameters passed to the page class
       # @return [PageDeclaration] The created declaration
+      #
+      # @see resolve_outline_title for title generation from page registry
       def create_standard_page(type, id: nil, outline: nil, **params)
         # In :none mode, never add outline entries
         return create_standard_page_without_outline(type, id: id, **params) if @current_outline_mode == :none
@@ -453,10 +476,22 @@ module BujoPdf
 
       # Create an inline page declaration from a block.
       #
-      # @param id [Symbol, nil] Optional explicit page ID
-      # @param outline [String, Boolean, nil] Outline entry
-      # @param params [Hash] Additional parameters
-      # @yield Block defining inline page configuration
+      # This method handles the outline resolution logic for inline pages:
+      #
+      # 1. **:none mode**: Never creates outline entries
+      # 2. **explicit false**: Suppresses outline even in :auto mode
+      # 3. **:auto mode with nil**: Treats nil as true, derives title from id
+      # 4. **:manual mode with nil**: No outline entry
+      # 5. **outline: true**: Derives title from id (e.g., :my_notes -> "My Notes")
+      # 6. **outline: "Title"**: Uses the explicit string
+      #
+      # Unlike standard pages, inline pages don't have a page registry entry,
+      # so `outline: true` derives the title from the page id using title case.
+      #
+      # @param id [Symbol, nil] Optional explicit page ID (also used for title derivation)
+      # @param outline [String, Boolean, nil] Outline entry specification
+      # @param params [Hash] Additional parameters passed to the inline page
+      # @yield Block defining inline page configuration (layout, background, body)
       # @return [InlinePageDeclaration] The created inline declaration
       def create_inline_page(id: nil, outline: nil, params: {}, &block)
         # Create context and evaluate the block
@@ -553,8 +588,19 @@ module BujoPdf
 
       # Determine the effective outline title for a group.
       #
-      # @param name [Symbol] The group name
-      # @param outline [String, Boolean, nil] The outline parameter
+      # This method controls whether groups create hierarchical outline sections:
+      #
+      # - **outline: false**: No section created; pages appear at current level
+      # - **outline: "Title"**: Creates section with explicit title
+      # - **outline: nil + :auto mode**: Creates section with title from group name
+      #   (e.g., :monthly_pages -> "Monthly Pages")
+      # - **outline: nil + :manual mode**: No section created (backward compatible)
+      #
+      # When a section is created, all pages declared inside the group block
+      # become children of that section in the PDF outline hierarchy.
+      #
+      # @param name [Symbol] The group name (used for title derivation in :auto mode)
+      # @param outline [String, Boolean, nil] The outline parameter from group()
       # @return [String, nil] The title to use, or nil if no section should be created
       def determine_group_outline_title(name, outline)
         case outline

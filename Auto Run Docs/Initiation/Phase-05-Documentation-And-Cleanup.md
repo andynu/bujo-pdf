@@ -17,10 +17,17 @@ This phase documents the new convention-based outline system, cleans up the test
   - Group hierarchy behavior in auto mode with examples
   - Manual `outline_section` usage for fine-grained control
 
-- [ ] Add inline documentation to the modified files:
+- [x] Add inline documentation to the modified files:
   - In `lib/bujo_pdf/dsl/context.rb`: Add YARD docs to `outline_mode` method
   - Document the auto-outline resolution logic in `create_standard_page` and `create_inline_page`
   - Document the group hierarchy behavior in the `group` method
+
+  **Completed:** Enhanced YARD documentation in `lib/bujo_pdf/dsl/context.rb`:
+  - Added module-level doc block summarizing the outline system with links to key methods
+  - Enhanced `create_standard_page` with numbered list of outline resolution priority rules
+  - Enhanced `create_inline_page` with numbered list of resolution rules and note about title derivation
+  - Enhanced `determine_group_outline_title` documenting how groups create hierarchical sections
+  - All auto-outline tests (20 tests) pass
 
 - [ ] Clean up the test script:
   - Move `test_project_planner.rb` to `examples/project_planner_example.rb`
