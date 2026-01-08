@@ -29,11 +29,18 @@ This phase documents the new convention-based outline system, cleans up the test
   - Enhanced `determine_group_outline_title` documenting how groups create hierarchical sections
   - All auto-outline tests (20 tests) pass
 
-- [ ] Clean up the test script:
+- [x] Clean up the test script:
   - Move `test_project_planner.rb` to `examples/project_planner_example.rb`
   - Update the script to include comments explaining what it demonstrates
   - Add it to `.gitignore` if example outputs shouldn't be committed, OR
   - Add a cleanup step that removes the generated PDF after verification
+
+  **Completed:** Moved and enhanced the test script:
+  - Created `examples/project_planner_example.rb` with comprehensive header documentation
+  - Added detailed comments explaining all four outline features demonstrated
+  - Added interactive cleanup prompt at end to optionally delete generated PDF
+  - Removed original `test_project_planner.rb` (already in `.gitignore` via `test_*.rb`)
+  - Generated PDFs at root level already ignored by `.gitignore`'s `*.pdf` rule
 
 - [ ] Create a future work note for layout refactoring:
   - Create `docs/future/layout-sidebar-decoupling.md` with front matter:
