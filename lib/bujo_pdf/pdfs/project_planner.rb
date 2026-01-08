@@ -7,12 +7,15 @@
 # pages in between.
 #
 # Page structure:
-# - Cover page (inline)
+# - Cover page (inline) with outline override: "Year Overview"
 # - 12 monthly overview pages (January through December)
-# - Notes page (inline)
+#   - Month 6 (June) suppressed from outline with outline: false
+# - Notes page (inline) with auto-generated outline title
 #
-# This recipe uses `outline_mode :auto` to automatically generate outline entries
-# from page registry titles (for standard pages) and id-derived titles (for inline pages).
+# This recipe demonstrates all three outline behaviors in auto mode:
+# 1. Auto-generated titles (most months, notes page)
+# 2. Custom override title (cover page: "Year Overview")
+# 3. Suppressed entry (June: outline: false)
 #
 # @example Generate a project planner
 #   BujoPdf.generate_from_recipe :project_planner, year: 2025, output: 'project_planner_2025.pdf'
@@ -28,8 +31,9 @@ BujoPdf.define_pdf :project_planner do |year:, theme: nil|
   theme theme if theme
   outline_mode :auto
 
-  # Cover page (inline)
-  page id: :cover do
+  # Cover page (inline) - demonstrates outline title override
+  # Instead of auto-generating "Cover" from the id, we override with "Year Overview"
+  page id: :cover, outline: 'Year Overview' do
     layout :full_page
 
     body do
@@ -39,12 +43,20 @@ BujoPdf.define_pdf :project_planner do |year:, theme: nil|
   end
 
   # 12 monthly overview pages
+  # - Most months use auto-generated titles from the page registry
+  # - Month 6 (June) demonstrates suppression with outline: false
   12.times do |i|
     month = i + 1
-    page :monthly_overview, id: :"month_#{month}", month: month, year: year
+    if month == 6
+      # Suppress June from the outline (demonstrates outline: false in auto mode)
+      page :monthly_overview, id: :"month_#{month}", month: month, year: year, outline: false
+    else
+      # Auto-generate outline title from page registry
+      page :monthly_overview, id: :"month_#{month}", month: month, year: year
+    end
   end
 
-  # Notes page (inline)
+  # Notes page (inline) - uses auto-generated title "Notes" from id
   page id: :notes do
     layout :full_page
     background :dot_grid

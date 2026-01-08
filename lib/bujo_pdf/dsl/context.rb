@@ -408,6 +408,11 @@ module BujoPdf
         # In :none mode, never add outline entries
         return create_standard_page_without_outline(type, id: id, **params) if @current_outline_mode == :none
 
+        # IMPORTANT: Check for explicit outline: false BEFORE checking auto mode.
+        # This allows users to suppress auto-generated outline entries for specific pages
+        # even when outline_mode :auto is enabled. The explicit false takes precedence.
+        return create_standard_page_without_outline(type, id: id, **params) if outline == false
+
         # Determine effective outline setting based on mode
         effective_outline = outline
         if outline.nil? && @current_outline_mode == :auto
@@ -447,9 +452,16 @@ module BujoPdf
         inline_context = InlinePageContext.new
         inline_context.evaluate(&block)
 
-        # Determine effective outline setting based on mode
+        # Determine effective outline setting based on mode.
+        # Check priority: :none mode > explicit false > auto mode > default
         effective_outline = outline
         if @current_outline_mode == :none
+          # In :none mode, never add outline entries
+          effective_outline = false
+        elsif outline == false
+          # IMPORTANT: Check for explicit outline: false BEFORE checking auto mode.
+          # This allows users to suppress auto-generated outline entries for specific pages
+          # even when outline_mode :auto is enabled. The explicit false takes precedence.
           effective_outline = false
         elsif outline.nil? && @current_outline_mode == :auto
           # Auto mode: treat nil as true (auto-generate title from id)
