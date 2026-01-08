@@ -2,20 +2,40 @@
 
 # Project Planner Recipe
 #
-# A minimal project planner for testing the convention-based outline system.
+# A minimal project planner for testing the convention-based outline system
+# and hierarchical group outline feature.
+#
 # This recipe uses inline pages for cover and notes, with 12 MonthlyOverview
-# pages in between.
+# pages grouped together in a hierarchical outline section.
 #
 # Page structure:
 # - Cover page (inline) with outline override: "Year Overview"
-# - 12 monthly overview pages (January through December)
+# - "Months" group containing 12 monthly overview pages
 #   - Month 6 (June) suppressed from outline with outline: false
 # - Notes page (inline) with auto-generated outline title
 #
-# This recipe demonstrates all three outline behaviors in auto mode:
+# This recipe demonstrates:
 # 1. Auto-generated titles (most months, notes page)
 # 2. Custom override title (cover page: "Year Overview")
 # 3. Suppressed entry (June: outline: false)
+# 4. Hierarchical outline from group (months nested under "Months" section)
+#
+# Expected outline structure:
+#   - Year Overview (cover)
+#   - Months (section, links to January)
+#     - January 2025
+#     - February 2025
+#     - March 2025
+#     - April 2025
+#     - May 2025
+#     - (June suppressed)
+#     - July 2025
+#     - August 2025
+#     - September 2025
+#     - October 2025
+#     - November 2025
+#     - December 2025
+#   - Notes
 #
 # @example Generate a project planner
 #   BujoPdf.generate_from_recipe :project_planner, year: 2025, output: 'project_planner_2025.pdf'
@@ -42,17 +62,19 @@ BujoPdf.define_pdf :project_planner do |year:, theme: nil|
     end
   end
 
-  # 12 monthly overview pages
-  # - Most months use auto-generated titles from the page registry
-  # - Month 6 (June) demonstrates suppression with outline: false
-  12.times do |i|
-    month = i + 1
-    if month == 6
-      # Suppress June from the outline (demonstrates outline: false in auto mode)
-      page :monthly_overview, id: :"month_#{month}", month: month, year: year, outline: false
-    else
-      # Auto-generate outline title from page registry
-      page :monthly_overview, id: :"month_#{month}", month: month, year: year
+  # 12 monthly overview pages wrapped in a group
+  # With outline_mode :auto, this creates a "Months" parent section
+  # with the 12 month children indented below it
+  group :months do
+    12.times do |i|
+      month = i + 1
+      if month == 6
+        # Suppress June from the outline (demonstrates outline: false in auto mode)
+        page :monthly_overview, id: :"month_#{month}", month: month, year: year, outline: false
+      else
+        # Auto-generate outline title from page registry
+        page :monthly_overview, id: :"month_#{month}", month: month, year: year
+      end
     end
   end
 

@@ -127,51 +127,62 @@ module BujoPdf
 
       # Declare a group of related pages.
       #
+      # In :auto outline mode, groups automatically create hierarchical outline entries.
+      # Pages declared inside the group become children of the group's outline section.
+      #
       # @param name [Symbol] The group name
-      # @param outline [String, nil] Optional outline entry title for the group
+      # @param outline [String, Boolean, nil] Outline entry title for the group
+      #   - String: Use this as the section title
+      #   - false: Suppress the group entry (pages appear at current level)
+      #   - nil: In :auto mode, derive title from name; in :manual mode, no section
       # @param options [Hash] Group options
       # @option options [Boolean] :cycle Enable cycling through pages
       # @yield Block containing page declarations for this group
       # @return [GroupDeclaration] The created group
       #
-      # @example Simple group
-      #   group :grids, cycle: true do
-      #     page :dot_grid
-      #     page :graph_grid
+      # @example Simple group (auto mode creates section)
+      #   outline_mode :auto
+      #   group :monthly_pages do
+      #     page :monthly_overview, id: :january, month: 1, year: 2025
+      #   end
+      #   # Creates: "Monthly Pages" section with child entries
+      #
+      # @example Group with explicit outline title
+      #   group :months, outline: 'All Months' do
+      #     page :monthly_overview, id: :january, month: 1, year: 2025
       #   end
       #
-      # @example Group with outline entry
-      #   group :grids, cycle: true, outline: 'Grid Types Showcase' do
-      #     page :grid_showcase, id: :grid_showcase
-      #     page :grid_dot, id: :grid_dot
+      # @example Suppress group outline entry (pages at root level)
+      #   group :grids, outline: false do
+      #     page :dot_grid, id: :dot_grid
       #   end
       def group(name, outline: nil, **options, &block)
         group_decl = GroupDeclaration.new(name, outline: outline, **options)
         @groups << group_decl
 
-        # Track where to insert the group's outline entry
-        # We'll determine the first page destination after evaluating the block
-        outline_placeholder_index = nil
-        if outline
-          outline_placeholder_index = @outline_entries.length
-        end
+        # Determine effective outline title for the group
+        # - outline: false -> no section, pages appear at current level
+        # - outline: "Title" -> use that title
+        # - outline: nil + auto mode -> derive from name
+        # - outline: nil + manual mode -> no section
+        effective_outline = determine_group_outline_title(name, outline)
 
         if block_given?
           previous_group = @current_group
           @current_group = group_decl
-          instance_eval(&block)
-          @current_group = previous_group
-        end
 
-        # Add outline entry for the group if specified
-        # Insert at the recorded position (before any pages added during block eval)
-        if outline && group_decl.pages.any?
-          first_page = group_decl.pages.first
-          entry = OutlineDeclaration.new(
-            title: outline,
-            dest: first_page.id || first_page.type
-          )
-          @outline_entries.insert(outline_placeholder_index, entry)
+          if effective_outline
+            # Create a section for the group; pages inside will be children
+            # We use :first so the section links to its first child's destination
+            outline_section(effective_outline, dest: :first) do
+              instance_eval(&block)
+            end
+          else
+            # No section - pages appear at current outline level
+            instance_eval(&block)
+          end
+
+          @current_group = previous_group
         end
 
         group_decl
@@ -537,6 +548,31 @@ module BujoPdf
           @current_section.add_child(entry)
         else
           @outline_entries << entry
+        end
+      end
+
+      # Determine the effective outline title for a group.
+      #
+      # @param name [Symbol] The group name
+      # @param outline [String, Boolean, nil] The outline parameter
+      # @return [String, nil] The title to use, or nil if no section should be created
+      def determine_group_outline_title(name, outline)
+        case outline
+        when false
+          # Explicitly suppressed
+          nil
+        when String
+          # Explicit title provided
+          outline
+        when nil
+          # Derive from name in auto mode, no section in manual mode
+          if @current_outline_mode == :auto
+            name.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+          else
+            nil
+          end
+        else
+          nil
         end
       end
     end
