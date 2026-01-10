@@ -71,13 +71,13 @@ module BujoPdf
       # @param label_size [Integer] Font size for label (optional)
       # @return [void]
       def draw_labeled_section(col, row, width_boxes, height_boxes, label, label_size: LABEL_FONT_SIZE)
-        box(col, row, width_boxes, height_boxes, stroke: Styling::Colors.BORDERS)
+        box(col, row, width_boxes, height_boxes, stroke: color_borders)
         text(col, row, label,
              size: label_size,
              style: :bold,
              align: :center,
              width: width_boxes,
-             color: Styling::Colors.SECTION_HEADERS)
+             color: color_section_headers)
       end
     end
   end

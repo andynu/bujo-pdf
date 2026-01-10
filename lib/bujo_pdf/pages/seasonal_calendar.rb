@@ -69,7 +69,7 @@ module BujoPdf
         # Header: rows 0-1 (2 boxes), full width
         header = @grid_system.rect(0, 0, COLS, 2)
         @pdf.font "Helvetica-Bold", size: 18
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        @pdf.fill_color color_text_black
         @pdf.text_box "Year #{@year}",
                       at: [header[:x], header[:y]],
                       width: header[:width],
@@ -131,12 +131,12 @@ module BujoPdf
       def draw_fieldset(start_col, start_row, width_boxes, height_boxes, legend)
         # Draw box border
         box(start_col, start_row, width_boxes, height_boxes,
-            stroke: Styling::Colors.BORDERS, fill: nil)
+            stroke: color_borders, fill: nil)
 
         # Draw season label with top positioning (centered on top border)
         h1(start_col + 1, start_row, legend,
            valign: :top,
-           color: Styling::Colors.BORDERS)
+           color: color_borders)
       end
 
       def draw_month_grid(month, start_col, start_row, width_boxes)

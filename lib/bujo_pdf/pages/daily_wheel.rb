@@ -19,6 +19,8 @@ module BujoPdf
     #   page = DailyWheel.new(pdf, { year: 2025 })
     #   page.generate
     class DailyWheel < Base
+      include Styling::Colors
+
       register_page :daily_wheel,
         title: "Daily Wheel",
         dest: "daily_wheel"
@@ -108,7 +110,7 @@ module BujoPdf
         inner_r = radii[2]  # Circle 3
         outer_r = radii[3]  # Circle 4
 
-        @pdf.fill_color Styling::Colors.WEEKEND_BG
+        @pdf.fill_color color_weekend_bg
 
         # Night hours: 22, 23, 0, 1, 2, 3, 4, 5, 6 (10 PM to 7 AM)
         night_hours = [22, 23, 0, 1, 2, 3, 4, 5, 6]
@@ -166,7 +168,7 @@ module BujoPdf
       #
       # @param radii [Array<Float>] Array of radii in points
       def draw_circles(radii)
-        @pdf.stroke_color Styling::Colors.SECTION_HEADERS
+        @pdf.stroke_color color_section_headers
         @pdf.line_width CIRCLE_LINE_WIDTH
 
         # Draw only circles 1-4 (indices 0-3)
@@ -179,7 +181,7 @@ module BujoPdf
       #
       # @param radii [Array<Float>] Array of radii in points
       def draw_divisions(radii)
-        @pdf.stroke_color Styling::Colors.TEXT_GRAY
+        @pdf.stroke_color color_text_gray
 
         angle_step = (2 * Math::PI) / NUM_SEGMENTS
         start_angle = -Math::PI / 2.0  # Start from top (12 o'clock)
@@ -226,7 +228,7 @@ module BujoPdf
       # @param radii [Array<Float>] Array of radii in points
       # @param scale [Float] Scale factor for converting proportions to points
       def draw_hour_labels(radii, scale)
-        @pdf.fill_color Styling::Colors.TEXT_GRAY
+        @pdf.fill_color color_text_gray
 
         label_radius = radii[5] + (LABEL_OFFSET * scale)
         angle_step = (2 * Math::PI) / 24  # One label per hour

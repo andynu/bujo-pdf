@@ -38,6 +38,7 @@ module BujoPdf
     #   )
     #   column.render
     class WeekColumn < Component
+      include Styling::Colors
       include Box::Mixin
       include HLine::Mixin
       include Text::Mixin
@@ -50,9 +51,9 @@ module BujoPdf
         header_font_size: 8,
         time_label_font_size: 6,
         text_inset: 0.2,          # Inset from column edges in grid boxes (~3pt)
-        header_color: nil,        # Will use Styling::Colors.SECTION_HEADERS if nil
-        border_color: nil,        # Will use Styling::Colors.BORDERS if nil
-        weekend_bg_color: nil,    # Will use Styling::Colors.WEEKEND_BG if nil
+        header_color: nil,        # Will use color_section_headers if nil
+        border_color: nil,        # Will use color_borders if nil
+        weekend_bg_color: nil,    # Will use color_weekend_bg if nil
         show_time_labels: false,
         weekend: false
       }.freeze
@@ -104,15 +105,15 @@ module BujoPdf
       private
 
       def effective_header_color
-        @header_color || Styling::Colors.SECTION_HEADERS
+        @header_color || color_section_headers
       end
 
       def effective_border_color
-        @border_color || Styling::Colors.BORDERS
+        @border_color || color_borders
       end
 
       def effective_weekend_bg_color
-        @weekend_bg_color || Styling::Colors.WEEKEND_BG
+        @weekend_bg_color || color_weekend_bg
       end
 
       # Draw subtle weekend background
