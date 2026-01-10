@@ -265,4 +265,54 @@ class TestDeclarationContext < Minitest::Test
     assert_instance_of BujoPdf::PdfDSL::ChromeBuilder, result
     assert result.empty?
   end
+
+  # Per-page chrome tests
+
+  def test_page_with_chrome_false_opt_out
+    @context.page(:cover, id: :cover, chrome: false)
+
+    assert_equal 1, @context.pages.length
+    assert_equal false, @context.pages.first.chrome
+  end
+
+  def test_page_with_chrome_hash_override
+    @context.page(:notes, id: :notes, chrome: { right: false })
+
+    assert_equal 1, @context.pages.length
+    assert_instance_of Hash, @context.pages.first.chrome
+    assert_equal false, @context.pages.first.chrome[:right]
+  end
+
+  def test_page_with_chrome_sidebar_replacement
+    @context.page(:special, id: :special, chrome: { left: :month_sidebar })
+
+    assert_equal 1, @context.pages.length
+    assert_equal :month_sidebar, @context.pages.first.chrome[:left]
+  end
+
+  def test_page_chrome_nil_by_default
+    @context.page(:seasonal_calendar, year: 2025)
+
+    assert_nil @context.pages.first.chrome
+  end
+
+  def test_inline_page_with_chrome_false
+    @context.page(id: :cover, chrome: false) do
+      body { h1(2, 2, "Cover") }
+    end
+
+    assert_equal 1, @context.pages.length
+    assert_equal false, @context.pages.first.chrome
+  end
+
+  def test_inline_page_with_chrome_hash
+    @context.page(id: :special, chrome: { left: false, right: :nav_tabs }) do
+      body { h1(2, 2, "Special") }
+    end
+
+    assert_equal 1, @context.pages.length
+    chrome = @context.pages.first.chrome
+    assert_equal false, chrome[:left]
+    assert_equal :nav_tabs, chrome[:right]
+  end
 end
