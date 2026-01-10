@@ -85,26 +85,24 @@ module BujoPdf
       private
 
       def draw_lines
-        pdf.stroke_color @color
-        pdf.line_width @stroke
+        with_stroke_color(@color) do
+          with_line_width(@stroke) do
+            # Apply dash pattern if specified
+            if @dash
+              pdf.dash(@dash[0], space: @dash[1])
+            end
 
-        # Apply dash pattern if specified
-        if @dash
-          pdf.dash(@dash[0], space: @dash[1])
+            # Draw one line per grid row, aligned exactly with grid positions
+            @height.times do |i|
+              row = @row + i
+              line_y = grid.y(row + 1)  # Bottom of the row, aligned to grid
+
+              pdf.stroke_line [grid.x(@col), line_y], [grid.x(@col + @width), line_y]
+            end
+
+            pdf.undash if @dash
+          end
         end
-
-        # Draw one line per grid row, aligned exactly with grid positions
-        @height.times do |i|
-          row = @row + i
-          line_y = grid.y(row + 1)  # Bottom of the row, aligned to grid
-
-          pdf.stroke_line [grid.x(@col), line_y], [grid.x(@col + @width), line_y]
-        end
-
-        # Restore defaults
-        pdf.undash if @dash
-        pdf.stroke_color color_text_black
-        pdf.line_width 0.5
       end
 
       def redraw_dots_if_enabled

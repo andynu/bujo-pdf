@@ -124,9 +124,10 @@ module BujoPdf
         @border_width = @width_boxes - (@inset_boxes * 2)
         @border_height = @height_boxes - (@inset_boxes * 2)
 
-        # Measure legend in grid boxes
-        pdf.font "Helvetica-Bold", size: @font_size
-        @legend_width_pt = pdf.width_of(@legend)
+        # Measure legend in grid boxes (font change needed for accurate measurement)
+        with_font("Helvetica-Bold", @font_size) do
+          @legend_width_pt = pdf.width_of(@legend)
+        end
         @legend_width_boxes = @legend_width_pt / grid.dot_spacing
         @legend_padding_boxes = @legend_padding / grid.dot_spacing
         @legend_total_boxes = @legend_width_boxes + (@legend_padding_boxes * 2)
@@ -136,8 +137,6 @@ module BujoPdf
 
         draw_border
         draw_legend
-
-        reset_colors
       end
 
       private
@@ -280,10 +279,6 @@ module BujoPdf
              rotation: rotation, pt_x: center_x, pt_y: center_y, centered: true)
       end
 
-      def reset_colors
-        pdf.stroke_color color_text_black
-        pdf.fill_color color_text_black
-      end
     end
   end
 end
