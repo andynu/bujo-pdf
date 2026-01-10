@@ -81,18 +81,20 @@ module BujoPdf
       # 1. Reference a predefined page type: page :seasonal_calendar, year: 2025
       # 2. Define an inline page with a block: page id: :notes do ... end
       #
-      # @overload page(type, id: nil, outline: nil, **params)
+      # @overload page(type, id: nil, outline: nil, chrome: nil, **params)
       #   Reference a predefined page type.
       #   @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       #   @param id [Symbol, nil] Optional explicit page ID
       #   @param outline [String, Boolean, nil] Outline entry
+      #   @param chrome [false, Hash, nil] Per-page chrome override
       #   @param params [Hash] Parameters for the page
       #   @return [PageDeclaration] The created declaration
       #
-      # @overload page(id: nil, outline: nil, **params, &block)
+      # @overload page(id: nil, outline: nil, chrome: nil, **params, &block)
       #   Define an inline page with a block.
       #   @param id [Symbol, nil] Optional explicit page ID
       #   @param outline [String, Boolean, nil] Outline entry
+      #   @param chrome [false, Hash, nil] Per-page chrome override
       #   @param params [Hash] Additional parameters
       #   @yield Block defining inline page configuration and body
       #   @return [InlinePageDeclaration] The created inline declaration
@@ -127,15 +129,24 @@ module BujoPdf
       #       h1(2, 1, "Blank")
       #     end
       #   end
-      def page(type = nil, id: nil, outline: nil, **params, &block)
+      #
+      # @example Full chrome opt-out (no sidebars)
+      #   page :cover, id: :cover, chrome: false
+      #
+      # @example Partial chrome override (disable right sidebar)
+      #   page :notes, id: :notes, chrome: { right: false }
+      #
+      # @example Override left sidebar type
+      #   page :special, id: :special, chrome: { left: :month_sidebar }
+      def page(type = nil, id: nil, outline: nil, chrome: nil, **params, &block)
         if block_given?
           # Inline page definition with block
-          create_inline_page(id: id, outline: outline, params: params, &block)
+          create_inline_page(id: id, outline: outline, chrome: chrome, params: params, &block)
         else
           # Standard page type reference
           raise ArgumentError, 'page type is required when not using a block' if type.nil?
 
-          create_standard_page(type, id: id, outline: outline, **params)
+          create_standard_page(type, id: id, outline: outline, chrome: chrome, **params)
         end
       end
 
@@ -473,18 +484,19 @@ module BujoPdf
       # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       # @param id [Symbol, nil] Optional explicit page ID for the destination
       # @param outline [String, Boolean, nil] Outline entry specification
+      # @param chrome [false, Hash, nil] Per-page chrome override
       # @param params [Hash] Parameters passed to the page class
       # @return [PageDeclaration] The created declaration
       #
       # @see resolve_outline_title for title generation from page registry
-      def create_standard_page(type, id: nil, outline: nil, **params)
+      def create_standard_page(type, id: nil, outline: nil, chrome: nil, **params)
         # In :none mode, never add outline entries
-        return create_standard_page_without_outline(type, id: id, **params) if @current_outline_mode == :none
+        return create_standard_page_without_outline(type, id: id, chrome: chrome, **params) if @current_outline_mode == :none
 
         # IMPORTANT: Check for explicit outline: false BEFORE checking auto mode.
         # This allows users to suppress auto-generated outline entries for specific pages
         # even when outline_mode :auto is enabled. The explicit false takes precedence.
-        return create_standard_page_without_outline(type, id: id, **params) if outline == false
+        return create_standard_page_without_outline(type, id: id, chrome: chrome, **params) if outline == false
 
         # Determine effective outline setting based on mode
         effective_outline = outline
@@ -496,7 +508,7 @@ module BujoPdf
         # Resolve outline: true to the page class's registered title
         outline_title = resolve_outline_title(type, effective_outline, params)
 
-        decl = PageDeclaration.new(type, id: id, outline: outline_title, **params)
+        decl = PageDeclaration.new(type, id: id, outline: outline_title, chrome: chrome, **params)
         add_page_declaration(decl, outline_title, id || type)
         decl
       end
@@ -505,10 +517,11 @@ module BujoPdf
       #
       # @param type [Symbol] The page type
       # @param id [Symbol, nil] Optional explicit page ID
+      # @param chrome [false, Hash, nil] Per-page chrome override
       # @param params [Hash] Parameters for the page
       # @return [PageDeclaration] The created declaration
-      def create_standard_page_without_outline(type, id: nil, **params)
-        decl = PageDeclaration.new(type, id: id, outline: nil, **params)
+      def create_standard_page_without_outline(type, id: nil, chrome: nil, **params)
+        decl = PageDeclaration.new(type, id: id, outline: nil, chrome: chrome, **params)
         add_page_declaration(decl, nil, id || type)
         decl
       end
@@ -529,10 +542,11 @@ module BujoPdf
       #
       # @param id [Symbol, nil] Optional explicit page ID (also used for title derivation)
       # @param outline [String, Boolean, nil] Outline entry specification
+      # @param chrome [false, Hash, nil] Per-page chrome override
       # @param params [Hash] Additional parameters passed to the inline page
       # @yield Block defining inline page configuration (layout, background, body)
       # @return [InlinePageDeclaration] The created inline declaration
-      def create_inline_page(id: nil, outline: nil, params: {}, &block)
+      def create_inline_page(id: nil, outline: nil, chrome: nil, params: {}, &block)
         # Create context and evaluate the block
         inline_context = InlinePageContext.new
         inline_context.evaluate(&block)
@@ -566,6 +580,7 @@ module BujoPdf
         decl = InlinePageDeclaration.new(
           id: id,
           outline: outline_title,
+          chrome: chrome,
           inline_context: inline_context,
           **params
         )

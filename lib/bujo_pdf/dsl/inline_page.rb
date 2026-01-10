@@ -121,11 +121,12 @@ module BujoPdf
       #
       # @param id [Symbol, nil] Optional explicit page ID
       # @param outline [String, nil] Optional outline entry title
+      # @param chrome [false, Hash, nil] Per-page chrome override
       # @param inline_context [InlinePageContext] The captured inline configuration
       # @param params [Hash] Additional parameters
-      def initialize(id: nil, outline: nil, inline_context:, **params)
+      def initialize(id: nil, outline: nil, chrome: nil, inline_context:, **params)
         # Type is :inline for inline pages
-        super(:inline, id: id, outline: outline, **params)
+        super(:inline, id: id, outline: outline, chrome: chrome, **params)
         @inline_context = inline_context
       end
 

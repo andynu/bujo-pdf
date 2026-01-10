@@ -258,6 +258,12 @@ module BujoPdf
           end
         end
 
+        # Apply per-page chrome override if specified
+        context[:chrome_config] = resolve_page_chrome(
+          page_decl.chrome,
+          base_context[:chrome_config]
+        )
+
         # Create link resolver for this page
         context[:link_resolver] = LinkResolver.new(
           @link_registry,
@@ -266,6 +272,104 @@ module BujoPdf
         )
 
         context
+      end
+
+      # Resolve effective chrome configuration for a page.
+      #
+      # Merges per-page chrome with PDF-level chrome according to these rules:
+      # - nil: Inherit PDF-level chrome unchanged
+      # - false: Full opt-out, no chrome (returns nil)
+      # - Hash: Merge with PDF chrome (per-region overrides)
+      #   - { left: :month_sidebar } -> replace left sidebar
+      #   - { right: false } -> disable right sidebar
+      #
+      # @param page_chrome [false, Hash, nil] Per-page chrome specification
+      # @param pdf_chrome [ChromeBuilder, nil] PDF-level chrome configuration
+      # @return [ChromeBuilder, nil] Effective chrome for this page
+      def resolve_page_chrome(page_chrome, pdf_chrome)
+        case page_chrome
+        when nil
+          # Inherit PDF-level chrome unchanged
+          pdf_chrome
+        when false
+          # Full opt-out - no chrome at all
+          nil
+        when Hash
+          # Merge with PDF chrome
+          merge_chrome_configs(pdf_chrome, page_chrome)
+        else
+          # Unknown type - inherit PDF chrome
+          pdf_chrome
+        end
+      end
+
+      # Merge page-level chrome overrides with PDF-level chrome.
+      #
+      # Creates a new ChromeBuilder with PDF chrome as base and page overrides applied.
+      # Each region can be:
+      # - false: Disable that region
+      # - Symbol: Replace sidebar with this type
+      # - Hash: Replace with {component: type, ...options}
+      #
+      # @param pdf_chrome [ChromeBuilder, nil] PDF-level chrome configuration
+      # @param page_overrides [Hash] Per-page region overrides
+      # @return [ChromeBuilder, nil] Merged chrome configuration
+      def merge_chrome_configs(pdf_chrome, page_overrides)
+        return nil if pdf_chrome.nil? && page_overrides.all? { |_, v| v == false }
+
+        merged = ChromeBuilder.new
+
+        %i[left right top bottom].each do |region|
+          override = page_overrides[region]
+          pdf_config = pdf_chrome&.send("#{region}_config")
+
+          if override == false
+            # Explicitly disabled - leave nil
+            next
+          elsif override
+            # Override provided - use it
+            apply_chrome_override(merged, region, override)
+          elsif pdf_config
+            # No override - copy from PDF chrome
+            copy_chrome_config(merged, region, pdf_config)
+          end
+        end
+
+        merged.empty? ? nil : merged
+      end
+
+      # Apply a chrome override to a region.
+      #
+      # @param builder [ChromeBuilder] Builder to modify
+      # @param region [Symbol] Region (:left, :right, :top, :bottom)
+      # @param override [Symbol, Hash] Override specification
+      def apply_chrome_override(builder, region, override)
+        case override
+        when Symbol
+          builder.send(region, override)
+        when Hash
+          component = override[:component] || override.keys.first
+          options = override.except(:component)
+          builder.send(region, component, **options)
+        end
+      end
+
+      # Copy chrome configuration from one builder to another.
+      #
+      # @param builder [ChromeBuilder] Target builder
+      # @param region [Symbol] Region to copy
+      # @param config [SidebarConfig] Configuration to copy
+      def copy_chrome_config(builder, region, config)
+        if region == :right && config.tabs?
+          # Right sidebar with tabs needs special handling
+          builder.right(config.sidebar_name, **config.options) do
+            config.tabs.each do |tab|
+              tab(tab.label, dest: tab.dest, **tab.options)
+            end
+          end
+        else
+          builder.send(region, config.sidebar_name, **config.options)
+        end
       end
 
       # Render a single page.
