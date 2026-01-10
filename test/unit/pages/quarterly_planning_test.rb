@@ -38,7 +38,9 @@ class TestQuarterlyPlanning < Minitest::Test
 
     layout = page.instance_variable_get(:@new_layout)
     assert layout, "Expected layout to be set"
-    assert_kind_of BujoPdf::Layouts::FullPageLayout, layout
+    # Full page layout is now ConfigurableLayout with no chrome
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout
+    assert_empty layout.chrome_spec.active_regions
   end
 
   def test_quarter_months_constant

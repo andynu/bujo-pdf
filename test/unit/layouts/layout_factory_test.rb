@@ -37,19 +37,30 @@ class TestLayoutFactoryNamedPresets < Minitest::Test
   def test_create_full_page_layout
     layout = BujoPdf::Layouts::LayoutFactory.create(:full_page, @pdf, @grid)
 
-    assert_instance_of BujoPdf::Layouts::FullPageLayout, layout
+    # All layouts are now ConfigurableLayout internally
+    assert_instance_of BujoPdf::Layouts::ConfigurableLayout, layout
+    # Full page has no chrome
+    assert_empty layout.chrome_spec.active_regions
   end
 
   def test_create_standard_with_sidebars_layout
     layout = BujoPdf::Layouts::LayoutFactory.create(:standard_with_sidebars, @pdf, @grid)
 
-    assert_instance_of BujoPdf::Layouts::StandardWithSidebarsLayout, layout
+    # All layouts are now ConfigurableLayout internally
+    assert_instance_of BujoPdf::Layouts::ConfigurableLayout, layout
+    # Standard layout has week sidebar on left, tab sidebar on right
+    assert_equal :week_sidebar, layout.chrome_spec.left
+    assert_equal :tab_sidebar, layout.chrome_spec.right
   end
 
   def test_create_daily_with_sidebars_layout
     layout = BujoPdf::Layouts::LayoutFactory.create(:daily_with_sidebars, @pdf, @grid)
 
-    assert_instance_of BujoPdf::Layouts::DailyWithSidebarsLayout, layout
+    # All layouts are now ConfigurableLayout internally
+    assert_instance_of BujoPdf::Layouts::ConfigurableLayout, layout
+    # Daily layout has month sidebar on left, tab sidebar on right
+    assert_equal :month_sidebar, layout.chrome_spec.left
+    assert_equal :tab_sidebar, layout.chrome_spec.right
   end
 
   def test_create_configurable_layout

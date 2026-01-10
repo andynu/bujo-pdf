@@ -48,9 +48,27 @@ module BujoPdf
       TAB_PADDING_PT = 6       # Padding around text within each tab
       START_Y_OFFSET_PT = 14   # Start position from top of page in points
 
-      def initialize(canvas:, top_tabs: [], bottom_tabs: [], sidebar_col: DEFAULT_SIDEBAR_COL, page_context: nil)
+      # Default navigation tabs for the right sidebar.
+      #
+      # These tabs provide the standard planner navigation:
+      # - Year: Seasonal calendar view
+      # - Future: Future log pages (cycles through pages)
+      # - Events: Year events page
+      # - Highlights: Year highlights page
+      # - Multi: Multi-year view
+      # - Grids: Grid template pages (cycles through templates)
+      DEFAULT_TOP_TABS = [
+        { label: "Year", dest: "seasonal" },
+        { label: "Future", dest: [:future_log_1, :future_log_2] },
+        { label: "Events", dest: "year_events" },
+        { label: "Highlights", dest: "year_highlights" },
+        { label: "Multi", dest: "multi_year" },
+        { label: "Grids", dest: [:grid_showcase, :grids_overview, :grid_dot, :grid_graph, :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon] }
+      ].freeze
+
+      def initialize(canvas:, top_tabs: nil, bottom_tabs: [], sidebar_col: DEFAULT_SIDEBAR_COL, page_context: nil)
         super(canvas: canvas, page_context: page_context)
-        @top_tabs = top_tabs
+        @top_tabs = top_tabs || DEFAULT_TOP_TABS
         @bottom_tabs = bottom_tabs
         @sidebar_col = sidebar_col
       end
