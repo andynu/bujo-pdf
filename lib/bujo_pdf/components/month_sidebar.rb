@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative '../base/component'
-require_relative '../utilities/styling'
+require_relative '../base/sidebar_base'
+require_relative '../sidebars/sidebar_registry'
 
 module BujoPdf
   module Components
@@ -28,8 +28,11 @@ module BujoPdf
     #     current_month: 3  # Optional: highlights March
     #   )
     #   sidebar.render
-    class MonthSidebar < Component
-      include Styling::Colors
+    class MonthSidebar < SidebarBase
+      include Sidebars::SidebarRegistry
+      register_sidebar :month_sidebar
+
+      # Constants preserved for backward compatibility with tests
       SIDEBAR_START_COL = 0.25
       SIDEBAR_WIDTH_BOXES = 2
       SIDEBAR_START_ROW = 2
@@ -41,18 +44,17 @@ module BujoPdf
       ROWS_PER_MONTH = 4.0
 
       def initialize(canvas:, year:, current_month: nil, page_context: nil)
-        super(canvas: canvas)
+        super(canvas: canvas, page_context: page_context, font_size: FONT_SIZE)
         @year = year
         @current_month = current_month
-        @page_context = page_context
       end
 
       def render
-        pdf.font "Helvetica", size: FONT_SIZE
+        pdf.font "Helvetica", size: sidebar_font_size
 
         12.times do |i|
           month = i + 1
-          row = SIDEBAR_START_ROW + (i * ROWS_PER_MONTH)
+          row = sidebar_start_row + (i * ROWS_PER_MONTH)
           draw_month_entry(month, row)
         end
       end
@@ -60,24 +62,25 @@ module BujoPdf
       private
 
       def draw_month_entry(month, row)
-        month_box = grid.rect(SIDEBAR_START_COL, row, SIDEBAR_WIDTH_BOXES, ROWS_PER_MONTH)
-
+        month_box = item_rect(row, ROWS_PER_MONTH)
         month_abbrev = MONTH_ABBREVS[month - 1]
         is_current = current_month?(month)
 
-        draw_month_background(month_box, is_current)
+        # Use base class helper for background drawing
+        draw_item_background(month_box, is_current)
 
-        if is_current
-          draw_current_month(month_box, month_abbrev)
-        else
-          draw_linked_month(month_box, month_abbrev, month)
-        end
+        # Build destination for linked months
+        first_day = Date.new(@year, month, 1)
+        dest = "day_#{first_day.strftime('%Y%m%d')}"
+
+        # Use base class helper for text + link
+        draw_item_text(month_box, month_abbrev, is_current, dest: dest)
       end
 
       def current_month?(month)
         # Check if current page is a day in this month
-        if @page_context&.respond_to?(:page_key)
-          page_key = @page_context.page_key.to_s
+        if page_context&.respond_to?(:page_key)
+          page_key = page_context.page_key.to_s
           if page_key.start_with?('day_')
             # Extract date from day_YYYYMMDD format
             date_str = page_key.sub('day_', '')
@@ -88,74 +91,6 @@ module BujoPdf
 
         # Fallback to explicit current_month
         @current_month == month
-      end
-
-      def draw_month_background(month_box, is_current)
-        gap_vertical = 2
-        gap_right = grid.width(0.25) + 2
-
-        left = month_box[:x]
-        width = month_box[:width] - gap_right
-        height = month_box[:height] - gap_vertical
-        top = month_box[:y] - (gap_vertical / 2.0)
-
-        if is_current
-          pdf.stroke_color color_borders
-          pdf.stroke_rounded_rectangle([left, top], width, height, 2)
-        else
-          pdf.transparent(0.2) do
-            pdf.fill_color color_borders
-            pdf.fill_rounded_rectangle([left, top], width, height, 2)
-          end
-        end
-
-        pdf.fill_color color_text_black
-        pdf.stroke_color color_text_black
-      end
-
-      def draw_current_month(month_box, month_abbrev)
-        text_x = month_box[:x] + grid.width(PADDING_BOXES) - 5
-        text_width = month_box[:width] - grid.width(PADDING_BOXES * 2)
-
-        with_font("Helvetica-Bold", FONT_SIZE) do
-          with_fill_color(color_text_black) do
-            pdf.text_box month_abbrev,
-                         at: [text_x, month_box[:y]],
-                         width: text_width,
-                         height: month_box[:height],
-                         align: :right,
-                         valign: :center,
-                         overflow: :shrink_to_fit
-          end
-        end
-      end
-
-      def draw_linked_month(month_box, month_abbrev, month)
-        text_x = month_box[:x] + grid.width(PADDING_BOXES) - 5
-        text_width = month_box[:width] - grid.width(PADDING_BOXES * 2)
-
-        with_fill_color(color_text_gray) do
-          pdf.text_box month_abbrev,
-                       at: [text_x, month_box[:y]],
-                       width: text_width,
-                       height: month_box[:height],
-                       align: :right,
-                       valign: :center,
-                       overflow: :shrink_to_fit
-
-          # Link to first day of month
-          first_day = Date.new(@year, month, 1)
-          dest = "day_#{first_day.strftime('%Y%m%d')}"
-
-          link_left = month_box[:x]
-          link_bottom = month_box[:y] - month_box[:height]
-          link_right = month_box[:x] + month_box[:width]
-          link_top = month_box[:y]
-
-          pdf.link_annotation([link_left, link_bottom, link_right, link_top],
-                              Dest: dest,
-                              Border: [0, 0, 0])
-        end
       end
     end
   end
