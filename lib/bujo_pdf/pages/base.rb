@@ -61,6 +61,7 @@ module BujoPdf
     #     end
     #   end
     class Base
+      include Styling::Colors
       include Components::All
       include PageRegistry
 
@@ -294,11 +295,11 @@ module BujoPdf
       # @return [void]
       def draw_background
         # Draw page background color if not white
-        bg_color = Styling::Colors.BACKGROUND
+        bg_color = color_background
         unless bg_color == 'FFFFFF'
           @pdf.fill_color bg_color
           @pdf.fill_rectangle [0, Styling::Grid::PAGE_HEIGHT], Styling::Grid::PAGE_WIDTH, Styling::Grid::PAGE_HEIGHT
-          @pdf.fill_color Styling::Colors.TEXT_BLACK  # Reset to text color
+          @pdf.fill_color color_text_black  # Reset to text color
         end
 
         # Draw background pattern (dots, rules, etc.)

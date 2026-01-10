@@ -18,6 +18,8 @@ module BujoPdf
     #   page = YearWheel.new(pdf, { year: 2025 })
     #   page.generate
     class YearWheel < Base
+      include Styling::Colors
+
       register_page :year_wheel,
         title: "Year Wheel",
         dest: "year_wheel"
@@ -120,7 +122,7 @@ module BujoPdf
         inner_r = radii[2]  # Circle 3
         outer_r = radii[3]  # Circle 4
 
-        @pdf.fill_color Styling::Colors.WEEKEND_BG
+        @pdf.fill_color color_weekend_bg
 
         @pdf.transparent(0.2) do  # 20% opacity
           NUM_DAYS.times do |day|
@@ -176,7 +178,7 @@ module BujoPdf
       #
       # @param radii [Array<Float>] Array of radii in points
       def draw_circles(radii)
-        @pdf.stroke_color Styling::Colors.SECTION_HEADERS
+        @pdf.stroke_color color_section_headers
         @pdf.line_width CIRCLE_LINE_WIDTH
 
         # Draw only circles 1-4 (indices 0-3)
@@ -189,7 +191,7 @@ module BujoPdf
       #
       # @param radii [Array<Float>] Array of radii in points
       def draw_divisions(radii)
-        @pdf.stroke_color Styling::Colors.TEXT_GRAY
+        @pdf.stroke_color color_text_gray
         @pdf.line_width DIVISION_LINE_WIDTH
 
         angle_step = (2 * Math::PI) / NUM_DAYS
@@ -241,7 +243,7 @@ module BujoPdf
         inner_r = radii[1]  # Circle 2
         outer_r = radii[2]  # Circle 3
 
-        @pdf.stroke_color Styling::Colors.TEXT_GRAY
+        @pdf.stroke_color color_text_gray
         @pdf.line_width CIRCLE_LINE_WIDTH  # Bolder line for week boundaries
 
         # Find all Mondays in the year and draw markers
@@ -273,9 +275,9 @@ module BujoPdf
         line_end_radius = inner_radius - (MONTH_LINE_INWARD * scale)
         label_radius = inner_radius - (MONTH_LABEL_OFFSET * scale)
 
-        @pdf.stroke_color Styling::Colors.SECTION_HEADERS
+        @pdf.stroke_color color_section_headers
         @pdf.line_width MONTH_LINE_WIDTH
-        @pdf.fill_color Styling::Colors.TEXT_GRAY
+        @pdf.fill_color color_text_gray
 
         box_size = 24
 

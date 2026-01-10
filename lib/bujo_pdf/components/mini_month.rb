@@ -154,13 +154,13 @@ module BujoPdf
           cell_rect = @week_grid.cell_rect(day_col)
           cell_y = grid.y(cal_row)
 
-          pdf.fill_color Styling::Colors.WEEKEND_BG
+          pdf.fill_color color_weekend_bg
           pdf.transparent(0.1) do
             pdf.fill_rectangle [cell_rect[:x], cell_y], cell_rect[:width], grid.height(1)
           end
         end
 
-        pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color color_text_black
       end
 
       # Draw day numbers and optional links using WeekGrid's cell_rect for column positioning
@@ -174,7 +174,7 @@ module BujoPdf
         current_col = start_col_offset
 
         pdf.font 'Helvetica', size: 7
-        pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color color_text_black
 
         1.upto(last_day.day) do |day|
           cal_row = headers_row + 1 + current_row

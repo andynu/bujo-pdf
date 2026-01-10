@@ -106,10 +106,10 @@ module BujoPdf
 
           # Draw month header cell
           @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-            @pdf.stroke_color Styling::Colors.BORDERS
+            @pdf.stroke_color color_borders
             @pdf.stroke_bounds
-            @pdf.stroke_color Styling::Colors.TEXT_BLACK
-            @pdf.fill_color Styling::Colors.TEXT_BLACK
+            @pdf.stroke_color color_text_black
+            @pdf.fill_color color_text_black
             @pdf.text_box month_name[0..2],
                           at: [0, cell_height],
                           width: cell_width,
@@ -173,19 +173,19 @@ module BujoPdf
 
             @pdf.fill_color bg_color
             @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
-            @pdf.fill_color Styling::Colors.TEXT_BLACK
+            @pdf.fill_color color_text_black
           # Or draw background for calendar events if no date_config highlight
           elsif !calendar_events.empty?
             event = calendar_events.first
             if event.color
               @pdf.fill_color event.color
               @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
-              @pdf.fill_color Styling::Colors.TEXT_BLACK
+              @pdf.fill_color color_text_black
             end
           end
 
           # Draw border (highlighted dates with high priority get thicker border)
-          @pdf.stroke_color Styling::Colors.BORDERS
+          @pdf.stroke_color color_borders
           if highlighted_date
             priority_style = context.date_config.priority_style(highlighted_date.priority)
             if priority_style['border_width'] > 0.5
@@ -196,7 +196,7 @@ module BujoPdf
           end
           @pdf.stroke_bounds
           @pdf.line_width = 0.5  # Reset
-          @pdf.stroke_color Styling::Colors.TEXT_BLACK
+          @pdf.stroke_color color_text_black
 
           # Add day number and abbreviation
           day_abbrev = date.strftime('%a')  # Mon, Tue, Wed, etc.
@@ -252,15 +252,15 @@ module BujoPdf
 
       def draw_empty_cell(cell_x, cell_y, cell_width, cell_height)
         @pdf.bounding_box([cell_x, cell_y], width: cell_width, height: cell_height) do
-          @pdf.stroke_color Styling::Colors.BORDERS
+          @pdf.stroke_color color_borders
           @pdf.stroke_bounds
-          @pdf.stroke_color Styling::Colors.TEXT_BLACK
+          @pdf.stroke_color color_text_black
           # Fill with theme overlay color at 20% opacity for subtle darkening
-          @pdf.fill_color Styling::Colors.EMPTY_CELL_OVERLAY
+          @pdf.fill_color color_empty_cell_overlay
           @pdf.transparent(0.2) do
             @pdf.fill_rectangle [0, cell_height], cell_width, cell_height
           end
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
+          @pdf.fill_color color_text_black
         end
       end
 
@@ -299,11 +299,11 @@ module BujoPdf
             cell_height = day_height_rows * DOT_SPACING
 
             # Draw weekend background with 10% opacity
-            @pdf.fill_color Styling::Colors.WEEKEND_BG
+            @pdf.fill_color color_weekend_bg
             @pdf.transparent(0.1) do
               @pdf.fill_rectangle [cell_x, cell_y], cell_width, cell_height
             end
-            @pdf.fill_color Styling::Colors.TEXT_BLACK
+            @pdf.fill_color color_text_black
           end
         end
       end

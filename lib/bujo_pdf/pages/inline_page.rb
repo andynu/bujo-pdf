@@ -19,6 +19,7 @@ module BujoPdf
     #   page.generate
     #
     class InlinePage < Base
+      include Styling::Colors
       # Initialize a new inline page instance.
       #
       # @param pdf [Prawn::Document] The PDF document to render into
@@ -79,11 +80,11 @@ module BujoPdf
       # @return [void]
       def draw_background_dots
         # Draw background color first
-        bg_color = Styling::Colors.BACKGROUND
+        bg_color = color_background
         unless bg_color == 'FFFFFF'
           @pdf.fill_color bg_color
           @pdf.fill_rectangle [0, Styling::Grid::PAGE_HEIGHT], Styling::Grid::PAGE_WIDTH, Styling::Grid::PAGE_HEIGHT
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
+          @pdf.fill_color color_text_black
         end
 
         # Use stamp if available - try/rescue since stamps may not exist
@@ -100,16 +101,16 @@ module BujoPdf
       # @return [void]
       def draw_background_ruled
         # Draw background color first
-        bg_color = Styling::Colors.BACKGROUND
+        bg_color = color_background
         unless bg_color == 'FFFFFF'
           @pdf.fill_color bg_color
           @pdf.fill_rectangle [0, Styling::Grid::PAGE_HEIGHT], Styling::Grid::PAGE_WIDTH, Styling::Grid::PAGE_HEIGHT
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
+          @pdf.fill_color color_text_black
         end
 
         # Draw horizontal ruled lines every 2 boxes (10mm spacing)
         line_spacing = 2
-        @pdf.stroke_color Styling::Colors.BORDERS
+        @pdf.stroke_color color_borders
         @pdf.line_width 0.5
 
         (0..55).step(line_spacing) do |row|
@@ -122,11 +123,11 @@ module BujoPdf
       #
       # @return [void]
       def draw_background_blank
-        bg_color = Styling::Colors.BACKGROUND
+        bg_color = color_background
         unless bg_color == 'FFFFFF'
           @pdf.fill_color bg_color
           @pdf.fill_rectangle [0, Styling::Grid::PAGE_HEIGHT], Styling::Grid::PAGE_WIDTH, Styling::Grid::PAGE_HEIGHT
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
+          @pdf.fill_color color_text_black
         end
       end
     end

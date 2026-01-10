@@ -281,8 +281,8 @@ module BujoPdf
       end
 
       def reset_colors
-        pdf.stroke_color Styling::Colors.TEXT_BLACK
-        pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.stroke_color color_text_black
+        pdf.fill_color color_text_black
       end
     end
   end

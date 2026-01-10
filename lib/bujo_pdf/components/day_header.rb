@@ -31,6 +31,8 @@ module BujoPdf
     #   )
     #   header.render
     class DayHeader < Component
+      include Styling::Colors
+
       # Default configuration values
       DEFAULTS = {
         format: :full,                # :full, :short, :abbrev, :day_only, :date_only
@@ -44,8 +46,8 @@ module BujoPdf
         header_padding: 2,
         align: :center,
         valign: :top,
-        weekend_bg_color: nil,        # Will use Styling::Colors.WEEKEND_BG if nil
-        text_color: nil               # Will use Styling::Colors.TEXT_BLACK if nil
+        weekend_bg_color: nil,        # Will use color_weekend_bg if nil
+        text_color: nil               # Will use color_text_black if nil
       }.freeze
 
       def initialize(canvas:, col:, row:, width:, height:, date:,
@@ -96,9 +98,9 @@ module BujoPdf
 
       # Draw weekend background
       def draw_background(width, height)
-        pdf.fill_color @weekend_bg_color || Styling::Colors.WEEKEND_BG
+        pdf.fill_color @weekend_bg_color || color_weekend_bg
         pdf.fill_rectangle [0, height], width, height
-        pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color color_text_black
       end
 
       # Draw day header text
@@ -137,7 +139,7 @@ module BujoPdf
 
         # Draw text
         pdf.font "Helvetica-Bold", size: @day_font_size
-        pdf.fill_color @text_color || Styling::Colors.TEXT_BLACK
+        pdf.fill_color @text_color || color_text_black
         pdf.text_box header_text,
                      at: [@header_padding, height - @header_padding],
                      width: width - (@header_padding * 2),
@@ -146,7 +148,7 @@ module BujoPdf
                      valign: @valign,
                      size: @date_font_size
 
-        pdf.fill_color Styling::Colors.TEXT_BLACK
+        pdf.fill_color color_text_black
       end
     end
   end

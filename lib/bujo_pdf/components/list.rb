@@ -36,6 +36,7 @@ module BujoPdf
     #            show_numbers: true, marker: :checkbox)
     #
     class List < Component
+      include Styling::Colors
       include RuledLines::Mixin
       include HLine::Mixin
       include Box::Mixin
@@ -294,7 +295,7 @@ module BujoPdf
       end
 
       def effective_divider_color
-        @divider_color || Styling::Colors.BORDERS
+        @divider_color || color_borders
       end
 
       def effective_number_color
@@ -302,7 +303,7 @@ module BujoPdf
       end
 
       def effective_marker_color
-        @marker_color || Styling::Colors.TEXT_BLACK
+        @marker_color || color_text_black
       end
 
       def effective_line_color

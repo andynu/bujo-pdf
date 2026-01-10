@@ -19,6 +19,8 @@ module BujoPdf
     #   grid_dots(2, 5, 20, 10)
     #
     class GridDots < Component
+      include Styling::Colors
+
       # Mixin providing the grid_dots verb for pages
       #
       # Include via Components::All in Pages::Base
@@ -58,7 +60,7 @@ module BujoPdf
         @row = row
         @width = width
         @height = height
-        @color = color || Styling::Colors.DOT_GRID
+        @color = color || color_dot_grid
         @radius = Styling::Grid::DOT_RADIUS
       end
 
