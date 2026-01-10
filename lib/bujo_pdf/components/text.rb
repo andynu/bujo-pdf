@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
+require_relative '../utilities/styling'
 require_relative 'hline'
 
 module BujoPdf
@@ -18,6 +19,7 @@ module BujoPdf
     #   text(2, 5, "Note", size: 12, style: :bold)
     #
     class Text < Component
+      include Styling::Colors
       include HLine::Mixin
 
       # Default font size
@@ -112,10 +114,8 @@ module BujoPdf
       #
       # @return [void]
       def render
-        require_relative '../themes/theme_registry'
-
-        text_color = @color || BujoPdf::Themes.current[:colors][:text_black]
-        bg_color = BujoPdf::Themes.current[:colors][:background]
+        text_color = @color || color_text_black
+        bg_color = color_background
 
         pdf.font 'Helvetica', style: @style, size: @size
 
@@ -127,7 +127,7 @@ module BujoPdf
 
         # Reset to defaults
         pdf.font 'Helvetica', style: :normal
-        pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+        pdf.fill_color color_text_black
       end
 
       private

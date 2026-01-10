@@ -69,54 +69,57 @@ module Styling
 
     # Instance methods for include pattern (preferred)
     # These delegate to the class methods for theme-aware color access
+    # Uses snake_case names for Ruby method compatibility
+    #
+    # Usage: include Styling::Colors; then call color_borders, color_text_black, etc.
 
     # @return [String] Dot grid color hex value
-    def DOT_GRID
+    def color_dot_grid
       Colors.DOT_GRID
     end
 
     # @return [String] Border color hex value
-    def BORDERS
+    def color_borders
       Colors.BORDERS
     end
 
     # @return [String] Section header color hex value
-    def SECTION_HEADERS
+    def color_section_headers
       Colors.SECTION_HEADERS
     end
 
     # @return [String] Weekend background color hex value
-    def WEEKEND_BG
+    def color_weekend_bg
       Colors.WEEKEND_BG
     end
 
     # @return [String] Empty cell overlay color hex value
-    def EMPTY_CELL_OVERLAY
+    def color_empty_cell_overlay
       Colors.EMPTY_CELL_OVERLAY
     end
 
     # @return [String] Diagnostic red color hex value
-    def DIAGNOSTIC_RED
+    def color_diagnostic_red
       Colors.DIAGNOSTIC_RED
     end
 
     # @return [String] Diagnostic label background color hex value
-    def DIAGNOSTIC_LABEL_BG
+    def color_diagnostic_label_bg
       Colors.DIAGNOSTIC_LABEL_BG
     end
 
     # @return [String] Text black color hex value
-    def TEXT_BLACK
+    def color_text_black
       Colors.TEXT_BLACK
     end
 
     # @return [String] Text gray color hex value
-    def TEXT_GRAY
+    def color_text_gray
       Colors.TEXT_GRAY
     end
 
     # @return [String] Background color hex value
-    def BACKGROUND
+    def color_background
       Colors.BACKGROUND
     end
   end

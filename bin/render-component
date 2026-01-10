@@ -194,13 +194,58 @@ module BujoPdf
     def parse_ruby_hash(str)
       return {} if str.nil? || str.empty?
 
-      # Safely evaluate a Ruby hash literal
-      # Convert string to actual hash
-      eval("{#{str}}")
-    rescue StandardError => e
+      safe_parse_hash(str)
+    rescue ArgumentError => e
       warn "Error parsing params: #{e.message}"
       warn "Expected format: 'key: value, key2: value2'"
       exit 1
+    end
+
+    # Safe parser for simple Ruby hash syntax without eval
+    # Supports: symbol keys, integers, floats, booleans, quoted strings, arrays
+    def safe_parse_hash(str)
+      result = {}
+      # Match key: value pairs, handling arrays and nested quotes
+      str.scan(/(\w+):\s*(\[[^\]]*\]|"[^"]*"|'[^']*'|[^,]+?)(?:,|$)/) do |key, value|
+        result[key.strip.to_sym] = safe_parse_value(value.strip)
+      end
+      result
+    end
+
+    def safe_parse_value(str)
+      case str
+      when /\A\[.*\]\z/
+        # Array: extract contents and parse each element
+        inner = str[1..-2]
+        parse_array_elements(inner)
+      when /\A"(.*)"\z/, /\A'(.*)'\z/
+        # Quoted string
+        ::Regexp.last_match(1)
+      when /\Atrue\z/i
+        true
+      when /\Afalse\z/i
+        false
+      when /\Anil\z/i
+        nil
+      when /\A-?\d+\z/
+        str.to_i
+      when /\A-?\d+\.\d+\z/
+        str.to_f
+      else
+        # Unquoted string or symbol-like value
+        str
+      end
+    end
+
+    def parse_array_elements(inner)
+      return [] if inner.strip.empty?
+
+      elements = []
+      # Simple split on comma, respecting quoted strings
+      inner.scan(/"[^"]*"|'[^']*'|[^,]+/) do |elem|
+        elements << safe_parse_value(elem.strip)
+      end
+      elements
     end
 
     def parse_variations(str)
@@ -208,11 +253,11 @@ module BujoPdf
 
       # Parse variations like 'quantize: [true, false], width_boxes: [28, 35, 42]'
       result = {}
-      eval("{#{str}}").each do |key, values|
+      safe_parse_hash(str).each do |key, values|
         result[key] = Array(values)
       end
       result
-    rescue StandardError => e
+    rescue ArgumentError => e
       warn "Error parsing variations: #{e.message}"
       warn "Expected format: 'param: [value1, value2]'"
       exit 1
@@ -420,18 +465,17 @@ module BujoPdf
     end
 
     def convert_to_png(pdf_file, output_file)
-      # Generate PNG with pdftoppm
+      # Generate PNG with pdftoppm (array form avoids shell injection)
       temp_png = pdf_file.sub(/\.pdf$/, '')
-      cmd = "pdftoppm -png -r #{@dpi} -singlefile '#{pdf_file}' '#{temp_png}'"
-      system(cmd, err: File::NULL) || abort("Failed to convert PDF to PNG")
+      success = system('pdftoppm', '-png', '-r', @dpi.to_s, '-singlefile', pdf_file, temp_png, err: File::NULL)
+      abort('Failed to convert PDF to PNG') unless success
 
       temp_png_file = "#{temp_png}.png"
 
       if @trim
-        # Trim whitespace with ImageMagick
-        trim_cmd = "convert '#{temp_png_file}' -trim +repage '#{output_file}'"
-        unless system(trim_cmd, err: File::NULL)
-          warn "Warning: Failed to trim image (ImageMagick not available?)"
+        # Trim whitespace with ImageMagick (array form avoids shell injection)
+        unless system('convert', temp_png_file, '-trim', '+repage', output_file, err: File::NULL)
+          warn 'Warning: Failed to trim image (ImageMagick not available?)'
           FileUtils.mv(temp_png_file, output_file)
         end
         FileUtils.rm_f(temp_png_file) if File.exist?(temp_png_file) && temp_png_file != output_file

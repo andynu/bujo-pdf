@@ -69,13 +69,16 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   first_week_of_month = {}
 
   weeks_in(year).each do |week|
-    next unless week.in_year?
+    next unless week.overlaps_year?
 
-    month = week.month
-    first_week_of_month[month] ||= week.number
+    # Use primary_month for interleaving - nil for cross-year weeks (like week 1)
+    month = week.primary_month
 
     # Insert monthly/quarterly pages at start of each month
-    unless generated_months.include?(month)
+    # Skip for weeks with nil primary_month (cross-year boundary weeks)
+    if month && !generated_months.include?(month)
+      first_week_of_month[month] ||= week.number
+
       # Quarterly planning at start of each quarter
       if [1, 4, 7, 10].include?(month)
         quarter = ((month - 1) / 3) + 1

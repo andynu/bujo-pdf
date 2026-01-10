@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Components
@@ -28,6 +29,7 @@ module BujoPdf
     #   )
     #   sidebar.render
     class MonthSidebar < Component
+      include Styling::Colors
       SIDEBAR_START_COL = 0.25
       SIDEBAR_WIDTH_BOXES = 2
       SIDEBAR_START_ROW = 2
@@ -89,9 +91,6 @@ module BujoPdf
       end
 
       def draw_month_background(month_box, is_current)
-        require_relative '../themes/theme_registry'
-        border_color = BujoPdf::Themes.current[:colors][:borders]
-
         gap_vertical = 2
         gap_right = grid.width(0.25) + 2
 
@@ -101,29 +100,25 @@ module BujoPdf
         top = month_box[:y] - (gap_vertical / 2.0)
 
         if is_current
-          pdf.stroke_color border_color
+          pdf.stroke_color color_borders
           pdf.stroke_rounded_rectangle([left, top], width, height, 2)
         else
           pdf.transparent(0.2) do
-            pdf.fill_color border_color
+            pdf.fill_color color_borders
             pdf.fill_rounded_rectangle([left, top], width, height, 2)
           end
         end
 
-        text_color = BujoPdf::Themes.current[:colors][:text_black]
-        pdf.fill_color text_color
-        pdf.stroke_color text_color
+        pdf.fill_color color_text_black
+        pdf.stroke_color color_text_black
       end
 
       def draw_current_month(month_box, month_abbrev)
         text_x = month_box[:x] + grid.width(PADDING_BOXES) - 5
         text_width = month_box[:width] - grid.width(PADDING_BOXES * 2)
 
-        require_relative '../themes/theme_registry'
-        text_color = BujoPdf::Themes.current[:colors][:text_black]
-
         with_font("Helvetica-Bold", FONT_SIZE) do
-          with_fill_color(text_color) do
+          with_fill_color(color_text_black) do
             pdf.text_box month_abbrev,
                          at: [text_x, month_box[:y]],
                          width: text_width,
@@ -139,10 +134,7 @@ module BujoPdf
         text_x = month_box[:x] + grid.width(PADDING_BOXES) - 5
         text_width = month_box[:width] - grid.width(PADDING_BOXES * 2)
 
-        require_relative '../themes/theme_registry'
-        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
-
-        with_fill_color(nav_color) do
+        with_fill_color(color_text_gray) do
           pdf.text_box month_abbrev,
                        at: [text_x, month_box[:y]],
                        width: text_width,

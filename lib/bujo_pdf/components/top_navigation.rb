@@ -16,8 +16,12 @@ module BujoPdf
     # Navigation links use LinkBox for consistent styling with
     # rounded rectangle backgrounds (20% opacity).
     #
-    # Example usage:
-    #   canvas = Canvas.new(pdf, grid)
+    # @example Using WeekContext (preferred)
+    #   ctx = WeekContext.new(year: 2025, number: 42)
+    #   nav = TopNavigation.new(canvas: canvas, week_context: ctx)
+    #   nav.render
+    #
+    # @example Legacy usage with individual parameters
     #   nav = TopNavigation.new(
     #     canvas: canvas,
     #     year: 2025,
@@ -33,14 +37,24 @@ module BujoPdf
       NAV_FONT_SIZE = 8
       TITLE_FONT_SIZE = 14
 
-      def initialize(canvas:, year:, week_num:, total_weeks:, week_start:, week_end:,
-                     content_start_col: 3, content_width_boxes: 39)
+      # @param canvas [Canvas] The canvas to render on
+      # @param week_context [WeekContext, nil] Week context bundling all week data (preferred)
+      # @param year [Integer, nil] The planner year (legacy, use week_context instead)
+      # @param week_num [Integer, nil] Week number (legacy, use week_context instead)
+      # @param total_weeks [Integer, nil] Total weeks in year (legacy, use week_context instead)
+      # @param week_start [Date, nil] Week start date (legacy, use week_context instead)
+      # @param week_end [Date, nil] Week end date (legacy, use week_context instead)
+      # @param content_start_col [Integer] Starting column for content area
+      # @param content_width_boxes [Integer] Width of content area in grid boxes
+      def initialize(canvas:, week_context: nil, year: nil, week_num: nil, total_weeks: nil,
+                     week_start: nil, week_end: nil, content_start_col: 3, content_width_boxes: 39)
         super(canvas: canvas)
-        @year = year
-        @week_num = week_num
-        @total_weeks = total_weeks
-        @week_start = week_start
-        @week_end = week_end
+        @week_context = week_context
+        @year = year || week_context&.year
+        @week_num = week_num || week_context&.number
+        @total_weeks = total_weeks || week_context&.total_weeks
+        @week_start = week_start || week_context&.start_date
+        @week_end = week_end || week_context&.end_date
         @content_start_col = content_start_col
         @content_width_boxes = content_width_boxes
       end
