@@ -42,6 +42,74 @@ All positioning uses grid coordinates (not Prawn points):
 
 Prawn uses bottom-left origin with Y increasing upward. The grid system handles this inversion.
 
+### Chrome System
+
+Chrome refers to the visual frame around page content: sidebars, tabs, and navigation elements. The DSL provides declarative chrome configuration.
+
+#### Default Chrome Configuration
+
+Set PDF-wide default chrome that pages inherit:
+
+```ruby
+BujoPdf.define_pdf :my_planner do |year:|
+  chrome do
+    left :week_sidebar
+    right :tab_sidebar do
+      tab "Year", dest: :seasonal
+      tab "Future", dest: [:future_log_1, :future_log_2]  # Cycling destinations
+      tab "Grids", dest: [:grid_dot, :grid_graph]
+    end
+  end
+
+  # Pages inherit chrome unless they opt out
+  page :weekly, id: :week_1, week: week
+  page :cover, id: :cover, chrome: false  # Full page, no chrome
+end
+```
+
+#### Chrome DSL Methods
+
+- `left :sidebar_name` - Left sidebar (typically week navigation)
+- `right :sidebar_name` - Right sidebar (navigation tabs)
+- `top :header_name` - Top header bar
+- `bottom :footer_name` - Bottom footer bar
+
+#### Per-Page Chrome Override
+
+```ruby
+page :notes, chrome: false                    # No chrome (full page)
+page :special, chrome: { right: false }       # Disable right sidebar only
+page :custom, chrome: { left: :month_sidebar } # Different left sidebar
+```
+
+#### Inline Sidebar Definitions
+
+Define custom sidebars scoped to a recipe:
+
+```ruby
+sidebar :project_nav, position: :left, width: 3 do |context|
+  h2(0, 0, "Projects")
+  ruled_lines(0, 2, 3, 10)
+end
+
+chrome do
+  left :project_nav  # Reference inline sidebar
+end
+```
+
+#### Sidebar Registration
+
+Built-in sidebars register via `SidebarRegistry`:
+
+```ruby
+class WeekSidebar < SidebarBase
+  include Sidebars::SidebarRegistry
+  register_sidebar :week_sidebar
+end
+```
+
+Available built-in sidebars: `:week_sidebar`, `:month_sidebar`, `:tab_sidebar`, `:right_sidebar`
+
 ### Layout System
 
 Pages declare layout intent; layouts handle chrome:
@@ -54,8 +122,9 @@ class MyPage < Pages::Base
 end
 ```
 
-- `:full_page` - No sidebars, full 43×55 content area
+- `:full_page` - No sidebars, full 43x55 content area
 - `:standard_with_sidebars` - Week sidebar + nav tabs, 39-col content area
+- `:configurable` - Uses ChromeSpec for flexible chrome configuration
 
 ### Component Verbs
 
@@ -74,7 +143,17 @@ end
 ```
 lib/bujo_pdf/
 ├── pages/           # Page classes (weekly_page.rb, seasonal_calendar.rb, etc.)
-├── layouts/         # Layout classes (full_page_layout.rb, standard_with_sidebars_layout.rb)
+├── layouts/         # Layout classes and chrome system
+│   ├── chrome_spec.rb           # Chrome region configuration
+│   ├── configurable_layout.rb   # Config-driven layout
+│   └── base_layout.rb           # Base layout with chrome rendering
+├── sidebars/        # Sidebar components
+│   ├── sidebar_registry.rb      # Sidebar type registration
+│   └── inline_sidebar.rb        # User-defined inline sidebars
+├── dsl/             # PDF DSL components
+│   ├── chrome_builder.rb        # chrome do...end DSL
+│   ├── sidebar_definition.rb    # sidebar :name do...end DSL
+│   └── context.rb               # DeclarationContext with chrome support
 ├── components/      # Component verbs (text.rb, box.rb, ruled_lines.rb, etc.)
 ├── utilities/       # GridSystem, DateCalculator
 ├── themes/          # Color schemes (light, earth, dark)
@@ -193,4 +272,4 @@ Enable debug grid overlay: Set `DEBUG_GRID = true` in `lib/bujo_pdf/planner_gene
 
 **Detailed documentation**: `docs/ARCHITECTURE.md` (modules, patterns, diagrams)
 
-Last updated: cd30d69
+Last updated: 1be3018
