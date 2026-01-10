@@ -17,6 +17,7 @@ module BujoPdf
     #   ruled_lines(2, 5, 20, 10, color: 'CCCCCC', stroke: 1.0)
     #
     class RuledLines < Component
+      include Styling::Colors
       include GridDots::Mixin
 
       # Mixin providing the ruled_lines verb for pages
@@ -102,7 +103,7 @@ module BujoPdf
 
         # Restore defaults
         pdf.undash if @dash
-        pdf.stroke_color '000000'
+        pdf.stroke_color color_text_black
         pdf.line_width 0.5
       end
 
