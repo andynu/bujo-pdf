@@ -70,6 +70,7 @@ require_relative 'bujo_pdf/components/all'
 # Load layouts
 require_relative 'bujo_pdf/layouts/base_layout'
 require_relative 'bujo_pdf/layouts/chrome_spec'
+require_relative 'bujo_pdf/layouts/configurable_layout'
 require_relative 'bujo_pdf/layouts/full_page_layout'
 require_relative 'bujo_pdf/layouts/standard_with_sidebars_layout'
 require_relative 'bujo_pdf/layouts/layout_factory'
