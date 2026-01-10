@@ -279,18 +279,7 @@ module BujoPdf
       #
       # @return [Hash] Content area with grid and point coordinates
       def calculate_content_area
-        area = @layout.content_area_spec
-        {
-          col: area[:col],
-          row: area[:row],
-          width_boxes: area[:width],
-          height_boxes: area[:height],
-          # Computed point values
-          x: @grid_system.x(area[:col]),
-          y: @grid_system.y(area[:row]),
-          width_pt: @grid_system.width(area[:width]),
-          height_pt: @grid_system.height(area[:height])
-        }
+        normalize_content_area(@layout.content_area_spec)
       end
 
       # Calculate content area from new layout system.
@@ -300,17 +289,33 @@ module BujoPdf
       #
       # @return [Hash] Content area with grid and point coordinates
       def calculate_content_area_from_new_layout
-        area = @new_layout.content_area
+        normalize_content_area(@new_layout.content_area)
+      end
+
+      # Normalize a content area specification to a standard format.
+      #
+      # Handles both key naming conventions:
+      # - Legacy: :width, :height (from legacy layout system)
+      # - New: :width_boxes, :height_boxes (from new layout system)
+      #
+      # Returns a hash with standardized keys and computed point values.
+      #
+      # @param area [Hash] Content area with :col, :row, and width/height keys
+      # @return [Hash] Normalized content area with grid and point coordinates
+      def normalize_content_area(area)
+        width = area[:width_boxes] || area[:width]
+        height = area[:height_boxes] || area[:height]
+
         {
           col: area[:col],
           row: area[:row],
-          width_boxes: area[:width_boxes],
-          height_boxes: area[:height_boxes],
+          width_boxes: width,
+          height_boxes: height,
           # Computed point values
           x: @grid_system.x(area[:col]),
           y: @grid_system.y(area[:row]),
-          width_pt: @grid_system.width(area[:width_boxes]),
-          height_pt: @grid_system.height(area[:height_boxes])
+          width_pt: @grid_system.width(width),
+          height_pt: @grid_system.height(height)
         }
       end
 
