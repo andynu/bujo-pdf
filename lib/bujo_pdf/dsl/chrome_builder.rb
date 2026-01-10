@@ -27,6 +27,15 @@ module BujoPdf
     #     end
     #   end
     #
+    # @example Tabs with cycling destinations
+    #   chrome do
+    #     right :tab_sidebar do
+    #       tab "Year", dest: :seasonal
+    #       tab "Weeks", dest: [:week_1, :week_2, :week_3]  # Cycles through weeks
+    #       tab "Notes", dest: :notes
+    #     end
+    #   end
+    #
     # @example All four edges
     #   chrome do
     #     top :header_bar, title: "My Planner"
@@ -53,9 +62,19 @@ module BujoPdf
       # Configuration for a single navigation tab.
       #
       # @attr_reader label [String] The tab label text
-      # @attr_reader dest [Symbol] The destination page ID
+      # @attr_reader dest [Symbol, Array<Symbol>] Single destination or array of cycling destinations
       # @attr_reader options [Hash] Additional options (icon, style, etc.)
-      TabConfig = Struct.new(:label, :dest, :options, keyword_init: true)
+      TabConfig = Struct.new(:label, :dest, :options, keyword_init: true) do
+        # Check if this tab has cycling destinations.
+        #
+        # Cycling destinations enable a tap-to-advance navigation pattern where
+        # each tap moves to the next destination in the array.
+        #
+        # @return [Boolean] True if dest is an array of destinations
+        def cycling?
+          dest.is_a?(Array)
+        end
+      end
 
       attr_reader :left_config, :right_config, :top_config, :bottom_config
 
@@ -191,13 +210,17 @@ module BujoPdf
         # Add a tab to the configuration.
         #
         # @param label [String] The tab label text
-        # @param dest [Symbol] The destination page ID
+        # @param dest [Symbol, Array<Symbol>] Single destination page ID or array of cycling destinations
         # @param options [Hash] Additional options
         # @return [TabConfig] The created tab configuration
         #
-        # @example
+        # @example Single destination
         #   tab "Index", dest: :index
         #   tab "Future", dest: :future_log, icon: :calendar
+        #
+        # @example Cycling destinations (tap to advance through pages)
+        #   tab "Weeks", dest: [:week_1, :week_2, :week_3]  # Cycles through weeks
+        #   tab "Grids", dest: [:grids_overview, :grid_dot, :grid_graph]
         def tab(label, dest:, **options)
           @tabs << TabConfig.new(
             label: label,
