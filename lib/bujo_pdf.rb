@@ -37,6 +37,9 @@ require_relative 'bujo_pdf/base/component'
 require_relative 'bujo_pdf/base/layout'
 require_relative 'bujo_pdf/base/sidebar_base'
 
+# Load sidebar registry (after SidebarBase, before concrete sidebars)
+require_relative 'bujo_pdf/sidebars/sidebar_registry'
+
 # Load components (position-based components now inherit from Component)
 require_relative 'bujo_pdf/components/fieldset'
 require_relative 'bujo_pdf/components/week_column'
