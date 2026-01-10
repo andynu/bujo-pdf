@@ -7,11 +7,12 @@ This document provides a comprehensive overview of the bujo-pdf planner generato
 1. [System Overview](#system-overview)
 2. [Page Generation Flow](#page-generation-flow)
 3. [Layout System](#layout-system)
-4. [Component Hierarchy](#component-hierarchy)
-5. [Grid System](#grid-system)
-6. [Themes System](#themes-system)
-7. [Design Principles](#design-principles)
-8. [Key Patterns](#key-patterns)
+4. [Chrome System](#chrome-system)
+5. [Component Hierarchy](#component-hierarchy)
+6. [Grid System](#grid-system)
+7. [Themes System](#themes-system)
+8. [Design Principles](#design-principles)
+9. [Key Patterns](#key-patterns)
 
 ---
 
@@ -26,9 +27,15 @@ The bujo-pdf generator is built on a modular architecture with clear separation 
 **DSL Module** - Declarative planner definition system:
 - `Builder` - Entry point for defining planners
 - `Context` - Runtime state container (pdf, year, theme, grid)
+- `ChromeBuilder` - Captures chrome block DSL (`left`, `right`, `top`, `bottom`)
+- `SidebarDefinition` - Captures inline sidebar definitions
 - `Registry` - Page registration and named destinations
 - `Configuration` - Config file loaders (dates, calendars, collections)
 - `Runtime` - Execution-time support (page factory, render context)
+
+**Sidebars Module** - Sidebar components and registration:
+- `SidebarRegistry` - Maps sidebar names to classes (`:week_sidebar` -> `WeekSidebar`)
+- `InlineSidebar` - Executes user-defined sidebar body blocks
 
 **PDFs (Recipes)** - Complete planner definitions:
 - `StandardPlanner` - Default planner recipe with all page types
@@ -41,10 +48,12 @@ The bujo-pdf generator is built on a modular architecture with clear separation 
 - Wheels: `DailyWheel`, `YearWheel`
 - Reference: `ReferenceCalibration`
 
-**Layouts Module** - Declarative layout system:
-- `BaseLayout` - Abstract base with lifecycle hooks
-- `FullPageLayout` - No sidebars, full page content
-- `StandardWithSidebarsLayout` - Week sidebar + navigation tabs
+**Layouts Module** - Declarative layout system with chrome support:
+- `BaseLayout` - Abstract base with lifecycle hooks and chrome rendering
+- `ChromeSpec` - Value object defining chrome regions (left, right, top, bottom)
+- `ConfigurableLayout` - Config-driven layout using ChromeSpec
+- `FullPageLayout` - No sidebars, full page content (legacy)
+- `StandardWithSidebarsLayout` - Week sidebar + navigation tabs (legacy)
 - `LayoutFactory` - Creates layout instances by symbol name
 
 **Components Module** - Reusable UI components with verb pattern:
@@ -148,6 +157,199 @@ end
 - **DRY principle** - Pages don't duplicate sidebar code
 - **Easy modification** - Change sidebar behavior in one place
 - **Clear separation** - Layout concerns separated from content concerns
+
+---
+
+## Chrome System
+
+Chrome refers to the visual frame around page content: sidebars, navigation tabs, headers, and footers. The chrome system provides a declarative DSL for configuring page chrome at both the PDF and per-page level.
+
+### Chrome Architecture
+
+```
++------------------+     +-----------------+     +------------------+
+| ChromeBuilder    | --> | ChromeSpec      | --> | ConfigurableLayout|
+| (DSL capture)    |     | (data object)   |     | (rendering)       |
++------------------+     +-----------------+     +------------------+
+        |                        |                        |
+        v                        v                        v
+   chrome do...end        left/right/top/bottom    render_chrome_region()
+   tab declarations       region configs           sidebar instantiation
+```
+
+### Key Components
+
+**ChromeBuilder** (`lib/bujo_pdf/dsl/chrome_builder.rb`)
+- Captures chrome configuration during PDF recipe evaluation
+- DSL methods: `left`, `right`, `top`, `bottom`
+- Right sidebar supports inline tab configuration with `tab` blocks
+
+**ChromeSpec** (`lib/bujo_pdf/layouts/chrome_spec.rb`)
+- Value object holding chrome region configurations
+- Calculates content area based on active regions
+- Supports Symbol, Hash, or Proc configuration per region
+
+**SidebarRegistry** (`lib/bujo_pdf/sidebars/sidebar_registry.rb`)
+- Maps sidebar names to sidebar classes (`:week_sidebar` -> `WeekSidebar`)
+- Similar to `PageFactory` for pages
+
+**SidebarDefinition** (`lib/bujo_pdf/dsl/sidebar_definition.rb`)
+- Captures inline sidebar definitions from recipes
+- Stores body block for deferred execution during render
+
+**InlineSidebar** (`lib/bujo_pdf/sidebars/inline_sidebar.rb`)
+- Executes user-provided body blocks for custom sidebar rendering
+- Has access to all component verbs (`h1`, `h2`, `ruled_lines`, etc.)
+
+### Chrome Configuration Flow
+
+```
+1. PDF Definition         2. Recipe Evaluation      3. Page Rendering
+   (standard_planner.rb)     (DeclarationContext)     (BaseLayout)
+
+   chrome do              @chrome_config =          render_before(page)
+     left :week_sidebar     ChromeBuilder.new()       for region in chrome_spec
+     right :tab_sidebar     ...captures config...       lookup sidebar
+   end                                                   instantiate & render
+```
+
+### Chrome DSL Usage
+
+**PDF-wide Default Chrome:**
+
+```ruby
+BujoPdf.define_pdf :my_planner do |year:|
+  # All pages inherit this chrome unless they opt out
+  chrome do
+    left :week_sidebar
+    right :tab_sidebar do
+      tab "Year", dest: :seasonal
+      tab "Future", dest: [:future_log_1, :future_log_2]  # Cycling
+      tab "Grids", dest: [:grid_dot, :grid_graph]
+    end
+  end
+end
+```
+
+**Inline Sidebar Definitions:**
+
+```ruby
+BujoPdf.define_pdf :custom_planner do |year:|
+  # Define a custom sidebar scoped to this recipe
+  sidebar :project_nav, position: :left, width: 3 do |context|
+    h2(0, 0, "Projects")
+    ruled_lines(0, 2, 3, 10)
+  end
+
+  chrome do
+    left :project_nav  # Reference the inline sidebar
+    right :tab_sidebar
+  end
+end
+```
+
+**Per-Page Chrome Overrides:**
+
+```ruby
+# Inherit default chrome
+page :weekly, id: :week_1, week: week
+
+# No chrome (full page)
+page :cover, id: :cover, chrome: false
+
+# Partial override (disable right only)
+page :notes, id: :notes, chrome: { right: false }
+
+# Different sidebar type
+page :daily, id: :day_1, chrome: { left: :month_sidebar }
+```
+
+### Tab Configuration
+
+The right sidebar supports inline tab configuration with cycling destinations:
+
+```ruby
+right :tab_sidebar do
+  tab "Year", dest: :seasonal                    # Single destination
+  tab "Future", dest: [:future_log_1, :future_log_2]  # Cycles on tap
+  tab "Grids", dest: [:grid_dot, :grid_graph, :grid_lined]
+end
+```
+
+**Cycling Behavior:**
+- Not on any page in cycle: Goes to first page (entry point)
+- On a page in cycle: Advances to next page
+- After last page: Wraps to first
+- Tab highlighted when on any page in cycle
+
+### Sidebar Resolution
+
+When rendering chrome, `BaseLayout.render_sidebar_by_name` follows this lookup order:
+
+1. **PDF-local namespace**: Inline sidebars defined with `sidebar :name do...end`
+2. **Global registry**: Registered sidebar classes (`SidebarRegistry.lookup(:name)`)
+
+This allows recipes to override built-in sidebars or define custom sidebars scoped to that PDF.
+
+### Built-in Sidebar Types
+
+| Name | Class | Description |
+|------|-------|-------------|
+| `:week_sidebar` | `WeekSidebar` | Vertical week list (1-52/53) with month labels |
+| `:month_sidebar` | `MonthSidebar` | Month navigation for daily planners |
+| `:tab_sidebar` | `TabSidebar` | Right-side navigation tabs |
+| `:right_sidebar` | `RightSidebar` | Legacy right sidebar |
+| `:inline_sidebar` | `InlineSidebar` | User-defined inline sidebars |
+
+### Creating Custom Sidebars
+
+**Registered Sidebar Class:**
+
+```ruby
+class MyCustomSidebar < SidebarBase
+  include Sidebars::SidebarRegistry
+  register_sidebar :my_custom
+
+  def initialize(canvas:, page_context: nil, **options)
+    super(canvas: canvas, page_context: page_context)
+    @options = options
+  end
+
+  def render
+    # Use inherited methods: item_rect, draw_item_background, draw_item_text
+    # Access @pdf, @grid, @page_context
+  end
+end
+```
+
+**Inline Sidebar Definition:**
+
+```ruby
+sidebar :my_inline, position: :left, width: 3 do |context|
+  # Component verbs available: h1, h2, text, ruled_lines, box, etc.
+  h2(0, 0, "My Sidebar")
+  ruled_lines(0, 2, 3, 10)
+end
+```
+
+### Content Area Calculation
+
+`ChromeSpec.content_area` calculates available space after accounting for chrome:
+
+```ruby
+spec = ChromeSpec.new(left: :week_sidebar, right: :tab_sidebar)
+spec.content_area(43, 55)
+# => { col: 2, row: 0, width_boxes: 40, height_boxes: 55 }
+
+spec = ChromeSpec.new  # No chrome
+spec.content_area(43, 55)
+# => { col: 0, row: 0, width_boxes: 43, height_boxes: 55 }
+```
+
+Default chrome region widths:
+- Left sidebar: 2 grid boxes
+- Right sidebar: 1 grid box
+- Top/Bottom: 0 grid boxes (not commonly used)
 
 ---
 
@@ -458,10 +660,14 @@ use_layout :standard_with_sidebars  # Sidebar strategy
 ```
 lib/bujo_pdf/
 ├── constants.rb                 # Layout constants
+├── canvas.rb                    # Canvas value object (pdf + grid)
 │
 ├── dsl/                         # DSL for planner definition
 │   ├── builder.rb               # Entry point
-│   ├── context.rb               # Runtime state
+│   ├── context.rb               # DeclarationContext with chrome support
+│   ├── chrome_builder.rb        # chrome do...end DSL
+│   ├── sidebar_definition.rb    # sidebar :name do...end DSL
+│   ├── sidebar_overrides.rb     # Tab destination overrides
 │   ├── registry.rb              # Page registration
 │   ├── configuration/           # Config loaders
 │   │   ├── dates.rb
@@ -477,7 +683,12 @@ lib/bujo_pdf/
 │
 ├── base/                        # User extension points
 │   ├── component.rb
-│   └── layout.rb
+│   ├── layout.rb
+│   └── sidebar_base.rb          # Base class for sidebars
+│
+├── sidebars/                    # Sidebar components
+│   ├── sidebar_registry.rb      # Sidebar type registration
+│   └── inline_sidebar.rb        # User-defined inline sidebars
 │
 ├── pages/                       # Page classes
 │   ├── base.rb
@@ -495,17 +706,21 @@ lib/bujo_pdf/
 │       ├── graph_grid_page.rb
 │       └── ...
 │
-├── layouts/                     # Layout classes
-│   ├── base_layout.rb
-│   ├── full_page_layout.rb
-│   ├── standard_with_sidebars_layout.rb
+├── layouts/                     # Layout classes and chrome
+│   ├── base_layout.rb           # Base with chrome rendering
+│   ├── chrome_spec.rb           # Chrome region configuration
+│   ├── configurable_layout.rb   # Config-driven layout
+│   ├── full_page_layout.rb      # Legacy full page
+│   ├── standard_with_sidebars_layout.rb  # Legacy with sidebars
 │   └── layout_factory.rb
 │
 ├── components/                  # Components (verb pattern)
 │   ├── all.rb                   # Mixin aggregator
 │   ├── text.rb, h1.rb, h2.rb    # Content verbs
 │   ├── box.rb, hline.rb, vline.rb  # Drawing verbs
-│   ├── week_sidebar.rb          # Navigation
+│   ├── week_sidebar.rb          # Week navigation sidebar
+│   ├── month_sidebar.rb         # Month navigation sidebar
+│   ├── right_sidebar.rb         # Right navigation tabs
 │   └── ...
 │
 ├── themes/                      # Color themes
