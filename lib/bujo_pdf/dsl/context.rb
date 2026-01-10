@@ -5,6 +5,7 @@ require_relative 'page_declaration'
 require_relative 'inline_page'
 require_relative 'metadata'
 require_relative 'outline'
+require_relative 'sidebar_definition'
 require_relative 'sidebar_overrides'
 require_relative 'week'
 
@@ -42,7 +43,7 @@ module BujoPdf
     #
     class DeclarationContext
       attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries, :sidebar_overrides,
-                  :current_outline_mode, :chrome_config
+                  :current_outline_mode, :chrome_config, :sidebar_definitions
 
       # Initialize a new declaration context.
       def initialize
@@ -54,6 +55,7 @@ module BujoPdf
         @outline_entries = []
         @current_section = nil
         @sidebar_overrides = SidebarOverrides.new
+        @sidebar_definitions = {}
         @current_outline_mode = :manual
         @chrome_config = nil
       end
@@ -273,6 +275,44 @@ module BujoPdf
         @chrome_config = ChromeBuilder.new
         @chrome_config.instance_eval(&block) if block_given?
         @chrome_config
+      end
+
+      # Define an inline sidebar for use in chrome configuration.
+      #
+      # Inline sidebars allow recipes to define custom sidebar rendering
+      # directly in the PDF definition, rather than referencing pre-registered
+      # sidebar types. The body block receives page context when rendered.
+      #
+      # @param name [Symbol] Unique identifier for this sidebar
+      # @param position [Symbol] Where the sidebar appears (:left or :right)
+      # @param width [Integer] Width in grid columns (default: 3)
+      # @yield [context] Block defining sidebar content using component verbs
+      # @return [SidebarDefinition] The created sidebar definition
+      # @raise [ArgumentError] if name is nil or already defined
+      #
+      # @example Simple sidebar
+      #   sidebar :project_nav, position: :left, width: 3 do |context|
+      #     h2(0, 0, "Projects")
+      #     ruled_lines(0, 2, 3, 10)
+      #   end
+      #
+      # @example Then reference in chrome
+      #   chrome do
+      #     left :project_nav
+      #   end
+      def sidebar(name, position:, width: SidebarDefinition::DEFAULT_WIDTH, &block)
+        if @sidebar_definitions.key?(name)
+          raise ArgumentError, "sidebar :#{name} is already defined"
+        end
+
+        definition = SidebarDefinition.new(
+          name: name,
+          position: position,
+          width: width,
+          &block
+        )
+        @sidebar_definitions[name] = definition
+        definition
       end
 
       # Get all weeks in a year.
