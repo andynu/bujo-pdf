@@ -173,7 +173,7 @@ class TestConfigurableLayoutRenderBefore < Minitest::Test
   end
 end
 
-class TestConfigurableLayoutReplicatesStandardLayout < Minitest::Test
+class TestConfigurableLayoutStandardPreset < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
     create_stub_stamp(@pdf, 'page_dots')
@@ -187,21 +187,20 @@ class TestConfigurableLayoutReplicatesStandardLayout < Minitest::Test
     @page = MockPage.new(@pdf, @context)
   end
 
-  def test_content_area_matches_standard_layout
-    # ConfigurableLayout with week + tab sidebars
+  def test_standard_preset_content_area
+    # ConfigurableLayout with week + tab sidebars (standard preset)
     spec = BujoPdf::Layouts::ChromeSpec.new(
       left: :week_sidebar,
       right: :tab_sidebar
     )
     configurable = BujoPdf::Layouts::ConfigurableLayout.new(@pdf, @grid, chrome_spec: spec)
 
-    # StandardWithSidebarsLayout
-    standard = BujoPdf::Layouts::StandardWithSidebarsLayout.new(@pdf, @grid)
-
-    assert_equal standard.content_area, configurable.content_area
+    # Expected content area for standard layout
+    expected = { col: 2, row: 0, width_boxes: 40, height_boxes: 55 }
+    assert_equal expected, configurable.content_area
   end
 
-  def test_can_render_like_standard_layout
+  def test_can_render_with_standard_preset
     # ConfigurableLayout with week + tab sidebars
     spec = BujoPdf::Layouts::ChromeSpec.new(
       left: :week_sidebar,
@@ -209,13 +208,13 @@ class TestConfigurableLayoutReplicatesStandardLayout < Minitest::Test
     )
     layout = BujoPdf::Layouts::ConfigurableLayout.new(@pdf, @grid, chrome_spec: spec)
 
-    # Should render successfully like StandardWithSidebarsLayout
+    # Should render successfully
     layout.render_before(@page)
     layout.render_after(@page)
   end
 end
 
-class TestConfigurableLayoutReplicatesDailyLayout < Minitest::Test
+class TestConfigurableLayoutDailyPreset < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
     create_stub_stamp(@pdf, 'page_dots')
@@ -229,21 +228,20 @@ class TestConfigurableLayoutReplicatesDailyLayout < Minitest::Test
     @page = MockPage.new(@pdf, @context)
   end
 
-  def test_content_area_matches_daily_layout
-    # ConfigurableLayout with month + tab sidebars
+  def test_daily_preset_content_area
+    # ConfigurableLayout with month + tab sidebars (daily preset)
     spec = BujoPdf::Layouts::ChromeSpec.new(
       left: :month_sidebar,
       right: :tab_sidebar
     )
     configurable = BujoPdf::Layouts::ConfigurableLayout.new(@pdf, @grid, chrome_spec: spec)
 
-    # DailyWithSidebarsLayout
-    daily = BujoPdf::Layouts::DailyWithSidebarsLayout.new(@pdf, @grid)
-
-    assert_equal daily.content_area, configurable.content_area
+    # Expected content area for daily layout
+    expected = { col: 2, row: 0, width_boxes: 40, height_boxes: 55 }
+    assert_equal expected, configurable.content_area
   end
 
-  def test_can_render_like_daily_layout
+  def test_can_render_with_daily_preset
     # ConfigurableLayout with month + tab sidebars
     spec = BujoPdf::Layouts::ChromeSpec.new(
       left: :month_sidebar,
@@ -251,7 +249,7 @@ class TestConfigurableLayoutReplicatesDailyLayout < Minitest::Test
     )
     layout = BujoPdf::Layouts::ConfigurableLayout.new(@pdf, @grid, chrome_spec: spec)
 
-    # Should render successfully like DailyWithSidebarsLayout
+    # Should render successfully
     layout.render_before(@page)
     layout.render_after(@page)
   end

@@ -618,7 +618,9 @@ class TestPagesBaseChromeInheritance < Minitest::Test
     page.generate
 
     refute_nil page.new_layout
-    assert_kind_of BujoPdf::Layouts::FullPageLayout, page.new_layout
+    # Full page layout is now ConfigurableLayout with no chrome
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.new_layout
+    assert_empty page.new_layout.chrome_spec.active_regions
   end
 
   def test_use_layout_applies_pdf_chrome_config

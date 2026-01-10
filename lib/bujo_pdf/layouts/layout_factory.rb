@@ -2,9 +2,7 @@
 
 require_relative 'chrome_spec'
 require_relative 'configurable_layout'
-require_relative 'daily_with_sidebars_layout'
 require_relative 'full_page_layout'
-require_relative 'standard_with_sidebars_layout'
 
 module BujoPdf
   module Layouts
@@ -12,6 +10,10 @@ module BujoPdf
     #
     # Provides a centralized registry of available layouts and creates
     # layout instances with appropriate initialization parameters.
+    #
+    # All named presets use ConfigurableLayout internally with pre-defined
+    # chrome configurations. This unifies the layout system around a single
+    # flexible implementation.
     #
     # Supports two modes of operation:
     # 1. Named presets: Use symbolic names for common layout configurations
@@ -39,17 +41,12 @@ module BujoPdf
     #
     # @example List available layouts
     #   LayoutFactory.available_layouts
-    #   # => [:full_page, :standard_with_sidebars, :configurable]
+    #   # => [:full_page, :standard_with_sidebars, :daily_with_sidebars, :configurable]
     class LayoutFactory
-      # Registry of available layouts.
+      # Named layout presets.
       #
-      # Maps symbolic layout names to their corresponding class.
-      LAYOUTS = {
-        configurable: ConfigurableLayout,
-        daily_with_sidebars: DailyWithSidebarsLayout,
-        full_page: FullPageLayout,
-        standard_with_sidebars: StandardWithSidebarsLayout
-      }.freeze
+      # All presets map to ConfigurableLayout with specific chrome configurations.
+      PRESET_NAMES = [:full_page, :standard_with_sidebars, :daily_with_sidebars, :configurable].freeze
 
       # Preset chrome configurations for named layouts.
       #
@@ -63,20 +60,20 @@ module BujoPdf
 
       # Create a layout instance by name.
       #
-      # When a `chrome:` option is provided, creates a ConfigurableLayout
-      # with the specified chrome configuration. Otherwise, uses the
-      # registered layout class for the given name.
+      # All layouts are created using ConfigurableLayout with the appropriate
+      # chrome configuration. Named presets (:full_page, :standard_with_sidebars,
+      # :daily_with_sidebars) map to pre-defined chrome configurations.
       #
-      # Named presets still work as before but can be thought of as
-      # shortcuts for specific chrome configurations.
+      # When a `chrome:` option is provided, it overrides any preset configuration
+      # and creates a ConfigurableLayout with the specified chrome.
       #
-      # @param name [Symbol] Layout name (:full_page, :standard_with_sidebars, :configurable)
+      # @param name [Symbol] Layout name (:full_page, :standard_with_sidebars, :daily_with_sidebars, :configurable)
       # @param pdf [Prawn::Document] PDF document
       # @param grid_system [Utilities::GridSystem] Grid system
-      # @param chrome [Hash, nil] Optional chrome configuration hash
+      # @param chrome [Hash, nil] Optional chrome configuration hash (overrides preset)
       # @param options [Hash] Layout-specific options passed to the layout constructor
-      # @return [BaseLayout] Layout instance
-      # @raise [ArgumentError] if layout name is not registered
+      # @return [ConfigurableLayout] Layout instance
+      # @raise [ArgumentError] if layout name is not recognized
       #
       # @example Using named preset
       #   LayoutFactory.create(:full_page, pdf, grid_system)
@@ -86,27 +83,32 @@ module BujoPdf
       #     chrome: { left: :week_sidebar, right: :tab_sidebar }
       #   )
       def self.create(name, pdf, grid_system, chrome: nil, **options)
-        # If chrome hash is provided, build a ConfigurableLayout
+        # If chrome hash is provided explicitly, use it directly
         if chrome
           chrome_spec = build_chrome_spec(chrome)
           return ConfigurableLayout.new(pdf, grid_system, chrome_spec: chrome_spec, **options)
         end
 
-        layout_class = LAYOUTS[name]
-        raise ArgumentError, "Unknown layout: #{name}. Available layouts: #{available_layouts.join(', ')}" unless layout_class
+        # Validate layout name
+        unless PRESET_NAMES.include?(name)
+          raise ArgumentError, "Unknown layout: #{name}. Available layouts: #{available_layouts.join(', ')}"
+        end
 
-        layout_class.new(pdf, grid_system, **options)
+        # Use preset chrome configuration (empty hash for :configurable gives full page)
+        preset_chrome = CHROME_PRESETS.fetch(name, {})
+        chrome_spec = build_chrome_spec(preset_chrome)
+        ConfigurableLayout.new(pdf, grid_system, chrome_spec: chrome_spec, **options)
       end
 
       # Get list of available layout names.
       #
-      # @return [Array<Symbol>] Array of registered layout names
+      # @return [Array<Symbol>] Array of available layout preset names
       #
       # @example
       #   LayoutFactory.available_layouts
-      #   # => [:full_page, :standard_with_sidebars, :configurable]
+      #   # => [:full_page, :standard_with_sidebars, :daily_with_sidebars, :configurable]
       def self.available_layouts
-        LAYOUTS.keys
+        PRESET_NAMES
       end
 
       # Get chrome preset configuration for a named layout.
