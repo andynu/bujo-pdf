@@ -189,7 +189,8 @@ module BujoPdf
           link_registry: @link_registry,
           date_config: date_config,
           event_store: event_store,
-          sidebar_overrides: declaration_context.sidebar_overrides
+          sidebar_overrides: declaration_context.sidebar_overrides,
+          chrome_config: declaration_context.chrome_config
         }
       end
 
