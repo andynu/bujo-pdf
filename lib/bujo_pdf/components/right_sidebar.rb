@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
-require_relative '../base/component'
+require_relative '../base/sidebar_base'
+require_relative '../sidebars/sidebar_registry'
+require_relative '../utilities/tab_resolver'
 require_relative 'link_box'
 
 module BujoPdf
   module Components
-    # RightSidebar component for right sidebar tabs navigation.
+    # TabSidebar component for right sidebar tabs navigation.
+    # (Also aliased as RightSidebar for backward compatibility)
     #
     # Renders a vertical list of navigation tabs on the right edge with:
     #   - All tabs stack from top with uniform point-based gaps
@@ -22,7 +25,7 @@ module BujoPdf
     #
     # Example usage:
     #   canvas = Canvas.new(pdf, grid)
-    #   sidebar = RightSidebar.new(
+    #   sidebar = TabSidebar.new(
     #     canvas: canvas,
     #     top_tabs: [
     #       { label: "Year", dest: "seasonal" },
@@ -33,8 +36,11 @@ module BujoPdf
     #     ]
     #   )
     #   sidebar.render
-    class RightSidebar < Component
+    class TabSidebar < SidebarBase
+      include Sidebars::SidebarRegistry
       include LinkBox::Mixin
+
+      register_sidebar :tab_sidebar
 
       DEFAULT_SIDEBAR_COL = 42
       FONT_SIZE = 8
@@ -43,20 +49,32 @@ module BujoPdf
       START_Y_OFFSET_PT = 14   # Start position from top of page in points
 
       def initialize(canvas:, top_tabs: [], bottom_tabs: [], sidebar_col: DEFAULT_SIDEBAR_COL, page_context: nil)
-        super(canvas: canvas)
+        super(canvas: canvas, page_context: page_context)
         @top_tabs = top_tabs
         @bottom_tabs = bottom_tabs
         @sidebar_col = sidebar_col
-        @page_context = page_context
       end
 
       def render
-        # Combine all tabs and render from top to bottom
+        # Combine all tabs and resolve destinations
         all_tabs = @top_tabs + @bottom_tabs
-        render_tabs_from_top(all_tabs)
+        resolved_tabs = resolve_tabs(all_tabs)
+        render_tabs_from_top(resolved_tabs)
       end
 
       private
+
+      # Resolve tab destinations using TabResolver.
+      #
+      # Tabs that already have :current set pass through unchanged.
+      # Other tabs get resolved with page_context-aware highlighting.
+      #
+      # @param tabs [Array<Hash>] Tab configurations
+      # @return [Array<Hash>] Resolved tabs with :label, :dest, :current
+      def resolve_tabs(tabs)
+        resolver = Utilities::TabResolver.new(page_context: page_context)
+        resolver.resolve_all(tabs)
+      end
 
       def render_tabs_from_top(tabs)
         # Start from top of page with small offset
@@ -107,5 +125,11 @@ module BujoPdf
         )
       end
     end
+
+    # Backward compatibility alias
+    RightSidebar = TabSidebar
+
+    # Register :right_sidebar as alias for :tab_sidebar
+    Sidebars::SidebarRegistry.register(:right_sidebar, TabSidebar)
   end
 end
