@@ -97,9 +97,25 @@ module BujoPdf
         setup              # Page-specific state setup
 
         # If new layout system is used, default to full_page if not specified
+        # But check for PDF-level chrome config first
         if @new_layout.nil?
           require_relative '../layouts/layout_factory'
-          @new_layout = Layouts::LayoutFactory.create(:full_page, @pdf, @grid_system)
+
+          # Check if PDF-level chrome config exists
+          pdf_chrome = convert_chrome_config_to_hash(context.chrome_config)
+          if pdf_chrome
+            # Use configurable layout with PDF chrome
+            @new_layout = Layouts::LayoutFactory.create(
+              :configurable,
+              @pdf,
+              @grid_system,
+              chrome: pdf_chrome,
+              page_context: @context
+            )
+          else
+            # No chrome config, use full page layout
+            @new_layout = Layouts::LayoutFactory.create(:full_page, @pdf, @grid_system)
+          end
           # Update content area from new layout
           @content_area = calculate_content_area_from_new_layout
         end
@@ -226,6 +242,12 @@ module BujoPdf
         merged_options[:year] ||= context[:year] if context[:year]
         merged_options[:total_weeks] ||= context[:total_weeks] if context[:total_weeks]
         merged_options[:page_context] = @context  # Pass context for page detection
+
+        # If no explicit chrome provided, check for PDF-level chrome config
+        unless merged_options.key?(:chrome)
+          pdf_chrome = convert_chrome_config_to_hash(context.chrome_config)
+          merged_options[:chrome] = pdf_chrome if pdf_chrome
+        end
 
         @new_layout = Layouts::LayoutFactory.create(
           layout_name,
@@ -525,9 +547,59 @@ module BujoPdf
           week_end: hash[:week_end],
           total_weeks: hash[:total_weeks],
           total_pages: hash[:total_pages],
+          chrome_config: hash[:chrome_config],
           **hash.except(:page_key, :page_number, :year, :week_num,
-                        :week_start, :week_end, :total_weeks, :total_pages)
+                        :week_start, :week_end, :total_weeks, :total_pages, :chrome_config)
         )
+      end
+
+      # Convert a ChromeBuilder config to a hash suitable for LayoutFactory.
+      #
+      # Transforms PdfDSL::ChromeBuilder's SidebarConfig objects into the
+      # format expected by LayoutFactory.build_chrome_spec.
+      #
+      # @param chrome_config [PdfDSL::ChromeBuilder, nil] PDF-level chrome configuration
+      # @return [Hash, nil] Chrome hash with :left, :right, :top, :bottom keys, or nil
+      #
+      # @example
+      #   # ChromeBuilder with left: :week_sidebar, right: :tab_sidebar
+      #   convert_chrome_config_to_hash(chrome_config)
+      #   # => { left: :week_sidebar, right: :tab_sidebar }
+      def convert_chrome_config_to_hash(chrome_config)
+        return nil if chrome_config.nil?
+        return nil if chrome_config.empty?
+
+        result = {}
+
+        # Convert each region's SidebarConfig to appropriate format
+        %i[left right top bottom].each do |region|
+          config = chrome_config.send("#{region}_config")
+          next unless config
+
+          result[region] = convert_sidebar_config(config)
+        end
+
+        result.empty? ? nil : result
+      end
+
+      # Convert a SidebarConfig to the format expected by ChromeSpec/LayoutFactory.
+      #
+      # @param config [PdfDSL::ChromeBuilder::SidebarConfig] Sidebar configuration
+      # @return [Symbol, Hash] Simple symbol or hash with component and options
+      def convert_sidebar_config(config)
+        # If no options and no tabs, just return the sidebar name
+        if config.options.empty? && !config.tabs?
+          config.sidebar_name
+        else
+          # Build a hash with component name and options
+          result = { component: config.sidebar_name }
+          result.merge!(config.options)
+
+          # Include tabs if present
+          result[:tabs] = config.tabs if config.tabs?
+
+          result
+        end
       end
     end
   end

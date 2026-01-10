@@ -414,4 +414,61 @@ class TestRenderContext < Minitest::Test
     assert_equal :week_42, context.page_key
     assert_instance_of Symbol, context.page_key
   end
+
+  # Test chrome_config attribute
+  def test_chrome_config_nil_by_default
+    context = RenderContext.new(
+      page_key: :test,
+      page_number: 1,
+      year: @year
+    )
+
+    assert_nil context.chrome_config
+  end
+
+  def test_chrome_config_can_be_set
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)
+    chrome_config.right(:tab_sidebar)
+
+    context = RenderContext.new(
+      page_key: :test,
+      page_number: 1,
+      year: @year,
+      chrome_config: chrome_config
+    )
+
+    assert_equal chrome_config, context.chrome_config
+    refute_nil context.chrome_config.left_config
+    refute_nil context.chrome_config.right_config
+  end
+
+  def test_bracket_accessor_returns_chrome_config
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)
+
+    context = RenderContext.new(
+      page_key: :test,
+      page_number: 1,
+      year: @year,
+      chrome_config: chrome_config
+    )
+
+    assert_equal chrome_config, context[:chrome_config]
+  end
+
+  def test_to_h_includes_chrome_config
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)
+
+    context = RenderContext.new(
+      page_key: :test,
+      page_number: 1,
+      year: @year,
+      chrome_config: chrome_config
+    )
+
+    hash = context.to_h
+    assert_equal chrome_config, hash[:chrome_config]
+  end
 end

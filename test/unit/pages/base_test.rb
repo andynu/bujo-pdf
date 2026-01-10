@@ -559,6 +559,121 @@ class TestPagesBaseIntegration < Minitest::Test
   end
 end
 
+# ============================================
+# PDF Chrome Inheritance Tests
+# ============================================
+class TestPagesBaseChromeInheritance < Minitest::Test
+  def setup
+    @mock_pdf = MockPDF.new
+    DotGrid.create_stamp(@mock_pdf, "page_dots")
+    @base_context = {
+      page_key: :test_page,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 52
+    }
+  end
+
+  def test_generate_uses_pdf_chrome_when_no_explicit_layout
+    # Create chrome config using ChromeBuilder
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)
+    chrome_config.right(:tab_sidebar)
+
+    context = BujoPdf::RenderContext.new(
+      **@base_context,
+      chrome_config: chrome_config
+    )
+
+    page = TestablePage.new(@mock_pdf, context)
+    page.generate
+
+    # Page should have a layout created with chrome
+    refute_nil page.new_layout
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.new_layout
+  end
+
+  def test_generate_uses_full_page_when_no_chrome_config
+    context = BujoPdf::RenderContext.new(**@base_context)
+
+    page = TestablePage.new(@mock_pdf, context)
+    page.generate
+
+    refute_nil page.new_layout
+    assert_kind_of BujoPdf::Layouts::FullPageLayout, page.new_layout
+  end
+
+  def test_use_layout_applies_pdf_chrome_config
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)
+    chrome_config.right(:tab_sidebar)
+
+    context = BujoPdf::RenderContext.new(
+      **@base_context,
+      chrome_config: chrome_config
+    )
+
+    page = TestablePage.new(@mock_pdf, context)
+    page.test_use_layout(:configurable)
+
+    # The layout should have received the chrome config
+    refute_nil page.new_layout
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.new_layout
+  end
+
+  def test_use_layout_explicit_chrome_overrides_pdf_chrome
+    # PDF-level chrome
+    pdf_chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    pdf_chrome.left(:week_sidebar)
+    pdf_chrome.right(:tab_sidebar)
+
+    context = BujoPdf::RenderContext.new(
+      **@base_context,
+      chrome_config: pdf_chrome
+    )
+
+    page = TestablePage.new(@mock_pdf, context)
+
+    # Override with explicit chrome: false (no sidebars)
+    page.test_use_layout(:configurable, chrome: {})
+
+    # Layout should use the explicit chrome config, not PDF chrome
+    refute_nil page.new_layout
+    # Empty chrome means full content area
+    assert_equal 43, page.content_area[:width_boxes]
+  end
+
+  def test_content_area_reduced_with_pdf_chrome
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)  # Default width: 2
+    chrome_config.right(:tab_sidebar)  # Default width: 1
+
+    context = BujoPdf::RenderContext.new(
+      **@base_context,
+      chrome_config: chrome_config
+    )
+
+    page = TestablePage.new(@mock_pdf, context)
+    page.generate
+
+    # Content area should be reduced by sidebars (43 - 2 - 1 = 40)
+    assert_equal 40, page.content_area[:width_boxes]
+    assert_equal 2, page.content_area[:col]
+  end
+
+  def test_hash_context_with_chrome_config_is_wrapped
+    chrome_config = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome_config.left(:week_sidebar)
+
+    hash_context = @base_context.merge(chrome_config: chrome_config)
+
+    page = TestablePage.new(@mock_pdf, hash_context)
+
+    assert_kind_of BujoPdf::RenderContext, page.context
+    assert_equal chrome_config, page.context.chrome_config
+  end
+end
+
 class TestPagesBaseBackgroundTypes < Minitest::Test
   def setup
     @mock_pdf = MockPDF.new
