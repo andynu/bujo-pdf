@@ -67,6 +67,9 @@ require_relative 'bujo_pdf/components/layout_helpers'
 require_relative 'bujo_pdf/components/link_box'
 require_relative 'bujo_pdf/components/all'
 
+# Load sidebars (after Components::All is available)
+require_relative 'bujo_pdf/sidebars/inline_sidebar'
+
 # Load layouts
 require_relative 'bujo_pdf/layouts/base_layout'
 require_relative 'bujo_pdf/layouts/chrome_spec'
