@@ -74,6 +74,43 @@ class TestChromeBuilder < Minitest::Test
     assert_equal({ icon: :home }, tab.options)
   end
 
+  def test_right_sidebar_tabs_with_cycling_destinations
+    @builder.right(:right_sidebar) do
+      tab "Weeks", dest: [:week_1, :week_2, :week_3]
+      tab "Notes", dest: :notes
+    end
+
+    assert_equal 2, @builder.right_config.tabs.length
+
+    # Cycling tab stores array of destinations
+    weeks_tab = @builder.right_config.tabs[0]
+    assert_equal "Weeks", weeks_tab.label
+    assert_equal [:week_1, :week_2, :week_3], weeks_tab.dest
+
+    # Single destination unchanged
+    notes_tab = @builder.right_config.tabs[1]
+    assert_equal "Notes", notes_tab.label
+    assert_equal :notes, notes_tab.dest
+  end
+
+  def test_tab_config_cycling_predicate
+    # TabConfig with cycling destination
+    cycling_tab = BujoPdf::PdfDSL::ChromeBuilder::TabConfig.new(
+      label: "Weeks",
+      dest: [:week_1, :week_2, :week_3],
+      options: {}
+    )
+    assert cycling_tab.cycling?
+
+    # TabConfig with single destination
+    single_tab = BujoPdf::PdfDSL::ChromeBuilder::TabConfig.new(
+      label: "Year",
+      dest: :seasonal,
+      options: {}
+    )
+    refute single_tab.cycling?
+  end
+
   def test_top_sidebar
     @builder.top(:header_bar)
 
