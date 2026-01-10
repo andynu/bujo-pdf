@@ -145,19 +145,17 @@ module BujoPdf
 
         if @current
           # Current: stroked border only (no fill)
-          pdf.stroke_color color_borders
-          pdf.stroke_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
+          with_stroke_color(color_borders) do
+            pdf.stroke_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
+          end
         else
           # Non-current: 20% opacity filled background
           pdf.transparent(0.2) do
-            pdf.fill_color color_borders
-            pdf.fill_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
+            with_fill_color(color_borders) do
+              pdf.fill_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
+            end
           end
         end
-
-        # Reset colors
-        pdf.fill_color color_text_black
-        pdf.stroke_color color_text_black
       end
 
       def draw_text(left, top, width, height)
@@ -182,17 +180,17 @@ module BujoPdf
           )
         else
           # Horizontal text
-          pdf.font "Helvetica", style: style, size: @font_size
-          pdf.fill_color txt_color
-          pdf.text_box @text,
-                        at: [left, top],
-                        width: width,
-                        height: height,
-                        align: :center,
-                        valign: :center
-
-          # Reset color
-          pdf.fill_color color_text_black
+          with_font("Helvetica", @font_size) do
+            pdf.font "Helvetica", style: style, size: @font_size
+            with_fill_color(txt_color) do
+              pdf.text_box @text,
+                            at: [left, top],
+                            width: width,
+                            height: height,
+                            align: :center,
+                            valign: :center
+            end
+          end
         end
       end
     end

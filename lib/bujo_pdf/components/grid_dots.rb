@@ -68,19 +68,16 @@ module BujoPdf
       #
       # @return [void]
       def render
-        pdf.fill_color @color
-
-        # Draw dots at each grid intersection
-        (@row..(@row + @height)).each do |r|
-          dot_y = grid.y(r)
-          (@col..(@col + @width)).each do |c|
-            dot_x = grid.x(c)
-            pdf.fill_circle [dot_x, dot_y], @radius
+        with_fill_color(@color) do
+          # Draw dots at each grid intersection
+          (@row..(@row + @height)).each do |r|
+            dot_y = grid.y(r)
+            (@col..(@col + @width)).each do |c|
+              dot_x = grid.x(c)
+              pdf.fill_circle [dot_x, dot_y], @radius
+            end
           end
         end
-
-        # Restore default fill color
-        pdf.fill_color '000000'
       end
     end
   end

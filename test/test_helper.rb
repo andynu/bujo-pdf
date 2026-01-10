@@ -140,12 +140,50 @@ end
 # Mock PDF class for testing without actual PDF generation
 class MockPDF
   attr_reader :calls, :current_page_number, :page_count
+  attr_accessor :current_fill_color, :current_stroke_color, :current_line_width
 
   def initialize
     @calls = []
     @current_page_number = 1
     @page_count = 1
     @stamps = {}
+    # Initialize default PDF state values
+    @current_fill_color = '000000'
+    @current_stroke_color = '000000'
+    @current_line_width = 0.5
+  end
+
+  # State-tracking methods for colors and line width
+  def fill_color(color = nil)
+    if color.nil?
+      @current_fill_color
+    else
+      @calls << { method: :fill_color, args: [color], kwargs: {} }
+      @current_fill_color = color
+    end
+  end
+
+  def stroke_color(color = nil)
+    if color.nil?
+      @current_stroke_color
+    else
+      @calls << { method: :stroke_color, args: [color], kwargs: {} }
+      @current_stroke_color = color
+    end
+  end
+
+  def line_width(width = nil)
+    if width.nil?
+      @current_line_width
+    else
+      @calls << { method: :line_width, args: [width], kwargs: {} }
+      @current_line_width = width
+    end
+  end
+
+  def line_width=(width)
+    @calls << { method: :line_width, args: [width], kwargs: {} }
+    @current_line_width = width
   end
 
   # Track all method calls

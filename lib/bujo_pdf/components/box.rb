@@ -87,11 +87,6 @@ module BujoPdf
           draw_fill(x, y, w, h) if @fill
           draw_stroke(x, y, w, h) if @stroke
         end
-
-        # Restore defaults
-        pdf.stroke_color '000000'
-        pdf.fill_color '000000'
-        pdf.line_width 0.5
       end
 
       private
@@ -105,21 +100,24 @@ module BujoPdf
       end
 
       def draw_fill(x, y, w, h)
-        pdf.fill_color @fill
-        if @radius > 0
-          pdf.fill_rounded_rectangle([x, y], w, h, @radius)
-        else
-          pdf.fill_rectangle([x, y], w, h)
+        with_fill_color(@fill) do
+          if @radius > 0
+            pdf.fill_rounded_rectangle([x, y], w, h, @radius)
+          else
+            pdf.fill_rectangle([x, y], w, h)
+          end
         end
       end
 
       def draw_stroke(x, y, w, h)
-        pdf.stroke_color @stroke
-        pdf.line_width @stroke_width
-        if @radius > 0
-          pdf.stroke_rounded_rectangle([x, y], w, h, @radius)
-        else
-          pdf.stroke_rectangle([x, y], w, h)
+        with_stroke_color(@stroke) do
+          with_line_width(@stroke_width) do
+            if @radius > 0
+              pdf.stroke_rounded_rectangle([x, y], w, h, @radius)
+            else
+              pdf.stroke_rectangle([x, y], w, h)
+            end
+          end
         end
       end
     end

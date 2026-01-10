@@ -262,23 +262,22 @@ module BujoPdf
         divider_width = @width - left_columns_width - right_columns_width
         dash_pattern = @divider == :dashed ? [3, 2] : nil
 
-        pdf.stroke_color effective_divider_color
-        pdf.line_width 0.5
-        pdf.dash(dash_pattern[0], space: dash_pattern[1]) if dash_pattern
+        with_stroke_color(effective_divider_color) do
+          with_line_width(0.5) do
+            pdf.dash(dash_pattern[0], space: dash_pattern[1]) if dash_pattern
 
-        # Draw dividers at the bottom of each row (except last)
-        divider_count.times do |i|
-          divider_row = @row + ((i + 1) * @row_height)
-          y = grid.y(divider_row)
-          x_start = grid.x(divider_col)
-          x_end = grid.x(divider_col + divider_width)
-          pdf.stroke_line [x_start, y], [x_end, y]
+            # Draw dividers at the bottom of each row (except last)
+            divider_count.times do |i|
+              divider_row = @row + ((i + 1) * @row_height)
+              y = grid.y(divider_row)
+              x_start = grid.x(divider_col)
+              x_end = grid.x(divider_col + divider_width)
+              pdf.stroke_line [x_start, y], [x_end, y]
+            end
+
+            pdf.undash if dash_pattern
+          end
         end
-
-        # Restore defaults
-        pdf.undash if dash_pattern
-        pdf.stroke_color '000000'
-        pdf.line_width 0.5
       end
 
       # Width of left columns (number + marker) in grid boxes

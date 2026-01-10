@@ -240,28 +240,27 @@ module BujoPdf
 
         # Background
         label_x = @rect.x + h_padding
-        pdf.fill_color bg_color
-        pdf.fill_rectangle [label_x, label_y], width - (h_padding * 2), label_height
-        pdf.fill_color '000000'
+        with_fill_color(bg_color) do
+          pdf.fill_rectangle [label_x, label_y], width - (h_padding * 2), label_height
+        end
 
         # Text (with small vertical and horizontal padding)
         v_padding = 1
         text_h_padding = 2
 
-        pdf.font('Helvetica-Bold') if bold
-
-        pdf.fill_color text_color
-        pdf.text_box label_text,
-                      at: [label_x + text_h_padding, label_y - v_padding],
-                      width: width - (h_padding * 2) - (text_h_padding * 2),
-                      height: label_height - (v_padding * 2),
-                      size: 7,
-                      align: :center,
-                      valign: :center,
-                      overflow: :shrink_to_fit
-
-        pdf.fill_color '000000'
-        pdf.font('Helvetica')  # Reset font
+        font_family = bold ? 'Helvetica-Bold' : 'Helvetica'
+        with_font(font_family, 7) do
+          with_fill_color(text_color) do
+            pdf.text_box label_text,
+                          at: [label_x + text_h_padding, label_y - v_padding],
+                          width: width - (h_padding * 2) - (text_h_padding * 2),
+                          height: label_height - (v_padding * 2),
+                          size: 7,
+                          align: :center,
+                          valign: :center,
+                          overflow: :shrink_to_fit
+          end
+        end
       end
     end
   end

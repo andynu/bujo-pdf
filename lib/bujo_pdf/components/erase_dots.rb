@@ -62,18 +62,15 @@ module BujoPdf
       def render
         radius = Styling::Grid::DOT_RADIUS + 0.5 # Slightly larger to fully cover
 
-        pdf.fill_color color_background
-
-        (@row..(@row + @height)).each do |r|
-          dot_y = grid.y(r)
-          (@col..(@col + @width)).each do |c|
-            dot_x = grid.x(c)
-            pdf.fill_circle [dot_x, dot_y], radius
+        with_fill_color(color_background) do
+          (@row..(@row + @height)).each do |r|
+            dot_y = grid.y(r)
+            (@col..(@col + @width)).each do |c|
+              dot_x = grid.x(c)
+              pdf.fill_circle [dot_x, dot_y], radius
+            end
           end
         end
-
-        # Restore default fill color
-        pdf.fill_color color_text_black
       end
     end
   end

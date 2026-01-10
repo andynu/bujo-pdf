@@ -117,17 +117,15 @@ module BujoPdf
         text_color = @color || color_text_black
         bg_color = color_background
 
-        pdf.font 'Helvetica', style: @style, size: @size
+        with_font('Helvetica', @size) do
+          pdf.font 'Helvetica', style: @style, size: @size
 
-        if @rotation != 0
-          render_rotated(text_color)
-        else
-          render_normal(text_color, bg_color)
+          if @rotation != 0
+            render_rotated(text_color)
+          else
+            render_normal(text_color, bg_color)
+          end
         end
-
-        # Reset to defaults
-        pdf.font 'Helvetica', style: :normal
-        pdf.fill_color color_text_black
       end
 
       private
@@ -156,15 +154,16 @@ module BujoPdf
         box_height = @pt_height || grid.height(@height)
 
         # Draw the text
-        pdf.fill_color text_color
-        pdf.text_box @content,
-                      at: [x_pos, y_pos],
-                      width: box_width,
-                      height: box_height,
-                      size: @size,
-                      align: @align,
-                      valign: :center,
-                      overflow: :truncate
+        with_fill_color(text_color) do
+          pdf.text_box @content,
+                        at: [x_pos, y_pos],
+                        width: box_width,
+                        height: box_height,
+                        size: @size,
+                        align: @align,
+                        valign: :center,
+                        overflow: :truncate
+        end
       end
 
       # Render text with rotation
@@ -205,16 +204,17 @@ module BujoPdf
           center_y = (box_top - box_height) + (box_height / 2.0)
         end
 
-        pdf.fill_color text_color
-        pdf.rotate(@rotation, origin: [center_x, center_y]) do
-          pdf.text_box @content,
-                        at: [box_x, box_top],
-                        width: box_width,
-                        height: box_height,
-                        size: @size,
-                        align: @align,
-                        valign: :center,
-                        overflow: :truncate
+        with_fill_color(text_color) do
+          pdf.rotate(@rotation, origin: [center_x, center_y]) do
+            pdf.text_box @content,
+                          at: [box_x, box_top],
+                          width: box_width,
+                          height: box_height,
+                          size: @size,
+                          align: @align,
+                          valign: :center,
+                          overflow: :truncate
+          end
         end
       end
 
