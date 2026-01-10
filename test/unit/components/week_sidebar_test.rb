@@ -38,6 +38,23 @@ class TestWeekSidebar < Minitest::Test
   end
 
   # ============================================
+  # Registry Tests
+  # ============================================
+
+  def test_extends_sidebar_base
+    assert BujoPdf::Components::WeekSidebar < BujoPdf::SidebarBase
+  end
+
+  def test_registered_as_week_sidebar
+    assert BujoPdf::Sidebars::SidebarRegistry.registered?(:week_sidebar)
+    assert_equal BujoPdf::Components::WeekSidebar, BujoPdf::Sidebars::SidebarRegistry.lookup(:week_sidebar)
+  end
+
+  def test_sidebar_type_is_week_sidebar
+    assert_equal :week_sidebar, BujoPdf::Components::WeekSidebar.sidebar_type
+  end
+
+  # ============================================
   # Initialization Tests
   # ============================================
 
@@ -209,7 +226,7 @@ class TestWeekSidebar < Minitest::Test
     # Week 5 is current, week 6 is not
   end
 
-  def test_draw_week_background_current
+  def test_draw_item_background_current
     sidebar = BujoPdf::Components::WeekSidebar.new(
       canvas: @canvas,
       year: 2025,
@@ -217,12 +234,12 @@ class TestWeekSidebar < Minitest::Test
     )
 
     week_box = @grid.rect(0.25, 5, 2, 1)
-    sidebar.send(:draw_week_background, week_box, true)
+    sidebar.send(:draw_item_background, week_box, true)
 
     # Should draw stroked rectangle for current week
   end
 
-  def test_draw_week_background_non_current
+  def test_draw_item_background_non_current
     sidebar = BujoPdf::Components::WeekSidebar.new(
       canvas: @canvas,
       year: 2025,
@@ -230,7 +247,7 @@ class TestWeekSidebar < Minitest::Test
     )
 
     week_box = @grid.rect(0.25, 5, 2, 1)
-    sidebar.send(:draw_week_background, week_box, false)
+    sidebar.send(:draw_item_background, week_box, false)
 
     # Should draw filled transparent rectangle for non-current week
   end
