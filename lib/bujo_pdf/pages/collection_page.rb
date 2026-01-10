@@ -60,8 +60,7 @@ module BujoPdf
 
         # Set named destination for this collection page
         set_destination("collection_#{@collection_id}")
-
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render

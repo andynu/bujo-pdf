@@ -96,8 +96,7 @@ module BujoPdf
 
         # Set named destination for this quarter
         set_destination("quarter_#{@quarter}")
-
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render

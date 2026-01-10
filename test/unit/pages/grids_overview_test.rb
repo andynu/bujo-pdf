@@ -77,11 +77,23 @@ class TestGridsOverview < Minitest::Test
   end
 
   def test_setup_uses_standard_with_sidebars_layout
-    page = BujoPdf::Pages::GridsOverview.new(@pdf, @context)
-    page.send(:setup)
+    # Create context with chrome config to get sidebar layout
+    chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome.left(:week_sidebar)
+    chrome.right(:tab_sidebar)
+    context_with_chrome = BujoPdf::RenderContext.new(
+      page_key: :grids_overview,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 53,
+      chrome_config: chrome
+    )
+    page = BujoPdf::Pages::GridsOverview.new(@pdf, context_with_chrome)
+    page.generate  # Layout is applied in generate(), not setup()
 
     layout = page.instance_variable_get(:@new_layout)
     assert layout, "Expected layout to be set"
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout
   end
 
   # ============================================

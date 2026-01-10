@@ -71,8 +71,7 @@ module BujoPdf
         set_destination('visual_toc')
         @year = context[:year]
         @total_weeks = context[:total_weeks] || 52
-
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render

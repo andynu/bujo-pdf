@@ -32,7 +32,7 @@ module BujoPdf
         @month_name = Date::MONTHNAMES[@month]
 
         set_destination("month_#{@month}")
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render

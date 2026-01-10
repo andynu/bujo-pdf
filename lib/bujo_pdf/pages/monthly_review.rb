@@ -82,8 +82,7 @@ module BujoPdf
 
         # Set named destination for this review page
         set_destination("review_#{@review_month}")
-
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render
