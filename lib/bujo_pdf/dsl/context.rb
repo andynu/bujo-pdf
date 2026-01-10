@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'chrome_builder'
 require_relative 'page_declaration'
 require_relative 'inline_page'
 require_relative 'metadata'
@@ -41,7 +42,7 @@ module BujoPdf
     #
     class DeclarationContext
       attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries, :sidebar_overrides,
-                  :current_outline_mode
+                  :current_outline_mode, :chrome_config
 
       # Initialize a new declaration context.
       def initialize
@@ -54,6 +55,7 @@ module BujoPdf
         @current_section = nil
         @sidebar_overrides = SidebarOverrides.new
         @current_outline_mode = :manual
+        @chrome_config = nil
       end
 
       # Set the outline generation mode.
@@ -223,6 +225,43 @@ module BujoPdf
       #   theme :earth
       def theme(name)
         @theme_name = name
+      end
+
+      # Configure default chrome (sidebars) for all pages.
+      #
+      # Chrome refers to the visual frame around page content: sidebars, tabs,
+      # and navigation elements. This sets the default configuration that pages
+      # inherit unless they opt out or override.
+      #
+      # @yield Block containing chrome DSL calls (left, right, top, bottom)
+      # @return [ChromeBuilder] The chrome configuration builder
+      #
+      # @example Basic chrome with left and right sidebars
+      #   chrome do
+      #     left :week_sidebar
+      #     right :right_sidebar
+      #   end
+      #
+      # @example Right sidebar with inline tabs
+      #   chrome do
+      #     left :week_sidebar
+      #     right :right_sidebar do
+      #       tab "Index", dest: :index
+      #       tab "Future", dest: :future_log_1
+      #     end
+      #   end
+      #
+      # @example Full chrome configuration
+      #   chrome do
+      #     top :header_bar, title: "2025 Planner"
+      #     bottom :footer_bar
+      #     left :week_sidebar
+      #     right :nav_tabs
+      #   end
+      def chrome(&block)
+        @chrome_config = ChromeBuilder.new
+        @chrome_config.instance_eval(&block) if block_given?
+        @chrome_config
       end
 
       # Get all weeks in a year.

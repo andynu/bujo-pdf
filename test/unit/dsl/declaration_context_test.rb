@@ -189,4 +189,80 @@ class TestDeclarationContext < Minitest::Test
     @context.page(:seasonal_calendar, year: 2025, outline: false)
     assert_equal 0, @context.outline_entries.length
   end
+
+  # Chrome configuration tests
+
+  def test_chrome_config_nil_by_default
+    assert_nil @context.chrome_config
+  end
+
+  def test_chrome_block_creates_chrome_config
+    @context.chrome do
+      left :week_sidebar
+    end
+
+    refute_nil @context.chrome_config
+    assert_instance_of BujoPdf::PdfDSL::ChromeBuilder, @context.chrome_config
+  end
+
+  def test_chrome_block_captures_left_sidebar
+    @context.chrome do
+      left :week_sidebar
+    end
+
+    assert_equal :week_sidebar, @context.chrome_config.left_config.sidebar_name
+  end
+
+  def test_chrome_block_captures_right_sidebar
+    @context.chrome do
+      right :right_sidebar
+    end
+
+    assert_equal :right_sidebar, @context.chrome_config.right_config.sidebar_name
+  end
+
+  def test_chrome_block_captures_right_sidebar_with_tabs
+    @context.chrome do
+      right :right_sidebar do
+        tab "Index", dest: :index
+        tab "Future", dest: :future_log_1
+      end
+    end
+
+    assert @context.chrome_config.right_config.tabs?
+    assert_equal 2, @context.chrome_config.right_config.tabs.length
+    assert_equal "Index", @context.chrome_config.right_config.tabs.first.label
+    assert_equal :index, @context.chrome_config.right_config.tabs.first.dest
+  end
+
+  def test_chrome_block_captures_all_four_edges
+    @context.chrome do
+      top :header_bar, title: "My Planner"
+      bottom :footer_bar
+      left :week_sidebar
+      right :nav_tabs
+    end
+
+    assert_equal :header_bar, @context.chrome_config.top_config.sidebar_name
+    assert_equal({ title: "My Planner" }, @context.chrome_config.top_config.options)
+    assert_equal :footer_bar, @context.chrome_config.bottom_config.sidebar_name
+    assert_equal :week_sidebar, @context.chrome_config.left_config.sidebar_name
+    assert_equal :nav_tabs, @context.chrome_config.right_config.sidebar_name
+  end
+
+  def test_chrome_returns_builder_instance
+    result = @context.chrome do
+      left :week_sidebar
+    end
+
+    assert_instance_of BujoPdf::PdfDSL::ChromeBuilder, result
+    assert_equal :week_sidebar, result.left_config.sidebar_name
+  end
+
+  def test_chrome_without_block
+    result = @context.chrome
+
+    assert_instance_of BujoPdf::PdfDSL::ChromeBuilder, result
+    assert result.empty?
+  end
 end
