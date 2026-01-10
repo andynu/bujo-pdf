@@ -46,7 +46,7 @@ module BujoPdf
       # Set up the named destination for this page
       def setup
         set_destination('grid_showcase')
-        use_layout :full_page  # No sidebars for showcase page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       # Render the grid showcase with all four grid types

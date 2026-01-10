@@ -80,20 +80,48 @@ class TestFutureLog < Minitest::Test
   end
 
   def test_content_col
-    page = BujoPdf::Pages::FutureLog.new(@pdf, @context)
-    page.send(:setup)
+    # Create context with chrome config to get sidebar layout
+    chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome.left(:week_sidebar)
+    chrome.right(:tab_sidebar)
+    context_with_chrome = BujoPdf::RenderContext.new(
+      page_key: :future_log_1,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 53,
+      future_log_page: 1,
+      future_log_page_count: 2,
+      future_log_start_month: 1,
+      chrome_config: chrome
+    )
+    page = BujoPdf::Pages::FutureLog.new(@pdf, context_with_chrome)
+    page.generate  # Layout is applied in generate()
     assert_equal 2, page.send(:content_col)
   end
 
   def test_content_row
     page = BujoPdf::Pages::FutureLog.new(@pdf, @context)
-    page.send(:setup)
+    page.generate  # Layout is applied in generate()
     assert_equal 0, page.send(:content_row)
   end
 
   def test_content_width
-    page = BujoPdf::Pages::FutureLog.new(@pdf, @context)
-    page.send(:setup)
+    # Create context with chrome config to get sidebar layout
+    chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome.left(:week_sidebar)
+    chrome.right(:tab_sidebar)
+    context_with_chrome = BujoPdf::RenderContext.new(
+      page_key: :future_log_1,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 53,
+      future_log_page: 1,
+      future_log_page_count: 2,
+      future_log_start_month: 1,
+      chrome_config: chrome
+    )
+    page = BujoPdf::Pages::FutureLog.new(@pdf, context_with_chrome)
+    page.generate  # Layout is applied in generate()
     assert_equal 40, page.send(:content_width)
   end
 

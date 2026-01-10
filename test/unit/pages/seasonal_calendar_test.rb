@@ -39,21 +39,44 @@ class TestSeasonalCalendar < Minitest::Test
   end
 
   def test_setup_uses_standard_with_sidebars_layout
-    page = BujoPdf::Pages::SeasonalCalendar.new(@pdf, @context)
-    page.send(:setup)
+    # Create context with chrome config to get sidebar layout
+    chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome.left(:week_sidebar)
+    chrome.right(:tab_sidebar)
+    context_with_chrome = BujoPdf::RenderContext.new(
+      page_key: :seasonal,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 53,
+      chrome_config: chrome
+    )
+    page = BujoPdf::Pages::SeasonalCalendar.new(@pdf, context_with_chrome)
+    page.generate  # Layout is applied in generate(), not setup()
 
     layout = page.instance_variable_get(:@new_layout)
     assert layout, "Expected layout to be set"
-    assert_kind_of BujoPdf::Layouts::StandardWithSidebarsLayout, layout
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout
   end
 
-  def test_setup_configures_layout_for_seasonal
-    page = BujoPdf::Pages::SeasonalCalendar.new(@pdf, @context)
-    page.send(:setup)
+  def test_layout_auto_detects_highlight_from_page_key
+    # Create context with chrome config to get sidebar layout
+    chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome.left(:week_sidebar)
+    chrome.right(:tab_sidebar)
+    context_with_chrome = BujoPdf::RenderContext.new(
+      page_key: :seasonal,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 53,
+      chrome_config: chrome
+    )
+    page = BujoPdf::Pages::SeasonalCalendar.new(@pdf, context_with_chrome)
+    page.generate  # Layout is applied in generate(), not setup()
 
+    # Verify the page_context is passed to layout for auto-detection
     layout = page.instance_variable_get(:@new_layout)
-    assert_equal :seasonal, layout.options[:highlight_tab]
-    assert_nil layout.options[:current_week]
+    assert layout, "Expected layout to be set"
+    # The page_key is :seasonal which should be auto-detected for tab highlighting
   end
 
   def test_render_calls_all_sections

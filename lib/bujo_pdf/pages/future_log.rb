@@ -85,12 +85,7 @@ module BujoPdf
 
         # Set named destination for this page
         set_destination("future_log_#{@future_log_page}")
-
-        use_layout :standard_with_sidebars,
-          current_week: nil,            # No week highlighting on future log
-          highlight_tab: nil,           # Let layout auto-detect from destination
-          year: @year,
-          total_weeks: @total_weeks
+        # No use_layout needed: inherits PDF chrome, auto-detects highlight from page_key
       end
 
       def render

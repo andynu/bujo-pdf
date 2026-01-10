@@ -47,12 +47,7 @@ module BujoPdf
         set_destination('seasonal')
         @year = context[:year]
         @total_weeks = Utilities::DateCalculator.total_weeks(@year)
-
-        use_layout :standard_with_sidebars,
-          current_week: nil,              # No week highlighting
-          highlight_tab: :seasonal,       # Highlight "Year" tab
-          year: @year,
-          total_weeks: @total_weeks
+        # No use_layout needed: inherits PDF chrome, auto-detects highlight from page_key
       end
 
       def render

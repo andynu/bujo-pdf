@@ -78,7 +78,7 @@ module BujoPdf
       # Set up the named destination for this page.
       def setup
         set_destination('year_wheel')
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       # Render the year wheel on the page.

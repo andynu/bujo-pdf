@@ -46,7 +46,7 @@ module BujoPdf
 
       def setup
         set_destination('reference')
-        use_layout :full_page  # Explicit: no sidebars for reference page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render

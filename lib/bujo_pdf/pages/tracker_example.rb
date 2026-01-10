@@ -39,7 +39,7 @@ module BujoPdf
 
       def setup
         set_destination("tracker_example")
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render

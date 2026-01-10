@@ -183,16 +183,21 @@ class TestMultiYearOverviewIntegration < Minitest::Test
   end
 
   def test_page_uses_standard_layout
+    # Create context with chrome config to get sidebar layout
+    chrome = BujoPdf::PdfDSL::ChromeBuilder.new
+    chrome.left(:week_sidebar)
+    chrome.right(:tab_sidebar)
     context = BujoPdf::RenderContext.new(
       page_key: :multi_year,
       page_number: 1,
       year: 2025,
       total_weeks: 52,
-      year_count: 4
+      year_count: 4,
+      chrome_config: chrome
     )
 
     page = BujoPdf::Pages::MultiYearOverview.new(@pdf, context)
-    page.send(:setup)
+    page.generate  # Layout is applied in generate(), not setup()
 
     content_area = page.send(:content_area)
     assert_equal 2, content_area[:col]
