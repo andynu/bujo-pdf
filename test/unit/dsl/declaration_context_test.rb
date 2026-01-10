@@ -315,4 +315,88 @@ class TestDeclarationContext < Minitest::Test
     assert_equal false, chrome[:left]
     assert_equal :nav_tabs, chrome[:right]
   end
+
+  # Sidebar definition tests
+
+  def test_sidebar_definitions_empty_by_default
+    assert_empty @context.sidebar_definitions
+  end
+
+  def test_sidebar_captures_name_position_width
+    @context.sidebar :project_nav, position: :left, width: 3 do |_context|
+      # body block
+    end
+
+    assert_equal 1, @context.sidebar_definitions.length
+    definition = @context.sidebar_definitions[:project_nav]
+    refute_nil definition
+    assert_equal :project_nav, definition.name
+    assert_equal :left, definition.position
+    assert_equal 3, definition.width
+  end
+
+  def test_sidebar_captures_body_block
+    block_called = false
+    @context.sidebar :test_sidebar, position: :right, width: 4 do |_context|
+      block_called = true
+    end
+
+    definition = @context.sidebar_definitions[:test_sidebar]
+    assert definition.body?
+    refute block_called, "Block should not be called during definition"
+
+    # Call the block to verify it's captured
+    definition.body_block.call(nil)
+    assert block_called, "Block should be callable"
+  end
+
+  def test_sidebar_without_body_block
+    @context.sidebar :empty_sidebar, position: :left
+
+    definition = @context.sidebar_definitions[:empty_sidebar]
+    refute definition.body?
+  end
+
+  def test_sidebar_uses_default_width
+    @context.sidebar :default_width_sidebar, position: :right
+
+    definition = @context.sidebar_definitions[:default_width_sidebar]
+    assert_equal 3, definition.width
+  end
+
+  def test_sidebar_rejects_duplicate_names
+    @context.sidebar :unique_sidebar, position: :left
+
+    assert_raises(ArgumentError) do
+      @context.sidebar :unique_sidebar, position: :right
+    end
+  end
+
+  def test_sidebar_rejects_invalid_position
+    assert_raises(ArgumentError) do
+      @context.sidebar :bad_sidebar, position: :top
+    end
+  end
+
+  def test_sidebar_rejects_nil_name
+    assert_raises(ArgumentError) do
+      @context.sidebar nil, position: :left
+    end
+  end
+
+  def test_sidebar_returns_definition
+    result = @context.sidebar :returned_sidebar, position: :left
+
+    assert_instance_of BujoPdf::PdfDSL::SidebarDefinition, result
+    assert_equal :returned_sidebar, result.name
+  end
+
+  def test_multiple_sidebars_can_be_defined
+    @context.sidebar :left_nav, position: :left, width: 3
+    @context.sidebar :right_nav, position: :right, width: 4
+
+    assert_equal 2, @context.sidebar_definitions.length
+    assert_equal :left, @context.sidebar_definitions[:left_nav].position
+    assert_equal :right, @context.sidebar_definitions[:right_nav].position
+  end
 end
