@@ -34,7 +34,6 @@ require_relative 'bujo_pdf/dsl/configuration/calendars'
 
 # Load base classes
 require_relative 'bujo_pdf/base/component'
-require_relative 'bujo_pdf/base/layout'
 require_relative 'bujo_pdf/base/sidebar_base'
 
 # Load sidebar registry (after SidebarBase, before concrete sidebars)

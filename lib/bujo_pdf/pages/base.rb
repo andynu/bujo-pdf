@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
+require 'ostruct'
 require_relative '../utilities/styling'
 require_relative '../utilities/grid_system'
 require_relative '../utilities/dot_grid'
 require_relative '../utilities/diagnostics'
-require_relative '../base/layout'
 require_relative '../dsl/runtime/render_context'
 require_relative '../components/all'
 require_relative 'page_registry'
@@ -46,14 +46,10 @@ module BujoPdf
     #   page = MyPage.new(pdf, { year: 2025 })
     #   page.generate
     #
-    # Example (With layout):
+    # Example (With layout - using new declarative system):
     #   class MyPage < Base
-    #     def initialize(pdf, context)
-    #       super(pdf, context, layout: Layout.full_page)
-    #     end
-    #
-    #     def render_chrome
-    #       # Draw sidebars, navigation - outside content area
+    #     def setup
+    #       use_layout :standard_with_sidebars, current_week: @week_num
     #     end
     #
     #     def render
@@ -259,14 +255,20 @@ module BujoPdf
         @content_area = calculate_content_area_from_new_layout
       end
 
-      # Get the default layout for this page type (legacy system).
+      # Get the default layout options for this page type (legacy system).
       #
-      # Override in subclasses to provide a specific default layout.
+      # Override in subclasses to provide specific default layout options.
       # The default is a full-page layout with no sidebars.
       #
-      # @return [Layout] Default layout for this page type
+      # @return [OpenStruct] Default layout with background/debug/footer options
       def default_layout
-        Layout.full_page
+        OpenStruct.new(
+          background_enabled?: true,
+          background_type: :dot_grid,
+          debug_mode?: false,
+          footer_enabled?: false,
+          content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
+        )
       end
 
       # Calculate content area from layout specification (legacy system).
