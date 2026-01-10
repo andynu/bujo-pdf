@@ -128,7 +128,14 @@ class TestPagesBase < Minitest::Test
   end
 
   def test_initialize_with_custom_layout
-    custom_layout = BujoPdf::Layout.with_sidebars(left_width: 5, right_width: 3)
+    # Create custom layout using OpenStruct (same as default_layout returns)
+    custom_layout = OpenStruct.new(
+      background_enabled?: true,
+      background_type: :dot_grid,
+      debug_mode?: false,
+      footer_enabled?: false,
+      content_area_spec: { col: 5, row: 0, width: 35, height: 55 }
+    )
     page = TestablePage.new(@pdf, @context, layout: custom_layout)
 
     assert_equal custom_layout, page.layout
@@ -147,7 +154,12 @@ class TestPagesBase < Minitest::Test
   def test_default_layout_is_full_page
     page = TestablePage.new(@pdf, @context)
 
-    assert_equal "full_page", page.layout.name
+    # Default layout provides full page content area
+    assert_equal({ col: 0, row: 0, width: 43, height: 55 }, page.layout.content_area_spec)
+    assert page.layout.background_enabled?
+    assert_equal :dot_grid, page.layout.background_type
+    refute page.layout.debug_mode?
+    refute page.layout.footer_enabled?
   end
 
   # ============================================
@@ -261,7 +273,13 @@ class TestPagesBase < Minitest::Test
   def test_draw_debug_grid_if_enabled_when_enabled
     mock_pdf = MockPDF.new
     DotGrid.create_stamp(mock_pdf, "page_dots")
-    debug_layout = BujoPdf::Layout.full_page(debug: true)
+    debug_layout = OpenStruct.new(
+      background_enabled?: true,
+      background_type: :dot_grid,
+      debug_mode?: true,
+      footer_enabled?: false,
+      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
+    )
     page = TestablePage.new(mock_pdf, @context, layout: debug_layout)
 
     page.test_draw_debug_grid_if_enabled
@@ -686,7 +704,13 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
   end
 
   def test_background_type_dot_grid
-    layout = BujoPdf::Layout.full_page(background_type: :dot_grid)
+    layout = OpenStruct.new(
+      background_enabled?: true,
+      background_type: :dot_grid,
+      debug_mode?: false,
+      footer_enabled?: false,
+      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
+    )
     page = TestablePage.new(@mock_pdf, @context, layout: layout)
 
     page.test_draw_background
@@ -695,7 +719,13 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
   end
 
   def test_background_type_blank
-    layout = BujoPdf::Layout.full_page(background_type: :blank)
+    layout = OpenStruct.new(
+      background_enabled?: true,
+      background_type: :blank,
+      debug_mode?: false,
+      footer_enabled?: false,
+      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
+    )
     page = TestablePage.new(@mock_pdf, @context, layout: layout)
 
     @mock_pdf.calls.clear
@@ -706,7 +736,13 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
   end
 
   def test_background_type_ruled
-    layout = BujoPdf::Layout.full_page(background_type: :ruled)
+    layout = OpenStruct.new(
+      background_enabled?: true,
+      background_type: :ruled,
+      debug_mode?: false,
+      footer_enabled?: false,
+      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
+    )
     page = TestablePage.new(@mock_pdf, @context, layout: layout)
 
     @mock_pdf.calls.clear
@@ -717,7 +753,13 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
   end
 
   def test_background_disabled
-    layout = BujoPdf::Layout.full_page(background: false)
+    layout = OpenStruct.new(
+      background_enabled?: false,
+      background_type: :dot_grid,
+      debug_mode?: false,
+      footer_enabled?: false,
+      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
+    )
     page = TestablePage.new(@mock_pdf, @context, layout: layout)
 
     # setup_page should skip background when disabled
