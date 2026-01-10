@@ -387,6 +387,189 @@ class TestBaseLayoutIntegration < Minitest::Test
   end
 end
 
+class TestBaseLayoutInlineSidebarLookup < Minitest::Test
+  def setup
+    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+    create_stub_stamp(@pdf, 'page_dots')
+    @grid = GridSystem.new(@pdf)
+  end
+
+  def test_inline_sidebar_rendered_from_pdf_local_namespace
+    # Create an inline sidebar definition
+    rendered = false
+    sidebar_definition = BujoPdf::PdfDSL::SidebarDefinition.new(
+      name: :custom_nav,
+      position: :left,
+      width: 3
+    ) { |_ctx| rendered = true }
+
+    # Create context with sidebar_definitions
+    context = BujoPdf::RenderContext.new(
+      page_key: :week_1,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 52,
+      sidebar_definitions: { custom_nav: sidebar_definition }
+    )
+    page = MockPage.new(@pdf, context)
+
+    # Create chrome spec that references the inline sidebar
+    spec = BujoPdf::Layouts::ChromeSpec.new(left: :custom_nav)
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    layout.render_before(page)
+
+    assert rendered, "Inline sidebar body block should have been called"
+  end
+
+  def test_pdf_namespace_takes_precedence_over_global_registry
+    # This test verifies that a PDF-local sidebar overrides a global one
+    # We'll define a sidebar with the same name as a global one
+
+    # week_sidebar is globally registered - we'll create a local override
+    rendered_local = false
+    sidebar_definition = BujoPdf::PdfDSL::SidebarDefinition.new(
+      name: :week_sidebar,
+      position: :left,
+      width: 3
+    ) { |_ctx| rendered_local = true }
+
+    context = BujoPdf::RenderContext.new(
+      page_key: :week_1,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 52,
+      sidebar_definitions: { week_sidebar: sidebar_definition }
+    )
+    page = MockPage.new(@pdf, context)
+
+    spec = BujoPdf::Layouts::ChromeSpec.new(left: :week_sidebar)
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    layout.render_before(page)
+
+    assert rendered_local, "Local sidebar should take precedence over global"
+  end
+
+  def test_falls_back_to_global_registry_when_not_in_pdf_namespace
+    # When sidebar not in PDF namespace, should use global registry
+    context = BujoPdf::RenderContext.new(
+      page_key: :week_1,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 52,
+      sidebar_definitions: {}  # Empty - no local overrides
+    )
+    page = MockPage.new(@pdf, context)
+
+    spec = BujoPdf::Layouts::ChromeSpec.new(left: :week_sidebar)
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    # Should not raise - falls back to global WeekSidebar
+    layout.render_before(page)
+  end
+
+  def test_inline_sidebar_receives_page_context
+    received_context = nil
+    sidebar_definition = BujoPdf::PdfDSL::SidebarDefinition.new(
+      name: :context_test,
+      position: :left,
+      width: 3
+    ) { |ctx| received_context = ctx }
+
+    context = BujoPdf::RenderContext.new(
+      page_key: :week_42,
+      page_number: 42,
+      year: 2025,
+      total_weeks: 52,
+      sidebar_definitions: { context_test: sidebar_definition }
+    )
+    page = MockPage.new(@pdf, context)
+
+    spec = BujoPdf::Layouts::ChromeSpec.new(left: :context_test)
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    layout.render_before(page)
+
+    # InlineSidebar passes the context to the body block
+    assert_equal context, received_context
+  end
+
+  def test_inline_sidebar_uses_definition_width
+    sidebar_definition = BujoPdf::PdfDSL::SidebarDefinition.new(
+      name: :wide_sidebar,
+      position: :right,
+      width: 5
+    ) { |_ctx| }
+
+    context = BujoPdf::RenderContext.new(
+      page_key: :test,
+      page_number: 1,
+      year: 2025,
+      sidebar_definitions: { wide_sidebar: sidebar_definition }
+    )
+    page = MockPage.new(@pdf, context)
+
+    spec = BujoPdf::Layouts::ChromeSpec.new(right: :wide_sidebar)
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    # Should render without error using the 5-column width
+    layout.render_before(page)
+  end
+
+  def test_inline_sidebar_uses_definition_position
+    left_definition = BujoPdf::PdfDSL::SidebarDefinition.new(
+      name: :left_nav,
+      position: :left,
+      width: 3
+    ) { |_ctx| }
+
+    right_definition = BujoPdf::PdfDSL::SidebarDefinition.new(
+      name: :right_nav,
+      position: :right,
+      width: 3
+    ) { |_ctx| }
+
+    context = BujoPdf::RenderContext.new(
+      page_key: :test,
+      page_number: 1,
+      year: 2025,
+      sidebar_definitions: {
+        left_nav: left_definition,
+        right_nav: right_definition
+      }
+    )
+    page = MockPage.new(@pdf, context)
+
+    spec = BujoPdf::Layouts::ChromeSpec.new(
+      left: :left_nav,
+      right: :right_nav
+    )
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    # Should render both sidebars in their defined positions
+    layout.render_before(page)
+  end
+
+  def test_works_without_sidebar_definitions_in_context
+    # Old code paths may not have sidebar_definitions
+    context = BujoPdf::RenderContext.new(
+      page_key: :week_1,
+      page_number: 1,
+      year: 2025,
+      total_weeks: 52
+      # No sidebar_definitions
+    )
+    page = MockPage.new(@pdf, context)
+
+    spec = BujoPdf::Layouts::ChromeSpec.new(left: :week_sidebar)
+    layout = BujoPdf::Layouts::BaseLayout.new(@pdf, @grid, chrome_spec: spec)
+
+    # Should fall back to global registry without error
+    layout.render_before(page)
+  end
+end
+
 # Mock page class for testing
 class MockPage
   attr_reader :context

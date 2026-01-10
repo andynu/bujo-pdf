@@ -164,18 +164,53 @@ module BujoPdf
         end
       end
 
-      # Render a sidebar by looking it up in the registry.
+      # Render a sidebar by looking it up first in PDF-local namespace, then global registry.
+      #
+      # PDF-local inline sidebars (defined with `sidebar` in the PDF definition) take
+      # precedence over globally registered sidebar classes. This allows recipes to
+      # override built-in sidebars or define custom sidebars scoped to that PDF.
       #
       # @param name [Symbol] The sidebar type identifier
       # @param sidebar_options [Hash] Options to pass to the sidebar constructor
       # @param page [Pages::Base] The page being rendered
       # @return [void]
       def render_sidebar_by_name(name, sidebar_options, page)
+        ctx = page_context(page)
+        sidebar_definitions = ctx&.sidebar_definitions || ctx&.[](:sidebar_definitions)
+
+        # Check PDF-local namespace first
+        if sidebar_definitions && sidebar_definitions.key?(name)
+          sidebar = instantiate_inline_sidebar(sidebar_definitions[name], page)
+          sidebar.render
+          return
+        end
+
+        # Fall back to global registry
         sidebar_class = Sidebars::SidebarRegistry.lookup(name)
         return unless sidebar_class
 
         sidebar = instantiate_sidebar(sidebar_class, sidebar_options, page)
         sidebar.render
+      end
+
+      # Instantiate an inline sidebar from a SidebarDefinition.
+      #
+      # Creates an InlineSidebar instance using the definition's parameters
+      # and body block. The sidebar receives the page context for rendering.
+      #
+      # @param definition [PdfDSL::SidebarDefinition] The sidebar definition
+      # @param page [Pages::Base] The page being rendered
+      # @return [Sidebars::InlineSidebar] The instantiated inline sidebar
+      def instantiate_inline_sidebar(definition, page)
+        require_relative '../sidebars/inline_sidebar'
+
+        Sidebars::InlineSidebar.new(
+          canvas: canvas,
+          position: definition.position,
+          width: definition.width,
+          body_block: definition.body_block,
+          context: page_context(page)
+        )
       end
 
       # Instantiate a sidebar with appropriate options.
