@@ -3,6 +3,7 @@
 require_relative 'standard_layout_page'
 require_relative '../utilities/date_calculator'
 require_relative '../utilities/styling'
+require_relative '../week_context'
 require_relative '../components/top_navigation'
 require_relative '../components/daily_section'
 require_relative '../components/cornell_notes'
@@ -78,13 +79,22 @@ module BujoPdf
       FOOTER_FONT_SIZE = 8
 
       def setup
-        @week_num = context[:week_num]
         @year = context[:year]
+        @week_num = context[:week_num]
         @total_weeks = context[:total_weeks] || Utilities::DateCalculator.total_weeks(@year)
 
         # Compute week_start/week_end if not provided (new DSL support)
         @week_start = context[:week_start] || Utilities::DateCalculator.week_start(@year, @week_num)
         @week_end = context[:week_end] || Utilities::DateCalculator.week_end(@year, @week_num)
+
+        # Bundle week data into WeekContext for component use
+        @week_context = WeekContext.new(
+          year: @year,
+          number: @week_num,
+          total_weeks: @total_weeks,
+          start_date: @week_start,
+          end_date: @week_end
+        )
 
         set_destination("week_#{@week_num}")
 
@@ -124,14 +134,10 @@ module BujoPdf
       end
 
       def draw_navigation
-        # Use TopNavigation component
+        # Use TopNavigation component with WeekContext
         nav = Components::TopNavigation.new(
           canvas: canvas,
-          year: @year,
-          week_num: @week_num,
-          total_weeks: @total_weeks,
-          week_start: @week_start,
-          week_end: @week_end,
+          week_context: @week_context,
           content_start_col: 2,
           content_width_boxes: 40
         )

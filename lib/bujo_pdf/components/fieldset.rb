@@ -34,6 +34,7 @@ module BujoPdf
     #   )
     #   fieldset.render
     class Fieldset < Component
+      include Styling::Colors
       include Text::Mixin
       include Box::Mixin
 
@@ -131,7 +132,7 @@ module BujoPdf
         @legend_total_boxes = @legend_width_boxes + (@legend_padding_boxes * 2)
 
         # Get background color for gap erasing
-        @background_color = BujoPdf::Themes.current[:colors][:background]
+        @background_color = color_background
 
         draw_border
         draw_legend

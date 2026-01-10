@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../utilities/grid_rect'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Components
@@ -33,6 +34,8 @@ module BujoPdf
     #   )
     #   grid.render
     class WeekGrid
+      include Styling::Colors
+
       # Day of week labels (single letter)
       DAY_LABELS = %w[M T W T F S S].freeze
 
@@ -160,10 +163,7 @@ module BujoPdf
       #
       # @return [void]
       def draw_headers
-        require_relative '../themes/theme_registry'
-        text_color = BujoPdf::Themes.current[:colors][:text_black]
-
-        @pdf.fill_color text_color
+        @pdf.fill_color color_text_black
         @column_widths.each_with_index do |col_width, i|
           x_offset = @column_widths[0...i].sum
           @pdf.text_box DAY_LABELS[i],

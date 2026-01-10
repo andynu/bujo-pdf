@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'base'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Pages
@@ -26,6 +27,8 @@ module BujoPdf
     #   page = MonthlyReview.new(pdf, context)
     #   page.generate
     class MonthlyReview < Base
+      include Styling::Colors
+
       register_page :monthly_review,
         title: ->(p) { Date::MONTHNAMES[p[:review_month] || p[:month]] },
         dest: "review_%{month}"
@@ -95,20 +98,16 @@ module BujoPdf
       #
       # @return [void]
       def draw_navigation
-        require_relative '../themes/theme_registry'
-        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
-        border_color = BujoPdf::Themes.current[:colors][:borders]
-
         # Previous month link (if not January)
         if @review_month > 1
           prev_month = Date::ABBR_MONTHNAMES[@review_month - 1]
-          draw_nav_link(2, "< #{prev_month}", "review_#{@review_month - 1}", nav_color, border_color)
+          draw_nav_link(2, "< #{prev_month}", "review_#{@review_month - 1}", color_text_gray, color_borders)
         end
 
         # Next month link (if not December)
         if @review_month < 12
           next_month = Date::ABBR_MONTHNAMES[@review_month + 1]
-          draw_nav_link(39, "#{next_month} >", "review_#{@review_month + 1}", nav_color, border_color)
+          draw_nav_link(39, "#{next_month} >", "review_#{@review_month + 1}", color_text_gray, color_borders)
         end
       end
 

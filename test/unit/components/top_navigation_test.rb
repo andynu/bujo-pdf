@@ -261,6 +261,76 @@ class TestTopNavigationWithMockPDF < Minitest::Test
   end
 end
 
+class TestTopNavigationWithWeekContext < Minitest::Test
+  def setup
+    @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+    @grid = GridSystem.new(@pdf)
+    @canvas = BujoPdf::Canvas.new(@pdf, @grid)
+  end
+
+  def test_initialize_with_week_context
+    ctx = BujoPdf::WeekContext.new(
+      year: 2025,
+      number: 42,
+      total_weeks: 52,
+      start_date: Date.new(2025, 10, 13),
+      end_date: Date.new(2025, 10, 19)
+    )
+
+    nav = BujoPdf::Components::TopNavigation.new(
+      canvas: @canvas,
+      week_context: ctx
+    )
+
+    assert_equal 2025, nav.instance_variable_get(:@year)
+    assert_equal 42, nav.instance_variable_get(:@week_num)
+    assert_equal 52, nav.instance_variable_get(:@total_weeks)
+    assert_equal Date.new(2025, 10, 13), nav.instance_variable_get(:@week_start)
+    assert_equal Date.new(2025, 10, 19), nav.instance_variable_get(:@week_end)
+  end
+
+  def test_render_with_week_context
+    ctx = BujoPdf::WeekContext.new(year: 2025, number: 25)
+
+    nav = BujoPdf::Components::TopNavigation.new(
+      canvas: @canvas,
+      week_context: ctx
+    )
+
+    # Should render prev and next links
+    nav.render
+  end
+
+  def test_week_context_with_custom_content_area
+    ctx = BujoPdf::WeekContext.new(year: 2025, number: 42)
+
+    nav = BujoPdf::Components::TopNavigation.new(
+      canvas: @canvas,
+      week_context: ctx,
+      content_start_col: 5,
+      content_width_boxes: 30
+    )
+
+    assert_equal 5, nav.instance_variable_get(:@content_start_col)
+    assert_equal 30, nav.instance_variable_get(:@content_width_boxes)
+  end
+
+  def test_individual_params_override_week_context
+    ctx = BujoPdf::WeekContext.new(year: 2025, number: 42, total_weeks: 52)
+
+    nav = BujoPdf::Components::TopNavigation.new(
+      canvas: @canvas,
+      week_context: ctx,
+      year: 2026  # Override year
+    )
+
+    # Individual param should take precedence
+    assert_equal 2026, nav.instance_variable_get(:@year)
+    # Other values from context
+    assert_equal 42, nav.instance_variable_get(:@week_num)
+  end
+end
+
 class TestTopNavigationEdgeCases < Minitest::Test
   def setup
     @pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)

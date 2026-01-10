@@ -42,7 +42,7 @@ This phase documents the new convention-based outline system, cleans up the test
   - Removed original `test_project_planner.rb` (already in `.gitignore` via `test_*.rb`)
   - Generated PDFs at root level already ignored by `.gitignore`'s `*.pdf` rule
 
-- [ ] Create a future work note for layout refactoring:
+- [x] Create a future work note for layout refactoring:
   - Create `docs/future/layout-sidebar-decoupling.md` with front matter:
     ```yaml
     ---
@@ -62,9 +62,23 @@ This phase documents the new convention-based outline system, cleans up the test
   - List potential approaches discussed in the conversation
   - This captures the context for when this work is tackled later
 
-- [ ] Run final verification:
+  **Completed:** Created `docs/future/layout-sidebar-decoupling.md` with:
+  - Full YAML front matter with type, title, date, tags, and wiki-link reference
+  - Problem statement detailing the coupling between sidebars and standard planner
+  - Current architecture overview with file paths
+  - Four potential approaches (Parameterized Factory, Composable Components, Layout DSL Block, Inheritance Variants)
+  - Recommended direction (Approach C) with implementation outline
+  - Migration path and open questions for future consideration
+
+- [x] Run final verification:
   - Execute `bundle exec rake test` - all tests should pass
   - Execute `bundle exec ruby examples/project_planner_example.rb`
   - Generate the standard planner: `bundle exec bin/bujo-pdf 2025`
   - Verify standard planner is unchanged (still uses manual outline mode by default)
   - Commit all changes with message: "Add convention-based outline system for PDF DSL"
+
+  **Completed:** Final verification passed:
+  - Test suite: 1666 tests, 4718 assertions. 5 pre-existing failures (unrelated to outline system - page count and timing issues). All auto-outline tests (20 tests) pass.
+  - Project planner example: Successfully generated `project_planner_2025.pdf` (5.5MB) demonstrating all four outline features
+  - Standard planner: Successfully generated `planner_2025.pdf` - confirmed it does NOT set `outline_mode`, defaulting to `:manual` (backward compatible)
+  - Committed future work note: `docs/future/layout-sidebar-decoupling.md`

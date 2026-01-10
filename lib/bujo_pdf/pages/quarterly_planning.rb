@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'base'
+require_relative '../utilities/styling'
 
 module BujoPdf
   module Pages
@@ -26,6 +27,8 @@ module BujoPdf
     #   page = QuarterlyPlanning.new(pdf, context)
     #   page.generate
     class QuarterlyPlanning < Base
+      include Styling::Colors
+
       register_page :quarterly_planning,
         title: "Q%{quarter} Planning",
         dest: "quarter_%{quarter}"
@@ -110,18 +113,14 @@ module BujoPdf
       #
       # @return [void]
       def draw_navigation
-        require_relative '../themes/theme_registry'
-        nav_color = BujoPdf::Themes.current[:colors][:text_gray]
-        border_color = BujoPdf::Themes.current[:colors][:borders]
-
         # Previous quarter link (if not Q1)
         if @quarter > 1
-          draw_nav_link(2, "< Q#{@quarter - 1}", "quarter_#{@quarter - 1}", nav_color, border_color)
+          draw_nav_link(2, "< Q#{@quarter - 1}", "quarter_#{@quarter - 1}", color_text_gray, color_borders)
         end
 
         # Next quarter link (if not Q4)
         if @quarter < 4
-          draw_nav_link(39, "Q#{@quarter + 1} >", "quarter_#{@quarter + 1}", nav_color, border_color)
+          draw_nav_link(39, "Q#{@quarter + 1} >", "quarter_#{@quarter + 1}", color_text_gray, color_borders)
         end
       end
 

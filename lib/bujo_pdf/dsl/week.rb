@@ -54,6 +54,28 @@ module BujoPdf
         start_date.year == @year
       end
 
+      # Check if any days of this week fall in the target year.
+      #
+      # This is useful for week 1 which may start in December of the
+      # previous year but should still be included in the planner.
+      #
+      # @return [Boolean]
+      def overlaps_year?
+        start_date.year == @year || end_date.year == @year
+      end
+
+      # Get the primary month for interleaving purposes.
+      #
+      # Returns the start date's month only if the week starts in the
+      # target year. For weeks spanning the year boundary (like week 1),
+      # returns nil to indicate no month-specific content should be
+      # interleaved for this week.
+      #
+      # @return [Integer, nil] Month number (1-12) or nil
+      def primary_month
+        start_date.year == @year ? start_date.month : nil
+      end
+
       # Check if this week starts a new quarter.
       #
       # @return [Boolean] true if this is the first week with start date in months 1, 4, 7, or 10

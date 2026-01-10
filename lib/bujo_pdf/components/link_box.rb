@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../base/component'
+require_relative '../utilities/styling'
 require_relative 'text'
 
 module BujoPdf
@@ -24,6 +25,7 @@ module BujoPdf
     #   link_box(42, 2, 1, 4, "Year", dest: "seasonal", rotation: -90)
     #
     class LinkBox < Component
+      include Styling::Colors
       include Text::Mixin
 
       DEFAULT_FONT_SIZE = 8
@@ -110,8 +112,6 @@ module BujoPdf
       end
 
       def render
-        require_relative '../themes/theme_registry'
-
         # Calculate box coordinates (use pt_ overrides if provided)
         box_left = @pt_x || grid.x(@col)
         box_top = @pt_y || grid.y(@row)
@@ -137,8 +137,6 @@ module BujoPdf
       private
 
       def draw_background(left, top, width, height)
-        border_color = BujoPdf::Themes.current[:colors][:borders]
-
         # Apply inset for visual breathing room
         rect_left = left + @inset
         rect_width = width - (@inset * 2)
@@ -147,26 +145,25 @@ module BujoPdf
 
         if @current
           # Current: stroked border only (no fill)
-          pdf.stroke_color border_color
+          pdf.stroke_color color_borders
           pdf.stroke_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
         else
           # Non-current: 20% opacity filled background
           pdf.transparent(0.2) do
-            pdf.fill_color border_color
+            pdf.fill_color color_borders
             pdf.fill_rounded_rectangle([rect_left, rect_top], rect_width, rect_height, 2)
           end
         end
 
         # Reset colors
-        text_color = BujoPdf::Themes.current[:colors][:text_black]
-        pdf.fill_color text_color
-        pdf.stroke_color text_color
+        pdf.fill_color color_text_black
+        pdf.stroke_color color_text_black
       end
 
       def draw_text(left, top, width, height)
         # Determine style and color based on current state
         style = @current ? :bold : :normal
-        text_color = @color || (@current ? BujoPdf::Themes.current[:colors][:text_black] : BujoPdf::Themes.current[:colors][:text_gray])
+        txt_color = @color || (@current ? color_text_black : color_text_gray)
 
         if @rotation != 0
           # Rotated text (vertical tabs)
@@ -175,7 +172,7 @@ module BujoPdf
             rotation: @rotation,
             size: @font_size,
             style: style,
-            color: text_color,
+            color: txt_color,
             align: :center,
             pt_x: left + (width / 2.0),
             pt_y: top - (height / 2.0),
@@ -186,7 +183,7 @@ module BujoPdf
         else
           # Horizontal text
           pdf.font "Helvetica", style: style, size: @font_size
-          pdf.fill_color text_color
+          pdf.fill_color txt_color
           pdf.text_box @text,
                         at: [left, top],
                         width: width,
@@ -195,7 +192,7 @@ module BujoPdf
                         valign: :center
 
           # Reset color
-          pdf.fill_color BujoPdf::Themes.current[:colors][:text_black]
+          pdf.fill_color color_text_black
         end
       end
     end
