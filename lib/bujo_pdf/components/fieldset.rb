@@ -89,29 +89,23 @@ module BujoPdf
         bottom_right: { edge: :left,   align: :bottom, rotation: 90 }
       }.freeze
 
-      def initialize(canvas:, col:, row:, width:, height:, legend:,
-                     position: DEFAULTS[:position],
-                     legend_padding: DEFAULTS[:legend_padding],
-                     font_size: DEFAULTS[:font_size],
-                     border_color: DEFAULTS[:border_color],
-                     text_color: DEFAULTS[:text_color],
-                     inset_boxes: DEFAULTS[:inset_boxes],
-                     legend_offset_x: DEFAULTS[:legend_offset_x],
-                     legend_offset_y: DEFAULTS[:legend_offset_y])
+      def initialize(canvas:, col:, row:, width:, height:, legend:, **options)
         super(canvas: canvas)
+        options = DEFAULTS.merge(options)
+
         @col = col
         @row = row
         @width_boxes = width
         @height_boxes = height
         @legend = legend
-        @position_name = position
-        @legend_padding = legend_padding
-        @font_size = font_size
-        @border_color_option = border_color
-        @text_color_option = text_color
-        @inset_boxes = inset_boxes
-        @legend_offset_x = legend_offset_x
-        @legend_offset_y = legend_offset_y
+        @position_name = options[:position]
+        @legend_padding = options[:legend_padding]
+        @font_size = options[:font_size]
+        @border_color_option = options[:border_color]
+        @text_color_option = options[:text_color]
+        @inset_boxes = options[:inset_boxes]
+        @legend_offset_x = options[:legend_offset_x]
+        @legend_offset_y = options[:legend_offset_y]
 
         @config = POSITION_CONFIG[@position_name]
         raise ArgumentError, "Invalid position: #{@position_name}" unless @config
