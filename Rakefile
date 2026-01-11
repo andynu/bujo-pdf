@@ -3,6 +3,19 @@
 require 'bundler/gem_tasks'
 require 'rake/testtask'
 
+begin
+  require 'yard'
+  YARD::Rake::YardocTask.new(:doc) do |t|
+    t.files = ['lib/**/*.rb']
+    t.options = ['--output-dir', 'doc', '--readme', 'README.md']
+  end
+rescue LoadError
+  desc 'Generate documentation (requires yard gem)'
+  task :doc do
+    warn 'YARD is not installed. Run `bundle install` to install development dependencies.'
+  end
+end
+
 Rake::TestTask.new(:test_unit) do |t|
   t.libs << 'test'
   t.libs << 'lib'

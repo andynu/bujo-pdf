@@ -24,3 +24,7 @@ config/calendars.yml
 .DS_Store
 .claude/
 config/collections.yml
+
+# YARD documentation output
+doc/
+.yardoc/
