@@ -128,18 +128,14 @@ module BujoPdf
         tab_width = grid.width(1)
         tab_left = grid.x(@sidebar_col)
 
-        # Use LinkBox with pt_ overrides for dynamic positioning
-        link_box(
-          0, 0, 1, 1, tab[:label],
+        # Use point-based positioning for dynamic tab heights
+        link_box_pt(
+          tab_left, top_y, tab_width, height, tab[:label],
           dest: tab[:dest],
           current: is_current,
           rotation: -90,
           font_size: FONT_SIZE,
-          inset: 2,
-          pt_x: tab_left,
-          pt_y: top_y,
-          pt_width: tab_width,
-          pt_height: height
+          inset: 2
         )
       end
     end

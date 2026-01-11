@@ -14,15 +14,22 @@ module BujoPdf
     #   - Link annotation overlay with destination
     #   - Theme-aware colors
     #
+    # Two entry points are provided via the Mixin:
+    #   - link_box: Grid-based positioning (col, row, width, height)
+    #   - link_box_pt: Point-based positioning (pt_x, pt_y, pt_width, pt_height)
+    #
     # Example usage:
-    #   # Horizontal link box:
+    #   # Grid-based horizontal link box:
     #   link_box(0, 0, 2, 1, "w42", dest: "week_42")
     #
     #   # Current page (stroked, bold, no link):
     #   link_box(0, 0, 2, 1, "2025", dest: "seasonal", current: true)
     #
-    #   # Vertical/rotated link box:
+    #   # Grid-based vertical/rotated link box:
     #   link_box(42, 2, 1, 4, "Year", dest: "seasonal", rotation: -90)
+    #
+    #   # Point-based positioning (for dynamic/calculated positions):
+    #   link_box_pt(100.0, 500.0, 50.0, 20.0, "Tab", dest: "tab_dest", rotation: -90)
     #
     class LinkBox < Component
       include Styling::Colors
@@ -33,7 +40,7 @@ module BujoPdf
 
       # Mixin providing the link_box verb for pages and components
       module Mixin
-        # Render a navigation link box
+        # Render a navigation link box using grid coordinates
         #
         # @param col [Integer, Float] Column position
         # @param row [Integer, Float] Row position
@@ -46,12 +53,8 @@ module BujoPdf
         # @param font_size [Integer] Font size (default: 8)
         # @param inset [Integer] Visual breathing room inside rectangle in points (default: 2)
         # @param color [String, nil] Override text color (default: theme text_gray, or text_black when current)
-        # @param pt_x [Float, nil] X position in points (overrides col when set)
-        # @param pt_y [Float, nil] Y position in points (overrides row when set)
-        # @param pt_width [Float, nil] Width in points (overrides width when set)
-        # @param pt_height [Float, nil] Height in points (overrides height when set)
         # @return [void]
-        def link_box(col, row, width, height, text, dest:, current: false, rotation: 0, font_size: DEFAULT_FONT_SIZE, inset: DEFAULT_INSET, color: nil, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil)
+        def link_box(col, row, width, height, text, dest:, current: false, rotation: 0, font_size: DEFAULT_FONT_SIZE, inset: DEFAULT_INSET, color: nil)
           c = @canvas || Canvas.new(@pdf, @grid)
           LinkBox.new(
             canvas: c,
@@ -59,6 +62,34 @@ module BujoPdf
             row: row,
             width: width,
             height: height,
+            text: text,
+            dest: dest,
+            current: current,
+            rotation: rotation,
+            font_size: font_size,
+            inset: inset,
+            color: color
+          ).render
+        end
+
+        # Render a navigation link box using point coordinates
+        #
+        # @param pt_x [Float] X position in points
+        # @param pt_y [Float] Y position in points (top of box)
+        # @param pt_width [Float] Width in points
+        # @param pt_height [Float] Height in points
+        # @param text [String] Label text
+        # @param dest [String] Named destination for link
+        # @param current [Boolean] When true, stroked border instead of filled, bold text, no link
+        # @param rotation [Integer] 0 (default) or -90 for vertical text
+        # @param font_size [Integer] Font size (default: 8)
+        # @param inset [Integer] Visual breathing room inside rectangle in points (default: 2)
+        # @param color [String, nil] Override text color (default: theme text_gray, or text_black when current)
+        # @return [void]
+        def link_box_pt(pt_x, pt_y, pt_width, pt_height, text, dest:, current: false, rotation: 0, font_size: DEFAULT_FONT_SIZE, inset: DEFAULT_INSET, color: nil)
+          c = @canvas || Canvas.new(@pdf, @grid)
+          LinkBox.new(
+            canvas: c,
             text: text,
             dest: dest,
             current: current,
@@ -76,23 +107,30 @@ module BujoPdf
 
       # Initialize a new LinkBox component
       #
+      # Positioning can be specified in two ways:
+      # 1. Grid coordinates: col, row, width, height (converted via grid system)
+      # 2. Point coordinates: pt_x, pt_y, pt_width, pt_height (used directly)
+      #
+      # When pt_ values are provided, they take precedence over grid values.
+      # At least one complete set of coordinates must be provided.
+      #
       # @param canvas [Canvas] The canvas wrapping pdf and grid
-      # @param col [Integer, Float] Column position
-      # @param row [Integer, Float] Row position
-      # @param width [Integer, Float] Width in grid boxes
-      # @param height [Integer, Float] Height in grid boxes
       # @param text [String] Label text
       # @param dest [String] Named destination for link
+      # @param col [Integer, Float, nil] Column position (grid-based)
+      # @param row [Integer, Float, nil] Row position (grid-based)
+      # @param width [Integer, Float, nil] Width in grid boxes
+      # @param height [Integer, Float, nil] Height in grid boxes
       # @param current [Boolean] When true, stroked border, bold text, no link
       # @param rotation [Integer] 0 or -90 for vertical text
       # @param font_size [Integer] Font size in points
       # @param inset [Integer] Inset in points for visual breathing room
       # @param color [String, nil] Override text color
-      # @param pt_x [Float, nil] X position in points (overrides col)
-      # @param pt_y [Float, nil] Y position in points (overrides row)
-      # @param pt_width [Float, nil] Width in points (overrides width)
-      # @param pt_height [Float, nil] Height in points (overrides height)
-      def initialize(canvas:, col:, row:, width:, height:, text:, dest:, current: false, rotation: 0, font_size: DEFAULT_FONT_SIZE, inset: DEFAULT_INSET, color: nil, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil)
+      # @param pt_x [Float, nil] X position in points
+      # @param pt_y [Float, nil] Y position in points (top of box)
+      # @param pt_width [Float, nil] Width in points
+      # @param pt_height [Float, nil] Height in points
+      def initialize(canvas:, text:, dest:, col: nil, row: nil, width: nil, height: nil, current: false, rotation: 0, font_size: DEFAULT_FONT_SIZE, inset: DEFAULT_INSET, color: nil, pt_x: nil, pt_y: nil, pt_width: nil, pt_height: nil)
         super(canvas: canvas)
         @col = col
         @row = row
