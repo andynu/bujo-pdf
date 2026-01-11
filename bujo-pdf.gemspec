@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'A Ruby-based PDF planner generator that creates programmable bullet journal PDFs optimized for digital note-taking apps (Noteshelf, GoodNotes). Includes seasonal calendar, year-at-a-glance pages, weekly pages with Cornell notes, and PDF hyperlink navigation.'
   spec.homepage      = 'https://github.com/andynu/bujo-pdf'
   spec.license       = 'MIT'
-  spec.required_ruby_version = '>= 2.7.0'
+  spec.required_ruby_version = '>= 3.3.0'
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = spec.homepage
