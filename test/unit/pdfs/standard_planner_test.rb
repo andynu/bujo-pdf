@@ -27,9 +27,10 @@ class TestStandardPlannerRecipe < Minitest::Test
     context = evaluate_recipe(year: 2025)
 
     total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(2025)
-    # New structure: 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
-    #               + weekly pages + 8 grids + 4 templates + 3 collections (from config/collections.yml)
-    expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + 3
+    # Structure: 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
+    #           + weekly pages + 8 grids + 4 templates + N collections (from config/collections.yml if present)
+    collections_count = BujoPdf::CollectionsConfiguration.load.length
+    expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + collections_count
 
     assert_equal expected_pages, context.pages.length
   end
@@ -180,13 +181,15 @@ class TestStandardPlannerRecipe < Minitest::Test
   end
 
   def test_standard_planner_works_for_different_years
+    collections_count = BujoPdf::CollectionsConfiguration.load.length
+
     [2024, 2025, 2026, 2030].each do |year|
       context = evaluate_recipe(year: year)
 
       total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(year)
       # 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
-      # + weekly pages + 8 grids + 4 templates + 3 collections
-      expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + 3
+      # + weekly pages + 8 grids + 4 templates + N collections
+      expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + collections_count
 
       assert_equal expected_pages, context.pages.length, "Wrong page count for year #{year}"
 
