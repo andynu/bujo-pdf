@@ -512,15 +512,6 @@ module BujoPdf
 
       # Create a standard page declaration referencing a predefined page type.
       #
-      # This method handles the outline resolution logic for standard pages:
-      #
-      # 1. **:none mode**: Never creates outline entries, regardless of outline param
-      # 2. **explicit false**: Suppresses outline even in :auto mode (takes precedence)
-      # 3. **:auto mode with nil**: Treats nil as true, auto-generates from registry
-      # 4. **:manual mode with nil**: No outline entry (backward compatible default)
-      # 5. **outline: true**: Resolves title from page class's generate_title method
-      # 6. **outline: "Title"**: Uses the explicit string
-      #
       # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       # @param id [Symbol, nil] Optional explicit page ID for the destination
       # @param outline [String, Boolean, nil] Outline entry specification
@@ -528,57 +519,21 @@ module BujoPdf
       # @param params [Hash] Parameters passed to the page class
       # @return [PageDeclaration] The created declaration
       #
+      # @see resolve_effective_outline for outline resolution priority
       # @see resolve_outline_title for title generation from page registry
       def create_standard_page(type, id: nil, outline: nil, chrome: nil, **params)
-        # In :none mode, never add outline entries
-        return create_standard_page_without_outline(type, id: id, chrome: chrome, **params) if @current_outline_mode == :none
-
-        # IMPORTANT: Check for explicit outline: false BEFORE checking auto mode.
-        # This allows users to suppress auto-generated outline entries for specific pages
-        # even when outline_mode :auto is enabled. The explicit false takes precedence.
-        return create_standard_page_without_outline(type, id: id, chrome: chrome, **params) if outline == false
-
-        # Determine effective outline setting based on mode
-        effective_outline = outline
-        if outline.nil? && @current_outline_mode == :auto
-          # Auto mode: treat nil as true (auto-generate title from registry)
-          effective_outline = true
-        end
-
-        # Resolve outline: true to the page class's registered title
-        outline_title = resolve_outline_title(type, effective_outline, params)
+        effective = resolve_effective_outline(outline, @current_outline_mode)
+        outline_title = resolve_outline_title(type, effective, params)
 
         decl = PageDeclaration.new(type, id: id, outline: outline_title, chrome: chrome, **params)
         add_page_declaration(decl, outline_title, id || type)
         decl
       end
 
-      # Create a standard page without any outline entry.
-      #
-      # @param type [Symbol] The page type
-      # @param id [Symbol, nil] Optional explicit page ID
-      # @param chrome [false, Hash, nil] Per-page chrome override
-      # @param params [Hash] Parameters for the page
-      # @return [PageDeclaration] The created declaration
-      def create_standard_page_without_outline(type, id: nil, chrome: nil, **params)
-        decl = PageDeclaration.new(type, id: id, outline: nil, chrome: chrome, **params)
-        add_page_declaration(decl, nil, id || type)
-        decl
-      end
-
       # Create an inline page declaration from a block.
       #
-      # This method handles the outline resolution logic for inline pages:
-      #
-      # 1. **:none mode**: Never creates outline entries
-      # 2. **explicit false**: Suppresses outline even in :auto mode
-      # 3. **:auto mode with nil**: Treats nil as true, derives title from id
-      # 4. **:manual mode with nil**: No outline entry
-      # 5. **outline: true**: Derives title from id (e.g., :my_notes -> "My Notes")
-      # 6. **outline: "Title"**: Uses the explicit string
-      #
       # Unlike standard pages, inline pages don't have a page registry entry,
-      # so `outline: true` derives the title from the page id using title case.
+      # so `outline: true` or `:auto` derives the title from the page id using title case.
       #
       # @param id [Symbol, nil] Optional explicit page ID (also used for title derivation)
       # @param outline [String, Boolean, nil] Outline entry specification
@@ -586,36 +541,14 @@ module BujoPdf
       # @param params [Hash] Additional parameters passed to the inline page
       # @yield Block defining inline page configuration (layout, background, body)
       # @return [InlinePageDeclaration] The created inline declaration
+      #
+      # @see resolve_effective_outline for outline resolution priority
       def create_inline_page(id: nil, outline: nil, chrome: nil, params: {}, &block)
-        # Create context and evaluate the block
         inline_context = InlinePageContext.new
         inline_context.evaluate(&block)
 
-        # Determine effective outline setting based on mode.
-        # Check priority: :none mode > explicit false > auto mode > default
-        effective_outline = outline
-        if @current_outline_mode == :none
-          # In :none mode, never add outline entries
-          effective_outline = false
-        elsif outline == false
-          # IMPORTANT: Check for explicit outline: false BEFORE checking auto mode.
-          # This allows users to suppress auto-generated outline entries for specific pages
-          # even when outline_mode :auto is enabled. The explicit false takes precedence.
-          effective_outline = false
-        elsif outline.nil? && @current_outline_mode == :auto
-          # Auto mode: treat nil as true (auto-generate title from id)
-          effective_outline = true
-        end
-
-        # Resolve outline title (for inline pages, true uses id-derived title)
-        outline_title = case effective_outline
-        when true
-          id&.to_s&.tr('_', ' ')&.split&.map(&:capitalize)&.join(' ') || 'Untitled'
-        when String
-          effective_outline
-        else
-          nil
-        end
+        effective = resolve_effective_outline(outline, @current_outline_mode)
+        outline_title = resolve_inline_outline_title(effective, id)
 
         decl = InlinePageDeclaration.new(
           id: id,
@@ -628,26 +561,46 @@ module BujoPdf
         decl
       end
 
-      # Resolve outline title based on outline parameter type.
+      # Resolve outline title for a standard page.
       #
       # @param type [Symbol] Page type
-      # @param outline [String, Boolean, nil] Outline specification
+      # @param effective [Symbol, String, nil] Effective outline value from resolve_effective_outline
       # @param params [Hash] Page parameters
       # @return [String, nil] Resolved outline title
-      def resolve_outline_title(type, outline, params)
-        case outline
-        when true
+      def resolve_outline_title(type, effective, params)
+        case effective
+        when :auto
           page_class = PageFactory.registry[type]
           if page_class&.respond_to?(:generate_title)
-            page_class.generate_title(params) || type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+            page_class.generate_title(params) || titleize(type)
           else
-            type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+            titleize(type)
           end
         when String
-          outline
-        else
-          nil
+          effective
         end
+      end
+
+      # Resolve outline title for an inline page.
+      #
+      # @param effective [Symbol, String, nil] Effective outline value from resolve_effective_outline
+      # @param id [Symbol, nil] Page id for title derivation
+      # @return [String, nil] Resolved outline title
+      def resolve_inline_outline_title(effective, id)
+        case effective
+        when :auto
+          id ? titleize(id) : 'Untitled'
+        when String
+          effective
+        end
+      end
+
+      # Convert a symbol to title case.
+      #
+      # @param sym [Symbol] Symbol to convert (e.g., :my_notes)
+      # @return [String] Title case string (e.g., "My Notes")
+      def titleize(sym)
+        sym.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
       end
 
       # Add a page declaration to the context.
@@ -677,6 +630,40 @@ module BujoPdf
           @current_section.add_child(entry)
         else
           @outline_entries << entry
+        end
+      end
+
+      # Resolve the effective outline value based on mode and parameter.
+      #
+      # This method centralizes the outline resolution logic used by both
+      # create_standard_page and create_inline_page.
+      #
+      # Resolution by mode:
+      #
+      # | outline_param | :none  | :auto  | :manual |
+      # |---------------|--------|--------|---------|
+      # | nil           | nil    | :auto  | nil     |
+      # | false         | nil    | nil    | nil     |
+      # | true          | nil    | :auto  | :auto   |
+      # | "Title"       | nil    | "Title"| "Title" |
+      #
+      # @param outline_param [String, Boolean, nil] The outline parameter from page()
+      # @param mode [Symbol] The current outline mode (:manual, :auto, or :none)
+      # @return [Symbol, String, nil] The effective outline value:
+      #   - nil: No outline entry
+      #   - :auto: Auto-generate title from page class or id
+      #   - String: Use this explicit title
+      def resolve_effective_outline(outline_param, mode)
+        case mode
+        when :none
+          nil
+        when :auto
+          return nil if outline_param == false
+          outline_param == true ? :auto : (outline_param || :auto)
+        when :manual
+          # In manual mode: nil/false -> no entry, true -> :auto, string -> string
+          return nil if outline_param.nil? || outline_param == false
+          outline_param == true ? :auto : outline_param
         end
       end
 
