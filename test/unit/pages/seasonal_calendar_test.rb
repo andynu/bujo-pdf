@@ -53,7 +53,7 @@ class TestSeasonalCalendar < Minitest::Test
     page = BujoPdf::Pages::SeasonalCalendar.new(@pdf, context_with_chrome)
     page.generate  # Layout is applied in generate(), not setup()
 
-    layout = page.instance_variable_get(:@new_layout)
+    layout = page.instance_variable_get(:@layout)
     assert layout, "Expected layout to be set"
     assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout
   end
@@ -74,7 +74,7 @@ class TestSeasonalCalendar < Minitest::Test
     page.generate  # Layout is applied in generate(), not setup()
 
     # Verify the page_context is passed to layout for auto-detection
-    layout = page.instance_variable_get(:@new_layout)
+    layout = page.instance_variable_get(:@layout)
     assert layout, "Expected layout to be set"
     # The page_key is :seasonal which should be auto-detected for tab highlighting
   end
