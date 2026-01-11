@@ -46,7 +46,7 @@ class TestYearWheel < Minitest::Test
     page = BujoPdf::Pages::YearWheel.new(@pdf, @context)
     page.generate  # Layout is applied in generate(), not setup()
 
-    layout = page.instance_variable_get(:@new_layout)
+    layout = page.instance_variable_get(:@layout)
     assert layout, "Expected layout to be set"
     # Full page layout is now ConfigurableLayout with no chrome
     assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout

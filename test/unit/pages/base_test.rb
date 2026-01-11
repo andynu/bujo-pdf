@@ -127,18 +127,11 @@ class TestPagesBase < Minitest::Test
     assert_equal 42, page.context.week_num
   end
 
-  def test_initialize_with_custom_layout
-    # Create custom layout using OpenStruct (same as default_layout returns)
-    custom_layout = OpenStruct.new(
-      background_enabled?: true,
-      background_type: :dot_grid,
-      debug_mode?: false,
-      footer_enabled?: false,
-      content_area_spec: { col: 5, row: 0, width: 35, height: 55 }
-    )
-    page = TestablePage.new(@pdf, @context, layout: custom_layout)
+  def test_initialize_sets_layout_to_nil
+    # Layout is nil until generate is called or use_layout is used
+    page = TestablePage.new(@pdf, @context)
 
-    assert_equal custom_layout, page.layout
+    assert_nil page.layout
   end
 
   def test_initialize_calculates_content_area
@@ -151,29 +144,26 @@ class TestPagesBase < Minitest::Test
     assert_equal 55, page.content_area[:height_boxes]
   end
 
-  def test_default_layout_is_full_page
-    page = TestablePage.new(@pdf, @context)
-
-    # Default layout provides full page content area
-    assert_equal({ col: 0, row: 0, width: 43, height: 55 }, page.layout.content_area_spec)
-    assert page.layout.background_enabled?
-    assert_equal :dot_grid, page.layout.background_type
-    refute page.layout.debug_mode?
-    refute page.layout.footer_enabled?
+  def test_class_level_config_defaults
+    # Test the class-level configuration methods
+    assert TestablePage.background_enabled?
+    assert_equal :dot_grid, TestablePage.background_type
+    refute TestablePage.debug_mode?
+    refute TestablePage.footer_enabled?
   end
 
   # ============================================
   # Generate Lifecycle Tests
   # ============================================
 
-  def test_generate_creates_new_layout_when_nil
+  def test_generate_creates_layout_when_nil
     page = TestablePage.new(@pdf, @context)
 
-    assert_nil page.new_layout
+    assert_nil page.layout
 
     page.generate
 
-    refute_nil page.new_layout
+    refute_nil page.layout
   end
 
   def test_generate_raises_not_implemented_without_render
@@ -195,7 +185,7 @@ class TestPagesBase < Minitest::Test
 
     page.test_use_layout(:full_page)
 
-    refute_nil page.new_layout
+    refute_nil page.layout
   end
 
   def test_use_layout_updates_content_area
@@ -218,7 +208,7 @@ class TestPagesBase < Minitest::Test
 
     page.test_use_layout(:standard_with_sidebars)
 
-    refute_nil page.new_layout
+    refute_nil page.layout
   end
 
   # ============================================
@@ -270,18 +260,12 @@ class TestPagesBase < Minitest::Test
     # (no fill_circle calls from Diagnostics)
   end
 
-  def test_draw_debug_grid_if_enabled_when_enabled
+  def test_draw_debug_grid_if_enabled_draws_grid
     mock_pdf = MockPDF.new
     DotGrid.create_stamp(mock_pdf, "page_dots")
-    debug_layout = OpenStruct.new(
-      background_enabled?: true,
-      background_type: :dot_grid,
-      debug_mode?: true,
-      footer_enabled?: false,
-      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
-    )
-    page = TestablePage.new(mock_pdf, @context, layout: debug_layout)
+    page = TestablePage.new(mock_pdf, @context)
 
+    # Call draw_debug_grid_if_enabled directly (it now always draws)
     page.test_draw_debug_grid_if_enabled
 
     # Should draw diagnostic grid
@@ -607,8 +591,8 @@ class TestPagesBaseChromeInheritance < Minitest::Test
     page.generate
 
     # Page should have a layout created with chrome
-    refute_nil page.new_layout
-    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.new_layout
+    refute_nil page.layout
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.layout
   end
 
   def test_generate_uses_full_page_when_no_chrome_config
@@ -617,10 +601,10 @@ class TestPagesBaseChromeInheritance < Minitest::Test
     page = TestablePage.new(@mock_pdf, context)
     page.generate
 
-    refute_nil page.new_layout
+    refute_nil page.layout
     # Full page layout is now ConfigurableLayout with no chrome
-    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.new_layout
-    assert_empty page.new_layout.chrome_spec.active_regions
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.layout
+    assert_empty page.layout.chrome_spec.active_regions
   end
 
   def test_use_layout_applies_pdf_chrome_config
@@ -637,8 +621,8 @@ class TestPagesBaseChromeInheritance < Minitest::Test
     page.test_use_layout(:configurable)
 
     # The layout should have received the chrome config
-    refute_nil page.new_layout
-    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.new_layout
+    refute_nil page.layout
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.layout
   end
 
   def test_use_layout_explicit_chrome_overrides_pdf_chrome
@@ -658,7 +642,7 @@ class TestPagesBaseChromeInheritance < Minitest::Test
     page.test_use_layout(:configurable, chrome: {})
 
     # Layout should use the explicit chrome config, not PDF chrome
-    refute_nil page.new_layout
+    refute_nil page.layout
     # Empty chrome means full content area
     assert_equal 43, page.content_area[:width_boxes]
   end
@@ -694,6 +678,37 @@ class TestPagesBaseChromeInheritance < Minitest::Test
   end
 end
 
+# Test subclasses with different background configurations
+class BlankBackgroundPage < BujoPdf::Pages::Base
+  register_page :blank_bg_test, title: "Blank Background Test"
+
+  def self.background_type
+    :blank
+  end
+
+  def render; end
+end
+
+class NoBackgroundPage < BujoPdf::Pages::Base
+  register_page :no_bg_test, title: "No Background Test"
+
+  def self.background_enabled?
+    false
+  end
+
+  def render; end
+end
+
+class DebugModePage < BujoPdf::Pages::Base
+  register_page :debug_mode_test, title: "Debug Mode Test"
+
+  def self.debug_mode?
+    true
+  end
+
+  def render; end
+end
+
 class TestPagesBaseBackgroundTypes < Minitest::Test
   def setup
     @mock_pdf = MockPDF.new
@@ -706,14 +721,7 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
   end
 
   def test_background_type_dot_grid
-    layout = OpenStruct.new(
-      background_enabled?: true,
-      background_type: :dot_grid,
-      debug_mode?: false,
-      footer_enabled?: false,
-      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
-    )
-    page = TestablePage.new(@mock_pdf, @context, layout: layout)
+    page = TestablePage.new(@mock_pdf, @context)
 
     page.test_draw_background
 
@@ -721,48 +729,17 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
   end
 
   def test_background_type_blank
-    layout = OpenStruct.new(
-      background_enabled?: true,
-      background_type: :blank,
-      debug_mode?: false,
-      footer_enabled?: false,
-      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
-    )
-    page = TestablePage.new(@mock_pdf, @context, layout: layout)
+    page = BlankBackgroundPage.new(@mock_pdf, @context)
 
     @mock_pdf.calls.clear
-    page.test_draw_background
+    page.send(:draw_background)
 
     # Should not stamp for blank background
     refute @mock_pdf.called?(:stamp)
   end
 
-  def test_background_type_ruled
-    layout = OpenStruct.new(
-      background_enabled?: true,
-      background_type: :ruled,
-      debug_mode?: false,
-      footer_enabled?: false,
-      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
-    )
-    page = TestablePage.new(@mock_pdf, @context, layout: layout)
-
-    @mock_pdf.calls.clear
-    page.test_draw_background
-
-    # Ruled is future implementation - should not stamp
-    refute @mock_pdf.called?(:stamp)
-  end
-
   def test_background_disabled
-    layout = OpenStruct.new(
-      background_enabled?: false,
-      background_type: :dot_grid,
-      debug_mode?: false,
-      footer_enabled?: false,
-      content_area_spec: { col: 0, row: 0, width: 43, height: 55 }
-    )
-    page = TestablePage.new(@mock_pdf, @context, layout: layout)
+    page = NoBackgroundPage.new(@mock_pdf, @context)
 
     # setup_page should skip background when disabled
     page.send(:setup_page)
@@ -770,5 +747,16 @@ class TestPagesBaseBackgroundTypes < Minitest::Test
     # No stamp when background disabled
     stamp_calls = @mock_pdf.calls.select { |c| c[:method] == :stamp }
     assert_equal 0, stamp_calls.size
+  end
+
+  def test_debug_mode_enabled_draws_grid
+    page = DebugModePage.new(@mock_pdf, @context)
+
+    # setup_page should draw debug grid when debug_mode? is true
+    page.send(:setup_page)
+
+    # Should draw diagnostic grid
+    assert @mock_pdf.called?(:fill_circle)
+    assert @mock_pdf.called?(:stroke_line)
   end
 end

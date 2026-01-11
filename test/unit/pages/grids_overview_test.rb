@@ -91,7 +91,7 @@ class TestGridsOverview < Minitest::Test
     page = BujoPdf::Pages::GridsOverview.new(@pdf, context_with_chrome)
     page.generate  # Layout is applied in generate(), not setup()
 
-    layout = page.instance_variable_get(:@new_layout)
+    layout = page.instance_variable_get(:@layout)
     assert layout, "Expected layout to be set"
     assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout
   end
