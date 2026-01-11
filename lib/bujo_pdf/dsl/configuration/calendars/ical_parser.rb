@@ -27,7 +27,7 @@ module BujoPdf
       def parse(ical_data, skip_all_day: false, exclude_patterns: [])
         return [] unless ical_data
 
-        calendars = Icalendar::Calendar.parse(ical_data)
+        calendars = Icalendar::Calendar.parse(ical_data.dup)
         events = []
 
         calendars.each do |calendar|
