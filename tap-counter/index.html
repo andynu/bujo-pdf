@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tap Counter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #tap-area {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.08s;
+  }
+
+  #tap-area:active {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  #count {
+    font-size: min(40vw, 40vh);
+    font-weight: 200;
+    line-height: 1;
+    color: #e2e2e2;
+    pointer-events: none;
+  }
+
+  #controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  #controls button {
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  #controls button:active {
+    background: rgba(255,255,255,0.2);
+  }
+
+  #laps {
+    position: fixed;
+    bottom: 60px;
+    right: 20px;
+    text-align: right;
+    font-size: 13px;
+    color: rgba(255,255,255,0.45);
+    z-index: 10;
+    max-height: 40vh;
+    overflow-y: auto;
+    pointer-events: none;
+  }
+
+  .lap-entry {
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="tap-area">
+  <div id="count">0</div>
+</div>
+
+<div id="laps"></div>
+
+<div id="controls">
+  <button id="lap-btn">Lap</button>
+  <button id="reset-btn">Reset</button>
+</div>
+
+<script>
+  const countEl = document.getElementById('count');
+  const tapArea = document.getElementById('tap-area');
+  const lapBtn = document.getElementById('lap-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const lapsEl = document.getElementById('laps');
+
+  let count = 0;
+  let laps = [];
+
+  // Generate click sound using Web Audio API
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playClick() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'square';
+    osc.frequency.value = 1200;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.06);
+  }
+
+  function updateDisplay() {
+    countEl.textContent = count;
+  }
+
+  function renderLaps() {
+    lapsEl.innerHTML = laps.map(function(l, i) {
+      return '<div class="lap-entry">Lap ' + (i + 1) + ': ' + l + '</div>';
+    }).join('');
+  }
+
+  tapArea.addEventListener('click', function(e) {
+    // Ignore clicks on the control buttons
+    if (e.target.closest('#controls')) return;
+
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playClick();
+    count++;
+    updateDisplay();
+  });
+
+  lapBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    laps.push(count);
+    renderLaps();
+  });
+
+  resetBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    count = 0;
+    laps = [];
+    updateDisplay();
+    renderLaps();
+  });
+</script>
+</body>
+</html>
