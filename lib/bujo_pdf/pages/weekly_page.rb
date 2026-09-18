@@ -139,7 +139,8 @@ module BujoPdf
           canvas: canvas,
           week_context: @week_context,
           content_start_col: 2,
-          content_width_boxes: 40
+          content_width_boxes: 40,
+          chips: true
         )
         nav.render
       end

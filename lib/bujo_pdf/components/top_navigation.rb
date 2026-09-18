@@ -2,6 +2,7 @@
 
 require_relative '../base/component'
 require_relative 'link_box'
+require_relative 'month_nav'
 
 module BujoPdf
   module Components
@@ -37,6 +38,11 @@ module BujoPdf
       NAV_FONT_SIZE = 8
       TITLE_FONT_SIZE = 14
 
+      # Chip strip layout (chips: true mode)
+      CHIPS_START_COL = 2
+      CHIPS_ROW = 0.15
+      TITLE_RIGHT_COL = 42
+
       # @param canvas [Canvas] The canvas to render on
       # @param week_context [WeekContext, nil] Week context bundling all week data (preferred)
       # @param year [Integer, nil] The planner year (legacy, use week_context instead)
@@ -47,8 +53,10 @@ module BujoPdf
       # @param content_start_col [Integer] Starting column for content area
       # @param content_width_boxes [Integer] Width of content area in grid boxes
       def initialize(canvas:, week_context: nil, year: nil, week_num: nil, total_weeks: nil,
-                     week_start: nil, week_end: nil, content_start_col: 3, content_width_boxes: 39)
+                     week_start: nil, week_end: nil, content_start_col: 3, content_width_boxes: 39,
+                     chips: false)
         super(canvas: canvas)
+        @chips = chips
         @week_context = week_context
         @year = year || week_context&.year
         @week_num = week_num || week_context&.number
@@ -63,9 +71,17 @@ module BujoPdf
         nav_box = grid.rect(@content_start_col, 0, @content_width_boxes, 2)
 
         draw_year_link
-        draw_prev_week_link if show_prev?
-        draw_next_week_link if show_next?
-        draw_title(nav_box)
+
+        if @chips
+          # Chips replace the single-step prev/next links: same job, ~3x the
+          # touch area, and they show where the week sits among its neighbours.
+          strip = draw_week_chips
+          draw_title(nav_box, start_col: CHIPS_START_COL + strip.width_boxes)
+        else
+          draw_prev_week_link if show_prev?
+          draw_next_week_link if show_next?
+          draw_title(nav_box)
+        end
       end
 
       private
@@ -90,11 +106,32 @@ module BujoPdf
         link_box(40, 0, 2, 1, "w#{format('%02d', @week_num + 1)}", dest: "week_#{@week_num + 1}", font_size: NAV_FONT_SIZE)
       end
 
-      def draw_title(nav_box)
+      def draw_week_chips
+        nav = MonthNav.new(
+          canvas: canvas,
+          year: @year,
+          col: CHIPS_START_COL,
+          row: CHIPS_ROW,
+          week_num: @week_num
+        )
+        nav.render
+        nav
+      end
+
+      # @param nav_box [Hash] The navigation bounding box
+      # @param start_col [Integer, Float, nil] Left edge of the title area; when
+      #   nil the title is centred across the whole nav box minus its margins
+      def draw_title(nav_box, start_col: nil)
         pdf.font "Helvetica-Bold", size: TITLE_FONT_SIZE
 
-        title_x = nav_box[:x] + grid.width(8)
-        title_width = nav_box[:width] - grid.width(16)
+        if start_col
+          title_x = grid.x(start_col)
+          title_width = grid.x(TITLE_RIGHT_COL) - title_x
+        else
+          title_x = nav_box[:x] + grid.width(8)
+          title_width = nav_box[:width] - grid.width(16)
+        end
+
         title_text = "Week #{@week_num}: #{@week_start.strftime('%b %-d')} - #{@week_end.strftime('%b %-d, %Y')}"
 
         pdf.text_box title_text,
