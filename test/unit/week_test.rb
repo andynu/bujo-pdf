@@ -32,6 +32,28 @@ class TestWeek < Minitest::Test
     assert_equal 1, week.primary_month
   end
 
+  def test_interleaving_month_files_cross_year_week_under_its_end_month
+    week = BujoPdf::Week.new(year: 2025, number: 1)
+
+    # Week 1 starts in Dec 2024 but ends in Jan 2025 - it belongs with January
+    assert_equal 1, week.interleaving_month
+  end
+
+  def test_interleaving_month_matches_start_month_for_normal_weeks
+    week = BujoPdf::Week.new(year: 2025, number: 2)
+
+    assert_equal 1, week.interleaving_month
+  end
+
+  def test_interleaving_month_never_nil_for_weeks_in_the_planner
+    (1..BujoPdf::Utilities::DateCalculator.total_weeks(2026)).each do |num|
+      week = BujoPdf::Week.new(year: 2026, number: num)
+      next unless week.overlaps_year?
+
+      refute_nil week.interleaving_month, "Week #{num} has no interleaving month"
+    end
+  end
+
   def test_in_year_false_when_start_in_previous_year
     week = BujoPdf::Week.new(year: 2025, number: 1)
 

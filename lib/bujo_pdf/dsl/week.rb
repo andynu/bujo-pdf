@@ -76,6 +76,22 @@ module BujoPdf
         start_date.year == @year ? start_date.month : nil
       end
 
+      # Get the month this week should be filed under when interleaving
+      # month-specific pages into the weekly sequence.
+      #
+      # Unlike {#primary_month}, this never returns nil for a week that
+      # overlaps the target year: a week starting in the previous December
+      # is filed under the month it ends in (January), so the first week of
+      # the year is not orphaned ahead of its month's pages.
+      #
+      # @return [Integer, nil] Month number (1-12), or nil if the week does
+      #   not overlap the target year at all
+      def interleaving_month
+        return nil unless overlaps_year?
+
+        start_date.year == @year ? start_date.month : end_date.month
+      end
+
       # Check if this week starts a new quarter.
       #
       # @return [Boolean] true if this is the first week with start date in months 1, 4, 7, or 10
