@@ -81,19 +81,31 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   outline_entry :quarter_1, 'Quarterly Planning'
   outline_entry :review_1, 'Monthly Reviews'
 
+  # Monthly reviews are retrospective ("What Worked" / "What Didn't Work"), so
+  # each one is emitted *after* the last week of the month it reviews. That
+  # makes a month boundary read: [review of the month just finished] ->
+  # [quarterly planning, if a new quarter starts] -> [weeks of the new month].
+  # December's review is flushed after the final weekly page.
   generated_months = []
   first_week_of_month = {}
+  month_awaiting_review = nil
+
+  emit_monthly_review = lambda do |month|
+    page :monthly_review, id: :"review_#{month}", month: month, review_month: month,
+         year: year, chrome: false
+  end
 
   weeks_in(year).each do |week|
     next unless week.overlaps_year?
 
-    # Use primary_month for interleaving - nil for cross-year weeks (like week 1)
-    month = week.primary_month
+    # interleaving_month never returns nil for a week in the planner, so
+    # cross-year weeks (like week 1) are filed under the month they end in.
+    month = week.interleaving_month
 
-    # Insert monthly/quarterly pages at start of each month
-    # Skip for weeks with nil primary_month (cross-year boundary weeks)
+    # Insert monthly/quarterly pages at the start of each month
     if month && !generated_months.include?(month)
-      first_week_of_month[month] ||= week.number
+      # Close out the previous month before opening the new one
+      emit_monthly_review.call(month_awaiting_review) if month_awaiting_review
 
       # Quarterly planning at start of each quarter (full page - no sidebars)
       if [1, 4, 7, 10].include?(month)
@@ -101,18 +113,21 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
         page :quarterly_planning, id: :"quarter_#{quarter}", quarter: quarter, year: year, chrome: false
       end
 
-      # Monthly review (full page - no sidebars)
-      page :monthly_review, id: :"review_#{month}", month: month, review_month: month, year: year, chrome: false
+      first_week_of_month[month] ||= week.number
 
       # Month outline entry
       month_name = Date::MONTHNAMES[month]
       outline_entry :"week_#{first_week_of_month[month]}", "#{month_name} #{year}"
 
       generated_months << month
+      month_awaiting_review = month
     end
 
     page :weekly, id: :"week_#{week.number}", week: week
   end
+
+  # Final month's review, after its last weekly page
+  emit_monthly_review.call(month_awaiting_review) if month_awaiting_review
 
   # 4. Grid pages group with cycling navigation
   # Group's outline entry links to first page; individual pages use registered titles
