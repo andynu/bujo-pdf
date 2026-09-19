@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'shellwords'
+require_relative 'backed'
 require_relative 'grid_patch'
 require_relative 'radial_divider'
 require_relative 'hour_axis'
@@ -36,11 +37,18 @@ module BujoPdf
       # @param stickers [Array<Base>, nil] Defaults to the standard pack
       # @param tag [String, nil] Suffix appended to every filename; see {#tag_suffix}
       def initialize(output_dir: DEFAULT_OUTPUT_DIR, dpi: DEFAULT_DPI, stickers: nil,
-                     all: false, tag: nil)
+                     all: false, tag: nil, backed: false)
         @output_dir = output_dir
         @dpi = dpi
         @tag = normalize_tag(tag)
-        @stickers = stickers || self.class.default_pack(all: all)
+        @backed = backed
+        pack = stickers || self.class.default_pack(all: all)
+        @stickers = backed ? Backed.wrap(pack) : pack
+      end
+
+      # @return [Boolean] whether the pack sits on opaque cards
+      def backed?
+        @backed
       end
 
       # Filename for a sticker in this run, including any tag.

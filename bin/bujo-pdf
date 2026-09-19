@@ -70,6 +70,7 @@ module BujoPdf
       dpi = BujoPdf::Stickers::Generator::DEFAULT_DPI
       all = false
       tag = nil
+      backed = false
 
       i = 0
       while i < args.length
@@ -91,6 +92,8 @@ module BujoPdf
             warn "Error: --tag needs a value, e.g. --tag v2"
             exit 1
           end
+        when '--backed'
+          backed = true
         when '--all'
           all = true
         when '--help', '-h'
@@ -110,7 +113,7 @@ module BujoPdf
       end
 
       generator = BujoPdf::Stickers::Generator.new(
-        output_dir: output_dir, dpi: dpi, all: all, tag: tag
+        output_dir: output_dir, dpi: dpi, all: all, tag: tag, backed: backed
       )
       puts "Generating #{generator.stickers.length} stickers at #{dpi} DPI..."
 
@@ -137,6 +140,8 @@ module BujoPdf
           --out, -o DIR   Output directory (default: stickers)
           --dpi N         Raster resolution, 36-1200 (default: 300)
           --tag NAME      Append _NAME to every filename (see Re-importing)
+          --backed        Put each sticker on an opaque rounded card, so the
+                          page's dot grid does not show through
           --all           Include stickers that are off by default
           --help, -h      Show this help message
 

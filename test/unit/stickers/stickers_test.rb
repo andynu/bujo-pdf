@@ -99,6 +99,95 @@ class TestStickers < Minitest::Test
     assert_raises(NotImplementedError) { sticker.draw(nil) }
   end
 
+  # Backing
+
+  def test_card_adds_a_gutter_on_every_side
+    inner = BujoPdf::Stickers::GridPatch.new(type: :graph)
+    card = BujoPdf::Stickers::Backed.new(sticker: inner)
+    gutter = BujoPdf::Stickers::Backed::GUTTER_BOXES
+
+    assert_equal inner.width_boxes + (gutter * 2), card.width_boxes
+    assert_equal inner.height_boxes + (gutter * 2), card.height_boxes
+  end
+
+  def test_cards_stay_on_whole_grid_boxes
+    # A half-box gutter on each side adds one whole box per axis, so a backed
+    # sticker still lands on the grid when placed at 100%.
+    BujoPdf::Stickers::Backed.wrap(
+      BujoPdf::Stickers::Generator.default_pack(all: true)
+    ).each do |card|
+      assert_equal card.width_boxes.to_i, card.width_boxes, "#{card.slug} width"
+      assert_equal card.height_boxes.to_i, card.height_boxes, "#{card.slug} height"
+    end
+  end
+
+  def test_card_slugs_never_collide_with_their_transparent_originals
+    plain = BujoPdf::Stickers::Generator.new(all: true)
+    cards = BujoPdf::Stickers::Generator.new(all: true, backed: true)
+
+    assert_empty(plain.stickers.map { |s| plain.filename_for(s) } &
+                 cards.stickers.map { |s| cards.filename_for(s) })
+    cards.stickers.each { |c| assert_includes c.slug, '_card' }
+  end
+
+  def test_backed_generator_reports_itself
+    refute_predicate BujoPdf::Stickers::Generator.new, :backed?
+    assert_predicate BujoPdf::Stickers::Generator.new(backed: true), :backed?
+  end
+
+  def test_every_card_draws_without_error
+    BujoPdf::Stickers::Backed.wrap(
+      BujoPdf::Stickers::Generator.default_pack(all: true)
+    ).each do |card|
+      pdf = Prawn::Document.new(page_size: [card.width_pt, card.height_pt], margin: 0)
+      card.draw(pdf)
+      refute_empty pdf.render, "#{card.slug} produced no output"
+    end
+  end
+
+  def test_card_face_is_opaque_and_covers_the_whole_sticker
+    # The face is the only reason a card hides the page's dot grid, so assert
+    # it directly: a filled rounded rectangle spanning the full sticker, drawn
+    # before any content and not wrapped in a transparency group.
+    card = BujoPdf::Stickers::Backed.new(
+      sticker: BujoPdf::Stickers::GridPatch.new(type: :graph)
+    )
+    mock_pdf = MockPDF.new
+    card.draw(mock_pdf)
+
+    fills = mock_pdf.calls.select { |c| c[:method] == :fill_rounded_rectangle }
+    refute_empty fills, 'card drew no face'
+
+    face = fills.first
+    _origin, width, height, _radius = face[:args]
+    assert_in_delta card.width_pt, width, 0.01
+    assert_in_delta card.height_pt, height, 0.01
+
+    face_index = mock_pdf.calls.index { |c| c[:method] == :fill_rounded_rectangle }
+    translate_index = mock_pdf.calls.index { |c| c[:method] == :translate }
+    assert_operator face_index, :<, translate_index,
+                    'the face must be painted before the content sits on it'
+  end
+
+  def test_content_is_clipped_to_the_card_face
+    # Without a clip, patterns that tile past their frame (the hexagon grid)
+    # bleed through the rounded corners, where nothing can paint over them
+    # because that area has to stay transparent.
+    card = BujoPdf::Stickers::Backed.new(
+      sticker: BujoPdf::Stickers::GridPatch.new(type: :hexagon)
+    )
+    mock_pdf = MockPDF.new
+    card.draw(mock_pdf)
+
+    clip = mock_pdf.calls.find { |c| c[:method] == :add_content }
+    refute_nil clip, 'content was drawn without a clipping path'
+    assert_equal 'W n', clip[:args].first
+
+    methods = mock_pdf.calls.map { |c| c[:method] }
+    assert_operator methods.index(:save_graphics_state), :<, methods.index(:translate)
+    assert_operator methods.index(:translate), :<, methods.rindex(:restore_graphics_state)
+  end
+
   # Generator
 
   # Tagging - the escape hatch for Noteshelf's filename cache
