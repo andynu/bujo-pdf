@@ -68,6 +68,11 @@ module BujoPdf
         )
       end
 
+      # A ring belongs on a disc, not a rounded square.
+      def backing_shape
+        :circle
+      end
+
       def draw(pdf)
         cx = width_pt / 2.0
         cy = height_pt / 2.0
