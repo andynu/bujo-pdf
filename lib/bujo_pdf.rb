@@ -118,6 +118,9 @@ require_relative 'bujo_pdf/pages/all'
 # Load PDF DSL (depends on everything above)
 require_relative 'bujo_pdf/pdf_dsl'
 
+# Sticker generation (standalone widget PNGs for note-app sticker libraries)
+require_relative 'bujo_pdf/stickers'
+
 # Module for namespace
 module BujoPdf
   class Error < StandardError; end
