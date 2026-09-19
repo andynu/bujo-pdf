@@ -7,6 +7,8 @@ require_relative '../lib/bujo_pdf'
 module BujoPdf
   class CLI
     def self.run(args = ARGV)
+      return run_stickers(args[1..] || []) if args.first == 'stickers'
+
       # Parse arguments
       year = nil
       theme = nil
@@ -61,6 +63,83 @@ module BujoPdf
       end
     end
 
+    # Generate the sticker pack: transparent PNGs of standalone widgets, sized
+    # to exact grid multiples, for import into a note app's sticker library.
+    def self.run_stickers(args)
+      output_dir = BujoPdf::Stickers::Generator::DEFAULT_OUTPUT_DIR
+      dpi = BujoPdf::Stickers::Generator::DEFAULT_DPI
+      all = false
+
+      i = 0
+      while i < args.length
+        case args[i]
+        when '--out', '-o'
+          i += 1
+          output_dir = args[i]
+        when '--dpi'
+          i += 1
+          dpi = args[i].to_i
+          if dpi < 36 || dpi > 1200
+            warn "Error: --dpi must be between 36 and 1200"
+            exit 1
+          end
+        when '--all'
+          all = true
+        when '--help', '-h'
+          show_stickers_help
+          exit 0
+        else
+          warn "Error: unknown option '#{args[i]}'"
+          exit 1
+        end
+        i += 1
+      end
+
+      unless BujoPdf::Stickers::Generator.converter_available?
+        warn "Error: pdftocairo not found (install poppler)"
+        warn "  macOS: brew install poppler"
+        exit 1
+      end
+
+      generator = BujoPdf::Stickers::Generator.new(output_dir: output_dir, dpi: dpi, all: all)
+      puts "Generating #{generator.stickers.length} stickers at #{dpi} DPI..."
+
+      begin
+        generator.generate do |sticker, path|
+          puts "  #{sticker.title} (#{sticker.size_label} boxes) -> #{path}"
+        end
+        puts "✓ Wrote #{output_dir}/ - see #{output_dir}/README.txt to import"
+      rescue StandardError => e
+        warn "Error generating stickers: #{e.message}"
+        warn e.backtrace.join("\n") if ENV['DEBUG']
+        exit 1
+      end
+    end
+
+    def self.show_stickers_help
+      puts <<~HELP
+        bujo-pdf stickers - Generate widget stickers as transparent PNGs
+
+        Usage:
+          bujo-pdf stickers [OPTIONS]
+
+        Options:
+          --out, -o DIR   Output directory (default: stickers)
+          --dpi N         Raster resolution, 36-1200 (default: 300)
+          --all           Include stickers that are off by default
+          --help, -h      Show this help message
+
+        Output:
+          DIR/png/  transparent PNGs - import these
+          DIR/pdf/  vector originals
+
+        Stickers are sized in whole grid boxes, so placed at 100% scale they
+        line up with the planner's dot grid.
+
+        Requires poppler (pdftocairo) for PNG conversion.
+      HELP
+    end
+
     def self.show_help
       puts <<~HELP
         bujo-pdf - Generate programmable bullet journal PDFs
@@ -76,6 +155,9 @@ module BujoPdf
           --list-themes        Show available themes
           --version, -v        Show version
           --help, -h           Show this help message
+
+        Commands:
+          stickers      Generate widget stickers as PNGs (see: bujo-pdf stickers --help)
 
         Examples:
           bujo-pdf                    # Generate planner for current year (light theme)
