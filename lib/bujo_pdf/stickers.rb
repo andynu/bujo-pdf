@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'stickers/base'
+require_relative 'stickers/backed'
 require_relative 'stickers/grid_patch'
 require_relative 'stickers/radial_divider'
 require_relative 'stickers/hour_axis'
