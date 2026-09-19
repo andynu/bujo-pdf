@@ -29,15 +29,41 @@ module BujoPdf
 
       class ConversionError < StandardError; end
 
-      attr_reader :output_dir, :dpi, :stickers
+      attr_reader :output_dir, :dpi, :stickers, :tag
 
       # @param output_dir [String] Directory to write into
       # @param dpi [Integer] Raster resolution for the PNGs
       # @param stickers [Array<Base>, nil] Defaults to the standard pack
-      def initialize(output_dir: DEFAULT_OUTPUT_DIR, dpi: DEFAULT_DPI, stickers: nil, all: false)
+      # @param tag [String, nil] Suffix appended to every filename; see {#tag_suffix}
+      def initialize(output_dir: DEFAULT_OUTPUT_DIR, dpi: DEFAULT_DPI, stickers: nil,
+                     all: false, tag: nil)
         @output_dir = output_dir
         @dpi = dpi
+        @tag = normalize_tag(tag)
         @stickers = stickers || self.class.default_pack(all: all)
+      end
+
+      # Filename for a sticker in this run, including any tag.
+      #
+      # @param sticker [Base]
+      # @return [String]
+      def filename_for(sticker)
+        "#{sticker.filename}#{tag_suffix}"
+      end
+
+      # Suffix that forces a note app to treat these as new files.
+      #
+      # Noteshelf keys its sticker library on filename and caches that key
+      # past deletion: delete an imported set, re-import the same filenames,
+      # and nothing comes back. Only genuinely new names import. That makes a
+      # corrected sticker impossible to replace, because the fix ships under
+      # the name the cache is already holding.
+      #
+      # Tagging a run renames every file, which the app reads as a new pack.
+      #
+      # @return [String]
+      def tag_suffix
+        tag ? "_#{tag}" : ''
       end
 
       # The standard sticker pack.
@@ -72,8 +98,9 @@ module BujoPdf
         FileUtils.mkdir_p(pdf_dir)
 
         paths = stickers.map do |sticker|
-          pdf_path = File.join(pdf_dir, "#{sticker.filename}.pdf")
-          png_path = File.join(png_dir, "#{sticker.filename}.png")
+          stem = filename_for(sticker)
+          pdf_path = File.join(pdf_dir, "#{stem}.pdf")
+          png_path = File.join(png_dir, "#{stem}.png")
 
           render_pdf(sticker, pdf_path)
           convert_to_png(pdf_path, png_path)
@@ -87,6 +114,14 @@ module BujoPdf
       end
 
       private
+
+      # Keep tags filename-safe; a tag becomes part of every name in the pack.
+      def normalize_tag(value)
+        return nil if value.nil?
+
+        cleaned = value.to_s.strip.gsub(/[^A-Za-z0-9._-]+/, '-').gsub(/\A-+|-+\z/, '')
+        cleaned.empty? ? nil : cleaned
+      end
 
       # Draw one sticker onto a page sized exactly to it.
       #
@@ -142,6 +177,19 @@ module BujoPdf
           -----
           png/  what you import
           pdf/  vector originals, same artwork
+          #{tag ? "\n          This pack is tagged \"#{tag}\".\n" : ''}
+          Re-importing
+          ------------
+          Noteshelf keys its sticker library on filename and remembers that
+          key even after you delete the stickers. Re-importing the same
+          filenames brings back nothing - only new names import.
+
+          So to replace a set, regenerate with a new tag:
+
+              bujo-pdf stickers --tag v3
+
+          Every file is renamed, the app sees a new pack, and the whole set
+          imports.
         TEXT
       end
     end

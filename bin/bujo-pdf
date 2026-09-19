@@ -69,6 +69,7 @@ module BujoPdf
       output_dir = BujoPdf::Stickers::Generator::DEFAULT_OUTPUT_DIR
       dpi = BujoPdf::Stickers::Generator::DEFAULT_DPI
       all = false
+      tag = nil
 
       i = 0
       while i < args.length
@@ -81,6 +82,13 @@ module BujoPdf
           dpi = args[i].to_i
           if dpi < 36 || dpi > 1200
             warn "Error: --dpi must be between 36 and 1200"
+            exit 1
+          end
+        when '--tag'
+          i += 1
+          tag = args[i]
+          if tag.nil? || tag.strip.empty?
+            warn "Error: --tag needs a value, e.g. --tag v2"
             exit 1
           end
         when '--all'
@@ -101,7 +109,9 @@ module BujoPdf
         exit 1
       end
 
-      generator = BujoPdf::Stickers::Generator.new(output_dir: output_dir, dpi: dpi, all: all)
+      generator = BujoPdf::Stickers::Generator.new(
+        output_dir: output_dir, dpi: dpi, all: all, tag: tag
+      )
       puts "Generating #{generator.stickers.length} stickers at #{dpi} DPI..."
 
       begin
@@ -126,6 +136,7 @@ module BujoPdf
         Options:
           --out, -o DIR   Output directory (default: stickers)
           --dpi N         Raster resolution, 36-1200 (default: 300)
+          --tag NAME      Append _NAME to every filename (see Re-importing)
           --all           Include stickers that are off by default
           --help, -h      Show this help message
 
@@ -135,6 +146,13 @@ module BujoPdf
 
         Stickers are sized in whole grid boxes, so placed at 100% scale they
         line up with the planner's dot grid.
+
+        Re-importing:
+          Noteshelf keys its sticker library on filename and keeps that key
+          after you delete the stickers, so re-importing the same filenames
+          brings back nothing. To replace a set, give the run a new tag:
+
+            bujo-pdf stickers --tag v2
 
         Requires poppler (pdftocairo) for PNG conversion.
       HELP

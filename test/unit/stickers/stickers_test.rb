@@ -101,6 +101,64 @@ class TestStickers < Minitest::Test
 
   # Generator
 
+  # Tagging - the escape hatch for Noteshelf's filename cache
+
+  def test_untagged_filenames_are_unchanged
+    generator = BujoPdf::Stickers::Generator.new
+    sticker = generator.stickers.first
+
+    assert_equal '', generator.tag_suffix
+    assert_equal sticker.filename, generator.filename_for(sticker)
+  end
+
+  def test_tag_renames_every_file_in_the_pack
+    plain = BujoPdf::Stickers::Generator.new
+    tagged = BujoPdf::Stickers::Generator.new(tag: 'v2')
+
+    plain_names = plain.stickers.map { |s| plain.filename_for(s) }
+    tagged_names = tagged.stickers.map { |s| tagged.filename_for(s) }
+
+    assert_empty(plain_names & tagged_names,
+                 'a tagged run must share no filename with an untagged one, ' \
+                 'or the app cache will suppress the re-import')
+    tagged_names.each { |n| assert_match(/_v2\z/, n) }
+  end
+
+  def test_different_tags_never_collide
+    a = BujoPdf::Stickers::Generator.new(tag: 'v2')
+    b = BujoPdf::Stickers::Generator.new(tag: 'v3')
+
+    assert_empty(a.stickers.map { |s| a.filename_for(s) } &
+                 b.stickers.map { |s| b.filename_for(s) })
+  end
+
+  def test_tags_are_sanitised_into_filename_safe_text
+    generator = BujoPdf::Stickers::Generator.new(tag: 'v2 test/bad chars')
+
+    assert_equal '_v2-test-bad-chars', generator.tag_suffix
+  end
+
+  def test_blank_tags_are_treated_as_no_tag
+    ['', '   ', nil, '///'].each do |value|
+      assert_equal '', BujoPdf::Stickers::Generator.new(tag: value).tag_suffix,
+                   "#{value.inspect} should not produce a suffix"
+    end
+  end
+
+  def test_tagged_run_writes_tagged_files
+    skip 'pdftocairo not installed' unless BujoPdf::Stickers::Generator.converter_available?
+
+    Dir.mktmpdir do |dir|
+      pack = [BujoPdf::Stickers::GridPatch.new(type: :graph)]
+      BujoPdf::Stickers::Generator.new(
+        output_dir: dir, dpi: 72, stickers: pack, tag: 'v2'
+      ).generate
+
+      assert_path_exists File.join(dir, 'png', 'grid_graph_10x10_v2.png')
+      refute_path_exists File.join(dir, 'png', 'grid_graph_10x10.png')
+    end
+  end
+
   def test_generate_writes_a_png_and_pdf_for_every_sticker
     skip 'pdftocairo not installed' unless BujoPdf::Stickers::Generator.converter_available?
 
