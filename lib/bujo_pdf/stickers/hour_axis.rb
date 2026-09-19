@@ -15,7 +15,10 @@ module BujoPdf
     class HourAxis < Base
       DEFAULT_START_HOUR = 7   # 7am
       DEFAULT_END_HOUR = 21    # 9pm
-      LABEL_COLS = 2           # width of the time column
+      # Width of the time column. Labels are right-aligned against the spine,
+      # so any slack here becomes dead space on the left edge; "12p" at 6pt is
+      # only ~11pt wide, and two boxes left far more room than it needed.
+      LABEL_COLS = 1.5
       DEFAULT_WIDTH_BOXES = 6
 
       # @return [Array<HourAxis>]

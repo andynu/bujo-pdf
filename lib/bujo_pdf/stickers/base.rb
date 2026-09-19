@@ -70,6 +70,16 @@ module BujoPdf
         "#{slug}_#{size_label}"
       end
 
+      # Shape of the card this sticker wants when backed.
+      #
+      # A round widget on a square card reads as a sticker of the wrong shape,
+      # so a sticker gets to say what outline suits it.
+      #
+      # @return [Symbol] :rect or :circle
+      def backing_shape
+        :rect
+      end
+
       # Draw the sticker.
       #
       # The document's page is exactly {#width_pt} x {#height_pt} with no

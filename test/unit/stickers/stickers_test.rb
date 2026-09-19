@@ -169,6 +169,47 @@ class TestStickers < Minitest::Test
                     'the face must be painted before the content sits on it'
   end
 
+  def test_radial_dividers_ask_for_a_round_card
+    assert_equal :circle, BujoPdf::Stickers::RadialDivider.new(segments: 12).backing_shape
+  end
+
+  def test_other_stickers_default_to_a_rectangular_card
+    assert_equal :rect, BujoPdf::Stickers::GridPatch.new(type: :graph).backing_shape
+    assert_equal :rect, BujoPdf::Stickers::TopThree.new.backing_shape
+  end
+
+  def test_card_adopts_the_shape_its_sticker_asks_for
+    round = BujoPdf::Stickers::Backed.new(
+      sticker: BujoPdf::Stickers::RadialDivider.new(segments: 24)
+    )
+    square = BujoPdf::Stickers::Backed.new(
+      sticker: BujoPdf::Stickers::GridPatch.new(type: :graph)
+    )
+
+    assert_predicate round, :round?
+    refute_predicate square, :round?
+  end
+
+  def test_card_shape_can_be_overridden
+    card = BujoPdf::Stickers::Backed.new(
+      sticker: BujoPdf::Stickers::GridPatch.new(type: :graph), shape: :circle
+    )
+
+    assert_predicate card, :round?
+  end
+
+  def test_round_cards_draw_circles_not_rectangles
+    card = BujoPdf::Stickers::Backed.new(
+      sticker: BujoPdf::Stickers::RadialDivider.new(segments: 12)
+    )
+    mock_pdf = MockPDF.new
+    card.draw(mock_pdf)
+    methods = mock_pdf.calls.map { |c| c[:method] }
+
+    assert_includes methods, :fill_circle
+    refute_includes methods, :fill_rounded_rectangle
+  end
+
   def test_content_is_clipped_to_the_card_face
     # Without a clip, patterns that tile past their frame (the hexagon grid)
     # bleed through the rounded corners, where nothing can paint over them
