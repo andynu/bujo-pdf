@@ -56,15 +56,19 @@ module BujoPdf
         def draw_parallel_lines(angle)
           angle_rad = angle * Math::PI / 180.0
 
-          # For spacing perpendicular to the line direction
-          # We need to adjust based on the angle
-          perp_spacing = if angle == 90
-                           @spacing
-                         else
-                           # For angled lines, spacing is measured perpendicular
-                           # to the line direction
-                           @spacing / Math.sin(60 * Math::PI / 180.0)
-                         end
+          # All three families share one perpendicular spacing.
+          #
+          # They must: the three sets sit 60 degrees apart, so an equilateral
+          # lattice is symmetric under 120-degree rotation and cannot have a
+          # different spacing for one family. Giving the verticals their own
+          # spacing puts the 30/150 crossings at multiples of one distance and
+          # the verticals at multiples of another, so they agree only at the
+          # origin and drift apart across the page.
+          #
+          # With a shared spacing p, the 30 and 150 lines cross at x = -(i+j)p
+          # and the verticals fall at x = -kp, so every crossing lands on a
+          # vertical.
+          perp_spacing = @spacing
 
           # Calculate perpendicular direction (90° from line angle)
           perp_angle = angle_rad + Math::PI / 2
@@ -74,8 +78,12 @@ module BujoPdf
           page_diagonal = Math.sqrt(@width**2 + @height**2)
           num_lines = (page_diagonal / perp_spacing * 2).ceil
 
-          # Calculate starting position (extend beyond page to ensure full coverage)
-          start_offset = -page_diagonal
+          # Snap the starting offset to a whole multiple of the spacing so all
+          # three families are indexed from the same origin. Starting at an
+          # arbitrary -page_diagonal would shift each family by a different
+          # fraction of a cell and break the alignment even when the spacings
+          # match.
+          start_offset = -((page_diagonal / perp_spacing).ceil * perp_spacing)
 
           # Draw each parallel line
           num_lines.times do |i|
