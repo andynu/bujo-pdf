@@ -75,9 +75,21 @@ module BujoPdf
       # A round widget on a square card reads as a sticker of the wrong shape,
       # so a sticker gets to say what outline suits it.
       #
-      # @return [Symbol] :rect or :circle
+      # @return [Symbol] :rect, :circle, or :none
       def backing_shape
         :rect
+      end
+
+      # Whether a card may be put behind this sticker.
+      #
+      # Some stickers are defined by what shows through them. Ornament reads
+      # as ornament because the page fills its negative space; a photo frame
+      # already paints its own border and only works if the window stays
+      # clear. Backing either one replaces the design with a beige plate.
+      #
+      # @return [Boolean]
+      def backable?
+        backing_shape != :none
       end
 
       # Draw the sticker.
