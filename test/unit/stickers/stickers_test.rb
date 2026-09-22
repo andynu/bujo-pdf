@@ -122,12 +122,166 @@ class TestStickers < Minitest::Test
   end
 
   def test_card_slugs_never_collide_with_their_transparent_originals
-    plain = BujoPdf::Stickers::Generator.new(all: true)
+    # Only stickers that accept a card have two versions to keep apart. The
+    # ones that decline (ornament, stamps, photo frames) appear in a --backed
+    # run under their plain name, which is right: there is one version of
+    # them, so there is nothing for a card to overwrite.
     cards = BujoPdf::Stickers::Generator.new(all: true, backed: true)
+                                        .stickers.grep(BujoPdf::Stickers::Backed)
 
-    assert_empty(plain.stickers.map { |s| plain.filename_for(s) } &
-                 cards.stickers.map { |s| cards.filename_for(s) })
-    cards.stickers.each { |c| assert_includes c.slug, '_card' }
+    assert_empty(cards.map(&:filename) &
+                 BujoPdf::Stickers::Generator.default_pack(all: true).map(&:filename))
+    cards.each { |c| assert_includes c.slug, '_card' }
+  end
+
+  def test_a_backed_run_still_contains_the_whole_pack
+    plain = BujoPdf::Stickers::Generator.new(all: true).stickers
+    backed = BujoPdf::Stickers::Generator.new(all: true, backed: true).stickers
+
+    assert_equal plain.length, backed.length
+  end
+
+  def test_stickers_that_decline_a_card_pass_through_wrap_untouched
+    rosette = BujoPdf::Stickers::Rosette.new
+    wrapped = BujoPdf::Stickers::Backed.wrap([rosette])
+
+    refute_predicate rosette, :backable?
+    assert_same rosette, wrapped.first,
+                'a card behind ornament fills the negative space that is the ornament'
+  end
+
+  # Marks - the half of the pack applied to what is already on the page
+
+  def test_every_mark_declines_a_card
+    # These are ink, ornament or an object lying on the page. A card behind
+    # any of them replaces the design with a beige plate.
+    BujoPdf::Stickers::Generator.marks(all: true).each do |sticker|
+      refute_predicate sticker, :backable?, sticker.slug
+    end
+  end
+
+  def test_every_form_still_accepts_a_card
+    BujoPdf::Stickers::Generator.forms(all: true).each do |sticker|
+      assert_predicate sticker, :backable?, sticker.slug
+    end
+  end
+
+  def test_stamp_ink_follows_the_group_not_the_word
+    default = BujoPdf::Stickers::Stamp.all
+    by_word = default.to_h { |s| [s.text, s.ink] }
+
+    assert_equal :oxide, by_word['SUCCESS'], 'a verdict should be loud'
+    assert_equal :charcoal, by_word['PERMANENT RECORD'], 'provenance should be quiet'
+  end
+
+  def test_stamp_alternate_inks_are_available_behind_all
+    default = BujoPdf::Stickers::Stamp.all.map(&:slug)
+    every = BujoPdf::Stickers::Stamp.all(all: true).map(&:slug)
+
+    refute_includes default, 'stamp_success_charcoal'
+    assert_includes every, 'stamp_success_charcoal'
+  end
+
+  def test_blank_stamp_ships_in_both_inks_by_default
+    blanks = BujoPdf::Stickers::Stamp.all.select { |s| s.text.nil? }
+
+    assert_equal BujoPdf::Stickers::Stamp::INKS.keys.sort, blanks.map(&:ink).sort,
+                 'the word is the user\'s, so we cannot pick its register'
+  end
+
+  def test_stamp_is_wide_enough_for_its_word
+    # Width is rounded up to whole boxes from a measured string. If the
+    # rounding ever went the other way the word would touch the frame.
+    BujoPdf::Stickers::Stamp.all.reject { |s| s.text.nil? }.each do |stamp|
+      needed = BujoPdf::Stickers::Stamp.text_width(stamp.text)
+      assert_operator stamp.width_pt, :>, needed, stamp.slug
+    end
+  end
+
+  # Ornament
+
+  def test_rosette_and_guilloche_leave_a_centre_worth_writing_in
+    box = BujoPdf::Stickers::Base::BOX
+
+    BujoPdf::Stickers::Guilloche.all.each do |ring|
+      assert_operator ring.core_radius, :>, box * 2,
+                      "#{ring.slug} leaves no room for a title"
+    end
+  end
+
+  def test_guilloche_curve_stays_inside_its_own_rim
+    ring = BujoPdf::Stickers::Guilloche.new(lobes: 9)
+    cx = ring.width_pt / 2.0
+    cy = ring.height_pt / 2.0
+    radii = ring.send(:curve_points, cx, cy).map do |x, y|
+      Math.sqrt(((x - cx)**2) + ((y - cy)**2))
+    end
+
+    assert_operator radii.max, :<=, ring.outer_radius + 0.01, 'curve escapes the page'
+    assert_in_delta ring.core_radius, radii.min, 0.5,
+                    'the open middle should be exactly what the curve leaves'
+  end
+
+  def test_ornament_uses_weight_contrast
+    # A single hairline repeated twelve times reads as a spirograph; iron is
+    # legible because its members are visibly different thicknesses.
+    weights = BujoPdf::Stickers::Ornament::WEIGHTS.values
+
+    assert_equal weights.sort.reverse, weights
+    assert_operator weights.first / weights.last, :>, 3
+  end
+
+  def test_divider_gap_is_centred_and_wide_enough_to_write_in
+    BujoPdf::Stickers::Divider.all.each do |divider|
+      start, width = divider.gap
+
+      assert_in_delta divider.width_boxes / 2.0, start + (width / 2.0), 0.001
+      assert_operator width, :>=, 5, 'a gap under 5 boxes crowds a short word'
+    end
+  end
+
+  # Objects
+
+  def test_photo_frame_caption_strip_is_deeper_than_its_other_borders
+    # The deep bottom edge is the entire reason the shape reads as instant
+    # film rather than as a picture frame.
+    assert_operator BujoPdf::Stickers::PhotoFrame::CAPTION, :>,
+                    BujoPdf::Stickers::PhotoFrame::TOP * 2
+  end
+
+  def test_photo_frame_window_sits_inside_the_frame
+    BujoPdf::Stickers::PhotoFrame.all.each do |frame|
+      col, row, cols, rows = frame.window
+
+      assert_operator col, :>, 0, frame.slug
+      assert_operator row, :>, 0, frame.slug
+      assert_operator col + cols, :<, frame.width_boxes, frame.slug
+      assert_operator row + rows, :<, frame.height_boxes, frame.slug
+    end
+  end
+
+  def test_venn_circles_overlap_and_stay_on_the_sticker
+    BujoPdf::Stickers::Venn.all.each do |venn|
+      radius = venn.send(:bx, BujoPdf::Stickers::Venn::RADIUS)
+      centres = venn.centres
+
+      centres.combination(2) do |a, b|
+        gap = Math.sqrt(((a[0] - b[0])**2) + ((a[1] - b[1])**2))
+        assert_operator gap, :<, radius * 2, "#{venn.slug}: circles do not overlap"
+        assert_operator gap, :>, radius, "#{venn.slug}: circles nearly coincide"
+      end
+
+      centres.each do |x, y|
+        assert_operator x - radius, :>=, -0.01, venn.slug
+        assert_operator x + radius, :<=, venn.width_pt + 0.01, venn.slug
+        assert_operator y - radius, :>=, -0.01, venn.slug
+        assert_operator y + radius, :<=, venn.height_pt + 0.01, venn.slug
+      end
+    end
+  end
+
+  def test_venn_rejects_counts_it_cannot_draw
+    assert_raises(ArgumentError) { BujoPdf::Stickers::Venn.new(circles: 4) }
   end
 
   def test_backed_generator_reports_itself

@@ -36,10 +36,16 @@ module BujoPdf
 
       # Wrap each of the given stickers in a card.
       #
+      # Stickers that decline a card (see {Base#backable?}) pass through
+      # untouched, so a --backed run still contains the whole pack. Those come
+      # out byte-identical to their plain versions, which is correct: there is
+      # only one version of them, so there is nothing for a card to collide
+      # with.
+      #
       # @param stickers [Array<Base>]
-      # @return [Array<Backed>]
+      # @return [Array<Base>] cards, plus any sticker that declined one
       def self.wrap(stickers)
-        stickers.map { |sticker| new(sticker: sticker) }
+        stickers.map { |sticker| sticker.backable? ? new(sticker: sticker) : sticker }
       end
 
       attr_reader :inner, :gutter, :shape

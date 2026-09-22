@@ -10,6 +10,17 @@ require_relative 'eisenhower'
 require_relative 'habit_strip'
 require_relative 'top_three'
 require_relative 'timeline_ribbon'
+require_relative 'stamp'
+require_relative 'postmark'
+require_relative 'rosette'
+require_relative 'cartouche'
+require_relative 'guilloche'
+require_relative 'photo_frame'
+require_relative 'photo_corners'
+require_relative 'flag_tag'
+require_relative 'colophon'
+require_relative 'venn'
+require_relative 'divider'
 
 module BujoPdf
   module Stickers
@@ -76,16 +87,49 @@ module BujoPdf
 
       # The standard sticker pack.
       #
+      # Ordered as two halves, because they answer to different rules. The
+      # forms come first: widgets you commit to before writing, which earn
+      # their place by placing many elements precisely. The marks come second:
+      # stamps, ornament and objects, which earn their place by being shapes
+      # you cannot draw cleanly by hand, and which ask nothing of you before
+      # you place them.
+      #
       # @param all [Boolean] Include stickers that are off by default
       # @return [Array<Base>]
       def self.default_pack(all: false)
+        forms(all: all) + marks(all: all)
+      end
+
+      # Widgets you fill in.
+      #
+      # @param all [Boolean] Include stickers that are off by default
+      # @return [Array<Base>]
+      def self.forms(all: false)
         GridPatch.all(all: all) +
           RadialDivider.all +
           HourAxis.all +
           Eisenhower.all +
           HabitStrip.all +
           TopThree.all +
-          TimelineRibbon.all
+          TimelineRibbon.all +
+          Venn.all
+      end
+
+      # Marks you apply to what is already there.
+      #
+      # @param all [Boolean] Include stickers that are off by default
+      # @return [Array<Base>]
+      def self.marks(all: false)
+        Stamp.all(all: all) +
+          Postmark.all +
+          Rosette.all +
+          Cartouche.all +
+          Guilloche.all +
+          Divider.all +
+          Colophon.all +
+          FlagTag.all +
+          PhotoFrame.all +
+          PhotoCorners.all
       end
 
       # Check that the PNG converter is present.
