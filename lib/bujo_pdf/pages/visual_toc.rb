@@ -71,8 +71,7 @@ module BujoPdf
         set_destination('visual_toc')
         @year = context[:year]
         @total_weeks = context[:total_weeks] || 52
-
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       def render
@@ -86,7 +85,7 @@ module BujoPdf
       def draw_header
         header = @grid_system.rect(0, 0, COLS, 3)
         @pdf.font 'Helvetica-Bold', size: 18
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        @pdf.fill_color color_text_black
         @pdf.text_box 'Planner Sections',
                       at: [header[:x], header[:y]],
                       width: header[:width],
@@ -115,7 +114,7 @@ module BujoPdf
         thumbnail_path = thumbnail_file(section[:name])
 
         # Draw thumbnail border
-        @pdf.stroke_color Styling::Colors.BORDERS
+        @pdf.stroke_color color_borders
         box_rect = @grid_system.rect(col, row, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT - LABEL_HEIGHT)
         @pdf.stroke_rectangle([box_rect[:x], box_rect[:y]], box_rect[:width], box_rect[:height])
 
@@ -131,13 +130,13 @@ module BujoPdf
           # Draw placeholder
           @pdf.fill_color 'F0F0F0'
           @pdf.fill_rectangle([box_rect[:x], box_rect[:y]], box_rect[:width], box_rect[:height])
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
+          @pdf.fill_color color_text_black
         end
 
         # Draw label
         label_rect = @grid_system.rect(col, row + THUMBNAIL_HEIGHT - LABEL_HEIGHT, THUMBNAIL_WIDTH, LABEL_HEIGHT)
         @pdf.font 'Helvetica', size: 8
-        @pdf.fill_color Styling::Colors.TEXT_BLACK
+        @pdf.fill_color color_text_black
         @pdf.text_box section[:label],
                       at: [label_rect[:x], label_rect[:y]],
                       width: label_rect[:width],

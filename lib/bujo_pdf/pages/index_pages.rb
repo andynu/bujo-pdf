@@ -81,8 +81,7 @@ module BujoPdf
 
         # Set named destination for this index page
         set_destination("index_#{@index_page_num}")
-
-        use_layout :full_page
+        # No use_layout needed: inherits chrome: false from PDF definition
       end
 
       # Render the index page with numbered lines in two columns

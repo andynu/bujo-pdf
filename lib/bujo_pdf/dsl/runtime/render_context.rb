@@ -66,6 +66,12 @@ module BujoPdf
     # @return [PageSetContext::Context, PageSetContext::NullContext] Page set context when inside page_set block
     attr_accessor :set
 
+    # @return [PdfDSL::ChromeBuilder, nil] PDF-level chrome configuration
+    attr_reader :chrome_config
+
+    # @return [Hash<Symbol, PdfDSL::SidebarDefinition>, nil] PDF-local sidebar definitions
+    attr_reader :sidebar_definitions
+
     # Initialize a new RenderContext.
     #
     # @param page_key [Symbol] Page identifier (:seasonal, :week_42, etc.)
@@ -78,10 +84,13 @@ module BujoPdf
     # @param total_pages [Integer, nil] Total pages in document
     # @param date_config [DateConfiguration, nil] Date configuration
     # @param event_store [CalendarIntegration::EventStore, nil] Event store
+    # @param chrome_config [PdfDSL::ChromeBuilder, nil] PDF-level chrome configuration
+    # @param sidebar_definitions [Hash<Symbol, PdfDSL::SidebarDefinition>, nil] PDF-local sidebar definitions
     # @param data [Hash] Additional context data
     def initialize(page_key:, page_number:, year:,
                    week_num: nil, week_start: nil, week_end: nil,
-                   total_weeks: nil, total_pages: nil, date_config: nil, event_store: nil, **data)
+                   total_weeks: nil, total_pages: nil, date_config: nil, event_store: nil,
+                   chrome_config: nil, sidebar_definitions: nil, **data)
       @page_key = page_key
       @page_number = page_number
       @year = year
@@ -92,6 +101,8 @@ module BujoPdf
       @total_pages = total_pages
       @date_config = date_config
       @event_store = event_store
+      @chrome_config = chrome_config
+      @sidebar_definitions = sidebar_definitions
       @data = data
       @set = PageSetContext::NullContext.new
     end
@@ -179,6 +190,8 @@ module BujoPdf
       when :total_pages then @total_pages
       when :date_config then @date_config
       when :event_store then @event_store
+      when :chrome_config then @chrome_config
+      when :sidebar_definitions then @sidebar_definitions
       else @data[key]
       end
     end
@@ -203,7 +216,9 @@ module BujoPdf
         total_weeks: @total_weeks,
         total_pages: @total_pages,
         date_config: @date_config,
-        event_store: @event_store
+        event_store: @event_store,
+        chrome_config: @chrome_config,
+        sidebar_definitions: @sidebar_definitions
       }.merge(@data)
     end
   end

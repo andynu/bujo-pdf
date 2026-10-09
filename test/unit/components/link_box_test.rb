@@ -10,15 +10,28 @@ class TestLinkBox < Minitest::Test
     @canvas = BujoPdf::Canvas.new(@pdf, @grid)
   end
 
-  def test_initialize_with_required_params
+  def test_initialize_with_grid_coords
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "w42",
+      dest: "week_42",
       col: 0,
       row: 0,
       width: 2,
-      height: 1,
-      text: "w42",
-      dest: "week_42"
+      height: 1
+    )
+    link_box.render
+  end
+
+  def test_initialize_with_point_coords
+    link_box = BujoPdf::Components::LinkBox.new(
+      canvas: @canvas,
+      text: "Tab",
+      dest: "tab_dest",
+      pt_x: 100.0,
+      pt_y: 500.0,
+      pt_width: 50.0,
+      pt_height: 20.0
     )
     link_box.render
   end
@@ -27,12 +40,12 @@ class TestLinkBox < Minitest::Test
     # Using dimensions that work with rotated text (width/height suitable for rotation)
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "Year",
+      dest: "seasonal",
       col: 42,
       row: 0,
       width: 1,
       height: 4,
-      text: "Year",
-      dest: "seasonal",
       current: true,
       rotation: -90,
       font_size: 8,
@@ -49,12 +62,12 @@ class TestLinkBox < Minitest::Test
 
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: canvas,
+      text: "w42",
+      dest: "week_42",
       col: 0,
       row: 0,
       width: 2,
       height: 1,
-      text: "w42",
-      dest: "week_42",
       current: false
     )
     link_box.render
@@ -75,12 +88,12 @@ class TestLinkBox < Minitest::Test
 
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: canvas,
+      text: "2025",
+      dest: "seasonal",
       col: 0,
       row: 0,
       width: 2,
       height: 1,
-      text: "2025",
-      dest: "seasonal",
       current: true
     )
     link_box.render
@@ -98,12 +111,12 @@ class TestLinkBox < Minitest::Test
 
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: canvas,
+      text: "Year",
+      dest: "seasonal",
       col: 42,
       row: 2,
       width: 1,
       height: 4,
-      text: "Year",
-      dest: "seasonal",
       rotation: -90
     )
     link_box.render
@@ -119,12 +132,12 @@ class TestLinkBox < Minitest::Test
 
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: canvas,
+      text: "w42",
+      dest: "week_42",
       col: 0,
       row: 0,
       width: 2,
-      height: 1,
-      text: "w42",
-      dest: "week_42"
+      height: 1
     )
     link_box.render
 
@@ -133,13 +146,10 @@ class TestLinkBox < Minitest::Test
     assert_equal "week_42", link_call[:kwargs][:Dest], "Expected destination week_42"
   end
 
-  def test_render_with_point_overrides
+  def test_render_with_point_coords_only
+    # Test that pt_ coordinates work without grid coordinates
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
-      col: 0,
-      row: 0,
-      width: 2,
-      height: 1,
       text: "Test",
       dest: "test_dest",
       pt_x: 100.0,
@@ -153,12 +163,12 @@ class TestLinkBox < Minitest::Test
   def test_render_with_real_prawn_document
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "w42",
+      dest: "week_42",
       col: 0,
       row: 0,
       width: 2,
       height: 1,
-      text: "w42",
-      dest: "week_42",
       current: false,
       rotation: 0,
       font_size: 8,
@@ -200,6 +210,11 @@ class TestLinkBoxMixin < Minitest::Test
     assert component.respond_to?(:link_box), "Expected link_box method"
   end
 
+  def test_mixin_provides_link_box_pt_method
+    component = TestComponent.new
+    assert component.respond_to?(:link_box_pt), "Expected link_box_pt method"
+  end
+
   def test_mixin_link_box_with_minimal_args
     component = TestComponent.new
     component.link_box(0, 0, 2, 1, "Test", dest: "test_dest")
@@ -221,6 +236,28 @@ class TestLinkBoxMixin < Minitest::Test
     component.link_box(0, 0, 2, 1, "Test", dest: "test_dest")
     # Should not raise - creates canvas from pdf and grid
   end
+
+  def test_mixin_link_box_pt_with_minimal_args
+    component = TestComponent.new
+    component.link_box_pt(100.0, 500.0, 50.0, 20.0, "Test", dest: "test_dest")
+  end
+
+  def test_mixin_link_box_pt_with_all_options
+    component = TestComponent.new
+    component.link_box_pt(100.0, 500.0, 50.0, 20.0, "Test",
+                          dest: "test_dest",
+                          current: true,
+                          rotation: -90,
+                          font_size: 10,
+                          inset: 4,
+                          color: 'FF0000')
+  end
+
+  def test_mixin_link_box_pt_creates_canvas_if_not_present
+    component = TestComponentWithoutCanvas.new
+    component.link_box_pt(100.0, 500.0, 50.0, 20.0, "Test", dest: "test_dest")
+    # Should not raise - creates canvas from pdf and grid
+  end
 end
 
 class TestLinkBoxEdgeCases < Minitest::Test
@@ -233,12 +270,12 @@ class TestLinkBoxEdgeCases < Minitest::Test
   def test_zero_inset
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "Test",
+      dest: "test",
       col: 0,
       row: 0,
       width: 2,
       height: 1,
-      text: "Test",
-      dest: "test",
       inset: 0
     )
     link_box.render
@@ -247,12 +284,12 @@ class TestLinkBoxEdgeCases < Minitest::Test
   def test_small_box
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "X",
+      dest: "test",
       col: 0,
       row: 0,
       width: 1,
-      height: 1,
-      text: "X",
-      dest: "test"
+      height: 1
     )
     link_box.render
   end
@@ -260,12 +297,12 @@ class TestLinkBoxEdgeCases < Minitest::Test
   def test_large_box
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "Large Box",
+      dest: "test",
       col: 0,
       row: 0,
       width: 10,
-      height: 5,
-      text: "Large Box",
-      dest: "test"
+      height: 5
     )
     link_box.render
   end
@@ -273,12 +310,12 @@ class TestLinkBoxEdgeCases < Minitest::Test
   def test_fractional_dimensions
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "Fractional",
+      dest: "test",
       col: 0.5,
       row: 0.5,
       width: 2.5,
-      height: 1.5,
-      text: "Fractional",
-      dest: "test"
+      height: 1.5
     )
     link_box.render
   end
@@ -286,12 +323,12 @@ class TestLinkBoxEdgeCases < Minitest::Test
   def test_long_text
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "Very Long Text That May Overflow",
+      dest: "test",
       col: 0,
       row: 0,
       width: 2,
-      height: 1,
-      text: "Very Long Text That May Overflow",
-      dest: "test"
+      height: 1
     )
     link_box.render
   end
@@ -299,12 +336,12 @@ class TestLinkBoxEdgeCases < Minitest::Test
   def test_empty_text
     link_box = BujoPdf::Components::LinkBox.new(
       canvas: @canvas,
+      text: "",
+      dest: "test",
       col: 0,
       row: 0,
       width: 2,
-      height: 1,
-      text: "",
-      dest: "test"
+      height: 1
     )
     link_box.render
   end

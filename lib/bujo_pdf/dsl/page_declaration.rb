@@ -14,18 +14,23 @@ module BujoPdf
     #   decl.params     # => { week: week_obj }
     #
     class PageDeclaration
-      attr_reader :type, :params, :id, :outline_title
+      attr_reader :type, :params, :id, :outline_title, :chrome
 
       # Initialize a new page declaration.
       #
       # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       # @param id [Symbol, nil] Optional explicit page ID
       # @param outline [String, nil] Optional outline entry title
+      # @param chrome [false, Hash, nil] Per-page chrome override
+      #   - nil: Inherit PDF-level chrome
+      #   - false: Full opt-out, no sidebars (full page)
+      #   - Hash: Merge with PDF chrome (e.g., { right: false } disables right)
       # @param params [Hash] Parameters to pass to the page
-      def initialize(type, id: nil, outline: nil, **params)
+      def initialize(type, id: nil, outline: nil, chrome: nil, **params)
         @type = type
         @id = id
         @outline_title = outline
+        @chrome = chrome
         @params = params
       end
 

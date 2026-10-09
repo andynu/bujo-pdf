@@ -10,9 +10,20 @@ class TestRightSidebar < Minitest::Test
     @canvas = BujoPdf::Canvas.new(@pdf, @grid)
   end
 
+  # ============================================
+  # Basic Initialization Tests
+  # ============================================
+
   def test_initialize_with_defaults
     sidebar = BujoPdf::Components::RightSidebar.new(canvas: @canvas)
     sidebar.render
+  end
+
+  def test_tab_sidebar_alias_works
+    # TabSidebar is the primary class, RightSidebar is the alias
+    sidebar = BujoPdf::Components::TabSidebar.new(canvas: @canvas)
+    sidebar.render
+    assert_equal BujoPdf::Components::TabSidebar, BujoPdf::Components::RightSidebar
   end
 
   def test_initialize_with_top_tabs
@@ -61,11 +72,11 @@ class TestRightSidebar < Minitest::Test
   end
 
   def test_default_constants
-    assert_equal 42, BujoPdf::Components::RightSidebar::DEFAULT_SIDEBAR_COL
-    assert_equal 8, BujoPdf::Components::RightSidebar::FONT_SIZE
-    assert_equal 4, BujoPdf::Components::RightSidebar::TAB_GAP_PT
-    assert_equal 6, BujoPdf::Components::RightSidebar::TAB_PADDING_PT
-    assert_equal 14, BujoPdf::Components::RightSidebar::START_Y_OFFSET_PT
+    assert_equal 42, BujoPdf::Components::TabSidebar::DEFAULT_SIDEBAR_COL
+    assert_equal 8, BujoPdf::Components::TabSidebar::FONT_SIZE
+    assert_equal 4, BujoPdf::Components::TabSidebar::TAB_GAP_PT
+    assert_equal 6, BujoPdf::Components::TabSidebar::TAB_PADDING_PT
+    assert_equal 14, BujoPdf::Components::TabSidebar::START_Y_OFFSET_PT
   end
 
   def test_render_draws_tab_backgrounds
@@ -259,5 +270,30 @@ class TestRightSidebar < Minitest::Test
       ]
     )
     sidebar.render
+  end
+
+  # ============================================
+  # Sidebar Registry Integration Tests
+  # ============================================
+
+  def test_tab_sidebar_is_registered
+    assert BujoPdf::Sidebars::SidebarRegistry.registered?(:tab_sidebar)
+    assert_equal BujoPdf::Components::TabSidebar,
+                 BujoPdf::Sidebars::SidebarRegistry.lookup(:tab_sidebar)
+  end
+
+  def test_right_sidebar_alias_is_registered
+    assert BujoPdf::Sidebars::SidebarRegistry.registered?(:right_sidebar)
+    assert_equal BujoPdf::Components::TabSidebar,
+                 BujoPdf::Sidebars::SidebarRegistry.lookup(:right_sidebar)
+  end
+
+  def test_sidebar_type_is_tab_sidebar
+    assert_equal :tab_sidebar, BujoPdf::Components::TabSidebar.sidebar_type
+  end
+
+  def test_extends_sidebar_base
+    assert BujoPdf::Components::TabSidebar < BujoPdf::SidebarBase,
+           "TabSidebar should extend SidebarBase"
   end
 end

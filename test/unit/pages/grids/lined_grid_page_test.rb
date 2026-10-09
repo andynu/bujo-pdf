@@ -38,9 +38,11 @@ class TestLinedGridPage < Minitest::Test
 
   def test_uses_full_page_layout
     page = BujoPdf::Pages::Grids::LinedGridPage.new(@pdf, @context)
-    page.send(:setup)
+    page.generate
 
+    # Layout is created during generate
     assert page.instance_variable_get(:@layout)
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.layout
   end
 
   def test_render_calls_all_sections

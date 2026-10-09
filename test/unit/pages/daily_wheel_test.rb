@@ -41,10 +41,13 @@ class TestDailyWheel < Minitest::Test
 
   def test_setup_uses_full_page_layout
     page = BujoPdf::Pages::DailyWheel.new(@pdf, @context)
-    page.send(:setup)
+    page.generate  # Layout is applied in generate(), not setup()
 
-    layout = page.instance_variable_get(:@new_layout)
+    layout = page.instance_variable_get(:@layout)
     assert layout, "Expected layout to be set"
+    # Full page layout is now ConfigurableLayout with no chrome
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, layout
+    assert_empty layout.chrome_spec.active_regions
   end
 
   def test_constants_are_defined

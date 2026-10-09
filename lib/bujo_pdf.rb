@@ -25,6 +25,7 @@ require_relative 'bujo_pdf/dsl/runtime/page_ref'
 require_relative 'bujo_pdf/dsl/runtime/page_set'
 require_relative 'bujo_pdf/dsl/runtime/page_set_context'
 require_relative 'bujo_pdf/week'
+require_relative 'bujo_pdf/week_context'
 require_relative 'bujo_pdf/dsl/runtime/render_context'
 require_relative 'bujo_pdf/dsl/runtime/component_context'
 require_relative 'bujo_pdf/dsl/configuration/collections'
@@ -33,7 +34,10 @@ require_relative 'bujo_pdf/dsl/configuration/calendars'
 
 # Load base classes
 require_relative 'bujo_pdf/base/component'
-require_relative 'bujo_pdf/base/layout'
+require_relative 'bujo_pdf/base/sidebar_base'
+
+# Load sidebar registry (after SidebarBase, before concrete sidebars)
+require_relative 'bujo_pdf/sidebars/sidebar_registry'
 
 # Load components (position-based components now inherit from Component)
 require_relative 'bujo_pdf/components/fieldset'
@@ -62,10 +66,14 @@ require_relative 'bujo_pdf/components/layout_helpers'
 require_relative 'bujo_pdf/components/link_box'
 require_relative 'bujo_pdf/components/all'
 
+# Load sidebars (after Components::All is available)
+require_relative 'bujo_pdf/sidebars/inline_sidebar'
+
 # Load layouts
 require_relative 'bujo_pdf/layouts/base_layout'
+require_relative 'bujo_pdf/layouts/chrome_spec'
+require_relative 'bujo_pdf/layouts/configurable_layout'
 require_relative 'bujo_pdf/layouts/full_page_layout'
-require_relative 'bujo_pdf/layouts/standard_with_sidebars_layout'
 require_relative 'bujo_pdf/layouts/layout_factory'
 
 # Load page base classes
@@ -94,6 +102,7 @@ require_relative 'bujo_pdf/pages/daily_wheel'
 require_relative 'bujo_pdf/pages/year_wheel'
 require_relative 'bujo_pdf/pages/grid_showcase'
 require_relative 'bujo_pdf/pages/grids_overview'
+require_relative 'bujo_pdf/pages/monthly_overview'
 
 # Load grid page classes
 require_relative 'bujo_pdf/pages/grids/dot_grid_page'
@@ -108,6 +117,9 @@ require_relative 'bujo_pdf/pages/all'
 
 # Load PDF DSL (depends on everything above)
 require_relative 'bujo_pdf/pdf_dsl'
+
+# Sticker generation (standalone widget PNGs for note-app sticker libraries)
+require_relative 'bujo_pdf/stickers'
 
 # Module for namespace
 module BujoPdf

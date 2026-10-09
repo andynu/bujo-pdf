@@ -57,6 +57,41 @@ class TestPageDeclaration < Minitest::Test
     assert decl.matches?(:weekly, week_num: 12, year: 2025)
     refute decl.matches?(:weekly, week_num: 13)
   end
+
+  # Chrome parameter tests
+
+  def test_chrome_nil_by_default
+    decl = BujoPdf::PdfDSL::PageDeclaration.new(:seasonal_calendar, year: 2025)
+
+    assert_nil decl.chrome
+  end
+
+  def test_chrome_false_for_full_opt_out
+    decl = BujoPdf::PdfDSL::PageDeclaration.new(:cover, chrome: false)
+
+    assert_equal false, decl.chrome
+  end
+
+  def test_chrome_hash_for_partial_override
+    decl = BujoPdf::PdfDSL::PageDeclaration.new(:notes, chrome: { right: false })
+
+    assert_instance_of Hash, decl.chrome
+    assert_equal false, decl.chrome[:right]
+  end
+
+  def test_chrome_hash_with_sidebar_replacement
+    decl = BujoPdf::PdfDSL::PageDeclaration.new(:special, chrome: { left: :month_sidebar })
+
+    assert_equal :month_sidebar, decl.chrome[:left]
+  end
+
+  def test_chrome_not_in_params
+    decl = BujoPdf::PdfDSL::PageDeclaration.new(:notes, chrome: false, year: 2025)
+
+    # chrome should not appear in params
+    refute decl.params.key?(:chrome)
+    assert_equal({ year: 2025 }, decl.params)
+  end
 end
 
 class TestGroupDeclaration < Minitest::Test

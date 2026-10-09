@@ -161,7 +161,7 @@ module BujoPdf
       end
 
       def draw_grid_lines
-        @pdf.stroke_color Styling::Colors.BORDERS
+        @pdf.stroke_color color_borders
         @pdf.line_width 0.5
 
         grid_top = content_area[:row] + HEADER_HEIGHT

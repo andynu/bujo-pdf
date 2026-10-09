@@ -16,6 +16,8 @@ module BujoPdf
     #   erase_dots(2, 5, 10, 3)   # Erase multiple rows
     #
     class EraseDots < Component
+      include Styling::Colors
+
       # Mixin providing the erase_dots verb for pages and components
       #
       # Include via Components::All in Pages::Base, or directly in components.
@@ -58,23 +60,17 @@ module BujoPdf
       #
       # @return [void]
       def render
-        require_relative '../themes/theme_registry'
-
-        bg_color = BujoPdf::Themes.current[:colors][:background]
         radius = Styling::Grid::DOT_RADIUS + 0.5 # Slightly larger to fully cover
 
-        pdf.fill_color bg_color
-
-        (@row..(@row + @height)).each do |r|
-          dot_y = grid.y(r)
-          (@col..(@col + @width)).each do |c|
-            dot_x = grid.x(c)
-            pdf.fill_circle [dot_x, dot_y], radius
+        with_fill_color(color_background) do
+          (@row..(@row + @height)).each do |r|
+            dot_y = grid.y(r)
+            (@col..(@col + @width)).each do |c|
+              dot_x = grid.x(c)
+              pdf.fill_circle [dot_x, dot_y], radius
+            end
           end
         end
-
-        # Restore default fill color
-        pdf.fill_color '000000'
       end
     end
   end
