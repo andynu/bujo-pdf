@@ -22,6 +22,7 @@ SimpleCov.start do
 end
 
 require 'minitest/autorun'
+require 'minitest/mock'
 require 'minitest/reporters'
 
 # Use nicer test output formatting
