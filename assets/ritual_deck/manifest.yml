@@ -27,3 +27,9 @@ pages:
   pausing:
     page: 8
     title: The Pausing Page
+  feelings_wheel:
+    page: 9
+    title: The Feelings Wheel
+  mood_grid:
+    page: 10
+    title: The Mood Meter
