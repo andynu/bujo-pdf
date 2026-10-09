@@ -3,6 +3,7 @@
 require 'prawn'
 require 'prawn/templates'
 require 'date'
+require_relative 'bujo_pdf/utilities/template_page_import'
 
 # Load version first
 require_relative 'bujo_pdf/version'

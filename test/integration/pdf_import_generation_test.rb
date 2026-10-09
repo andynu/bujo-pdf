@@ -125,6 +125,19 @@ class TestPdfImportGeneration < Minitest::Test
     end
   end
 
+  # Page dictionaries are written uncompressed, so unreachable copies of the
+  # source deck's other pages show up as extra /Type /Page objects.
+  def test_unused_pages_of_the_source_deck_are_not_copied
+    with_deck do |_dir, manifest|
+      pdf = BujoPdf::PdfDSL.generate(year: 2025) do
+        page(id: :front) { body { h1(2, 1, 'Front') } }
+        import_page(import_pdf(manifest), :first)
+      end
+
+      assert_equal 2, pdf.render.scan(%r{/Type /Page\b}).size
+    end
+  end
+
   def test_imported_page_cannot_be_first
     with_deck do |_dir, manifest|
       error = assert_raises(ArgumentError) do
