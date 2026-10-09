@@ -66,9 +66,11 @@ module BujoPdf
         { label: "Grids", dest: [:grid_showcase, :grids_overview, :grid_dot, :grid_graph, :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon] }
       ].freeze
 
-      def initialize(canvas:, top_tabs: nil, bottom_tabs: [], sidebar_col: DEFAULT_SIDEBAR_COL, page_context: nil)
+      # @param tabs [Array<PdfDSL::ChromeBuilder::TabConfig>, nil] Tabs declared in a
+      #   recipe's chrome block; used when top_tabs is not given
+      def initialize(canvas:, top_tabs: nil, tabs: nil, bottom_tabs: [], sidebar_col: DEFAULT_SIDEBAR_COL, page_context: nil)
         super(canvas: canvas, page_context: page_context)
-        @top_tabs = top_tabs || DEFAULT_TOP_TABS
+        @top_tabs = top_tabs || tabs&.map { |tab| { label: tab.label, dest: tab.dest } } || DEFAULT_TOP_TABS
         @bottom_tabs = bottom_tabs
         @sidebar_col = sidebar_col
       end
