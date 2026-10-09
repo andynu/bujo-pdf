@@ -1,5 +1,6 @@
 *.pdf
 !examples/*.pdf
+!assets/ritual_deck/*.pdf
 test_*.rb
 vendor/
 gems/
