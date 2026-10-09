@@ -221,6 +221,11 @@ module BujoPdf
       # @param base_context [Hash] Base render context
       def render_pages(pdf, pages, base_context)
         pages.each_with_index do |page_decl, index|
+          if page_decl.imported?
+            render_imported_page(pdf, page_decl, index)
+            next
+          end
+
           # Start new page for all but first
           pdf.start_new_page if index > 0
 
@@ -230,6 +235,23 @@ module BujoPdf
           # Create and render page
           render_page(pdf, page_decl, page_context)
         end
+      end
+
+      # Insert a page of an external PDF as the next page of the document.
+      #
+      # The document's first page already exists when rendering starts, so an
+      # imported page cannot take that slot.
+      #
+      # @param pdf [Prawn::Document] The PDF document
+      # @param page_decl [ImportedPageDeclaration] The imported page declaration
+      # @param index [Integer] Page index (0-based)
+      def render_imported_page(pdf, page_decl, index)
+        if index.zero?
+          raise ArgumentError, "imported page '#{page_decl.id}' cannot be the first page; declare a page before it"
+        end
+
+        pdf.start_new_page(template: page_decl.pdf_path, template_page: page_decl.template_page)
+        pdf.add_dest(page_decl.destination_key, pdf.dest_xyz(0, pdf.bounds.top))
       end
 
       # Build context for a specific page.

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'prawn'
+require 'prawn/templates'
 require 'date'
 
 # Load version first
