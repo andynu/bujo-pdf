@@ -37,6 +37,28 @@ class TestRightSidebar < Minitest::Test
     sidebar.render
   end
 
+  def tab_link_destinations
+    reader = PDF::Reader.new(StringIO.new(@pdf.render))
+    reader.pages.first.attributes[:Annots].map { |ref| reader.objects.deref(ref)[:Dest] }
+  end
+
+  def test_tabs_from_the_chrome_dsl_replace_the_default_tabs
+    tab_config = BujoPdf::PdfDSL::ChromeBuilder::TabConfig
+    tabs = [
+      tab_config.new(label: 'Year', dest: :seasonal, options: {}),
+      tab_config.new(label: 'Index', dest: :index_1, options: {})
+    ]
+    BujoPdf::Components::TabSidebar.new(canvas: @canvas, tabs: tabs).render
+
+    assert_equal %w[seasonal index_1], tab_link_destinations
+  end
+
+  def test_default_tabs_render_when_none_are_given
+    BujoPdf::Components::TabSidebar.new(canvas: @canvas).render
+
+    assert_equal 6, tab_link_destinations.length
+  end
+
   def test_initialize_with_bottom_tabs
     sidebar = BujoPdf::Components::RightSidebar.new(
       canvas: @canvas,
