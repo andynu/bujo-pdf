@@ -259,6 +259,16 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_equal :earth, context2.theme_name
   end
 
+  # Sidebar tabs
+
+  def test_sidebar_has_an_index_tab_cycling_both_index_pages
+    tabs = evaluate_recipe(year: 2025).chrome_config.right_config.tabs
+    index_tab = tabs.find { |tab| tab.label == 'Index' }
+
+    assert_equal %i[index_1 index_2], index_tab.dest
+    assert_equal %w[Year Index], tabs.first(2).map(&:label)
+  end
+
   # Ritual deck (opt-in)
 
   def test_rituals_are_off_by_default
