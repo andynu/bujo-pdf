@@ -127,6 +127,68 @@ module BujoPdf
              start_num: base_entry + LINES_PER_COLUMN + 1,
              show_page_box: true,
              row_height: 2)
+
+        draw_prefilled_entries(left, right)
+      end
+
+      # Print entries into the first lines of index page 1, each linked to its page.
+      #
+      # Entries come from the page's `prefill` param, as hashes with :title and
+      # :dest (a page id). The page box shows the destination's page number when
+      # a link resolver is available.
+      #
+      # @param left [GridRect] Left column rectangle
+      # @param right [GridRect] Right column rectangle
+      # @return [void]
+      def draw_prefilled_entries(left, right)
+        entries = prefilled_entries
+        entries.each_with_index do |entry, index|
+          column = index < LINES_PER_COLUMN ? left : right
+          draw_prefilled_entry(entry, column, CONTENT_START_ROW + ((index % LINES_PER_COLUMN) * 2))
+        end
+      end
+
+      def prefilled_entries
+        return [] unless @index_page_num == 1
+
+        entries = context[:prefill] || []
+        if entries.length > ENTRIES_PER_PAGE
+          raise ArgumentError, "#{entries.length} prefilled index entries do not fit on one page (max #{ENTRIES_PER_PAGE})"
+        end
+
+        entries
+      end
+
+      def draw_prefilled_entry(entry, column, row)
+        text_col = column.col + Components::List::NUMBER_COLUMN_WIDTH + 1
+        box_col = column.col + column.width - Components::List::PAGE_BOX_WIDTH
+
+        text(text_col, row + 1, entry[:title], size: 10, width: box_col - text_col, height: 1)
+
+        page_number = destination_page_number(entry[:dest])
+        if page_number
+          text(box_col, row + 1, page_number.to_s, size: 9, align: :center,
+                                                   width: Components::List::PAGE_BOX_WIDTH, height: 1)
+        end
+
+        link_row(column.col, row, column.width, entry[:dest])
+      end
+
+      def destination_page_number(dest)
+        resolver = context[:link_resolver]
+        return nil unless resolver
+
+        info = resolver.registry.resolve_key(dest.to_s)
+        raise ArgumentError, "index entry points at undeclared page :#{dest}" unless info
+
+        info.page_number
+      end
+
+      def link_row(col, row, width, dest)
+        left = @grid.x(col)
+        top = @grid.y(row)
+        @pdf.link_annotation([left, top - @grid.height(2), left + @grid.width(width), top],
+                             Dest: dest.to_s, Border: [0, 0, 0])
       end
 
       # Draw vertical divider between columns
