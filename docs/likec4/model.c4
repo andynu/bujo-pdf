@@ -1,0 +1,262 @@
+// BujoPDF Architecture Model
+// LikeC4 diagram sources for the bujo-pdf planner generator
+
+specification {
+  element person {
+    style {
+      shape person
+      color green
+    }
+  }
+  element softwareSystem {
+    style {
+      shape rectangle
+      color slate
+    }
+  }
+  element container {
+    style {
+      shape rectangle
+      color blue
+    }
+  }
+  element component {
+    style {
+      shape rectangle
+      color indigo
+    }
+  }
+  element external {
+    style {
+      shape rectangle
+      color gray
+    }
+  }
+  element database {
+    style {
+      shape storage
+      color amber
+    }
+  }
+
+  relationship async
+  relationship uses
+  relationship includes
+  relationship creates
+  relationship inherits
+}
+
+model {
+  user = person 'User' {
+    description 'Digital planner user running bin/bujo-pdf'
+  }
+
+  bujo = softwareSystem 'BujoPDF' {
+    description 'Ruby-based PDF planner generator for digital note-taking apps'
+
+    cli = container 'CLI' {
+      description 'bin/bujo-pdf entry point'
+    }
+
+    dsl = container 'DSL Module' {
+      description 'Declarative planner definition system'
+
+      builder = component 'Builder' {
+        description 'Entry point for defining planners via DSL blocks'
+      }
+      context = component 'Context' {
+        description 'Runtime state container (pdf, year, theme, grid)'
+      }
+      registry = component 'PageRegistry' {
+        description 'Page registration and named destinations tracking'
+      }
+      configuration = component 'Configuration' {
+        description 'Config file loaders (dates.yml, calendars.yml, collections.yml)'
+      }
+      sidebarOverrides = component 'SidebarOverrides' {
+        description 'Context-dependent tab destination overrides'
+      }
+      runtime = component 'Runtime' {
+        description 'Page factory, render context, component context'
+      }
+    }
+
+    pdfs = container 'PDFs (Recipes)' {
+      description 'Complete planner definitions'
+
+      standardPlanner = component 'StandardPlanner' {
+        description 'Default planner recipe with all page types and generation phases'
+      }
+    }
+
+    pages = container 'Pages Module' {
+      description 'Individual page type classes'
+
+      pagesBase = component 'Pages::Base' {
+        description 'Abstract base class - includes Components::All, declares layout intent'
+      }
+      frontMatter = component 'Front Matter Pages' {
+        description 'IndexPages, FutureLog, CollectionPage, MonthlyReview, QuarterlyPlanning'
+      }
+      yearOverview = component 'Year Overview Pages' {
+        description 'SeasonalCalendar, YearEvents, YearHighlights, MultiYearOverview, TrackerExample'
+      }
+      weeklyPage = component 'WeeklyPage' {
+        description 'Daily sections + Cornell notes layout (52-53 pages per year)'
+      }
+      gridPages = component 'Grid Pages' {
+        description 'DotGrid, GraphGrid, LinedGrid, IsometricGrid, PerspectiveGrid, HexagonGrid'
+      }
+      wheelPages = component 'Wheel Pages' {
+        description 'DailyWheel, YearWheel - circular visualization pages'
+      }
+    }
+
+    layouts = container 'Layouts Module' {
+      description 'Declarative layout system - pages declare intent, layouts handle chrome'
+
+      layoutFactory = component 'LayoutFactory' {
+        description 'Creates layout instances by symbol name (:full_page, :standard_with_sidebars)'
+      }
+      baseLayout = component 'BaseLayout' {
+        description 'Abstract base with render_before/render_after lifecycle hooks'
+      }
+      fullPageLayout = component 'FullPageLayout' {
+        description 'No sidebars - full 43x55 content area'
+      }
+      standardLayout = component 'StandardWithSidebarsLayout' {
+        description 'Week sidebar (3 cols) + nav tabs (1 col) = 39-col content area'
+      }
+    }
+
+    components = container 'Components Module' {
+      description 'Reusable rendering verbs via mixin pattern'
+
+      allMixin = component 'Components::All' {
+        description 'Mixin aggregator - single include point for Pages::Base'
+      }
+      contentVerbs = component 'Content Verbs' {
+        description 'h1, h2, text, fieldset, ruled_lines, ruled_list, mini_month'
+      }
+      drawingVerbs = component 'Drawing Verbs' {
+        description 'box, hline, vline, grid_dots, erase_dots'
+      }
+      navComponents = component 'Navigation Components' {
+        description 'WeekSidebar, RightSidebar, TopNavigation - used by layouts, not verbs'
+      }
+      complexComponents = component 'Complex Components' {
+        description 'CornellNotes, DailySection, WeekGrid, TodoList'
+      }
+    }
+
+    themes = container 'Themes Module' {
+      description 'Color scheme definitions'
+
+      themeRegistry = component 'ThemeRegistry' {
+        description 'Theme lookup by symbol (:light, :earth, :dark)'
+      }
+      lightTheme = component 'Light Theme' {
+        description 'Default - light gray dots, subtle borders'
+      }
+      earthTheme = component 'Earth Theme' {
+        description 'Warm earth tones'
+      }
+      darkTheme = component 'Dark Theme' {
+        description 'OLED-friendly dark theme'
+      }
+    }
+
+    utilities = container 'Utilities Module' {
+      description 'Cross-cutting helper classes'
+
+      gridSystem = component 'GridSystem' {
+        description '43x55 grid abstraction over Prawn coordinates (14.17pt box size)'
+      }
+      dateCalculator = component 'DateCalculator' {
+        description 'Week numbering, date calculations, year boundaries'
+      }
+      gridRenderers = component 'GridRenderers' {
+        description 'Specialized grid rendering (dot, graph, isometric, etc.)'
+      }
+    }
+
+    canvas = container 'Canvas' {
+      description 'Value object bundling PDF document + GridSystem'
+    }
+  }
+
+  prawn = external 'Prawn PDF Library' {
+    description 'Ruby PDF generation library - bottom-left origin, Y increases upward'
+  }
+
+  configFiles = database 'Config Files' {
+    description 'config/dates.yml, calendars.yml, collections.yml'
+  }
+
+  outputPdf = external 'planner_YYYY.pdf' {
+    description 'Generated PDF planner (~4-5MB, 91+ pages)'
+    style {
+      shape browser
+      color red
+    }
+  }
+
+  // Top-level relationships
+  user -> bujo.cli 'runs bin/bujo-pdf [year]'
+  bujo.cli -> bujo.pdfs.standardPlanner 'loads planner recipe'
+
+  // DSL orchestration
+  bujo.pdfs.standardPlanner -> bujo.dsl.builder 'defines planner via DSL'
+  bujo.dsl.builder -> bujo.dsl.context 'creates runtime context'
+  bujo.dsl.builder -> bujo.dsl.registry 'registers pages & destinations'
+  bujo.dsl.configuration -> bujo.dsl.builder 'provides config'
+  bujo.dsl.runtime -> bujo.pages 'creates & renders pages'
+
+  // Config files
+  configFiles -> bujo.dsl.configuration 'loaded by'
+
+  // Pages use components via verb mixins
+  bujo.pages.pagesBase -> bujo.components.allMixin 'includes verb mixins'
+  bujo.components.allMixin -> bujo.components.contentVerbs 'aggregates'
+  bujo.components.allMixin -> bujo.components.drawingVerbs 'aggregates'
+  bujo.components.allMixin -> bujo.components.complexComponents 'aggregates'
+
+  // Page inheritance
+  bujo.pages.frontMatter -> bujo.pages.pagesBase 'extends'
+  bujo.pages.yearOverview -> bujo.pages.pagesBase 'extends'
+  bujo.pages.weeklyPage -> bujo.pages.pagesBase 'extends'
+  bujo.pages.gridPages -> bujo.pages.pagesBase 'extends'
+  bujo.pages.wheelPages -> bujo.pages.pagesBase 'extends'
+
+  // Layout system
+  bujo.pages.pagesBase -> bujo.layouts.layoutFactory 'use_layout(:symbol)'
+  bujo.layouts.layoutFactory -> bujo.layouts.fullPageLayout 'creates'
+  bujo.layouts.layoutFactory -> bujo.layouts.standardLayout 'creates'
+  bujo.layouts.fullPageLayout -> bujo.layouts.baseLayout 'inherits'
+  bujo.layouts.standardLayout -> bujo.layouts.baseLayout 'inherits'
+  bujo.layouts.standardLayout -> bujo.components.navComponents 'renders sidebars'
+
+  // Theme integration
+  bujo.themes.themeRegistry -> bujo.dsl.context 'provides colors'
+  bujo.themes.themeRegistry -> bujo.themes.lightTheme 'resolves'
+  bujo.themes.themeRegistry -> bujo.themes.earthTheme 'resolves'
+  bujo.themes.themeRegistry -> bujo.themes.darkTheme 'resolves'
+
+  // Utilities used throughout
+  bujo.pages.pagesBase -> bujo.utilities.gridSystem 'grid coordinates'
+  bujo.pages.pagesBase -> bujo.utilities.dateCalculator 'date logic'
+  bujo.components -> bujo.utilities.gridSystem 'positioning'
+  bujo.layouts -> bujo.utilities.gridSystem 'content area calc'
+  bujo.pages.gridPages -> bujo.utilities.gridRenderers 'grid rendering'
+
+  // Canvas
+  bujo.canvas -> bujo.utilities.gridSystem 'bundles grid'
+  bujo.canvas -> prawn 'bundles pdf document'
+
+  // Prawn integration
+  bujo.components -> prawn 'PDF drawing operations'
+  bujo.layouts -> prawn 'PDF drawing operations'
+
+  // Output
+  bujo.dsl.builder -> outputPdf 'saves file'
+}
