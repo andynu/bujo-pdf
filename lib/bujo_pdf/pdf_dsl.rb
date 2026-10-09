@@ -49,6 +49,7 @@ module BujoPdf
     require_relative 'dsl/context'
     require_relative 'dsl/page_declaration'
     require_relative 'dsl/pdf_import'
+    require_relative 'dsl/imported_page'
     require_relative 'dsl/metadata'
     require_relative 'dsl/week'
     require_relative 'dsl/builder'

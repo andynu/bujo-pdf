@@ -70,6 +70,13 @@ module BujoPdf
         false
       end
 
+      # Check if this page is copied from an external PDF.
+      #
+      # @return [Boolean] false for standard PageDeclaration
+      def imported?
+        false
+      end
+
       # Check if this declaration matches a destination.
       #
       # @param dest_type [Symbol] The destination page type

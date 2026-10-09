@@ -2,8 +2,10 @@
 
 require_relative 'chrome_builder'
 require_relative 'page_declaration'
+require_relative 'imported_page'
 require_relative 'inline_page'
 require_relative 'metadata'
+require_relative 'pdf_import'
 require_relative 'outline'
 require_relative 'sidebar_definition'
 require_relative 'sidebar_overrides'
@@ -150,6 +152,52 @@ module BujoPdf
 
           create_standard_page(type, id: id, outline: outline, chrome: chrome, **params)
         end
+      end
+
+      # Load an external PDF and its manifest so its pages can be inserted.
+      #
+      # Declares nothing by itself; pass the result to {#import_page} or
+      # {#import_pages}. Relative paths resolve against the working directory,
+      # so recipes shipped inside the gem should pass an absolute path.
+      #
+      # @param manifest [String] Path to the YAML manifest (see {PdfImport})
+      # @param prefix [Symbol, String, nil] Prepended to each key to form its page id
+      # @return [PdfImport]
+      # @raise [PdfImport::Error] If the manifest or PDF is missing or inconsistent
+      #
+      # @example
+      #   deck = import_pdf 'assets/ritual_deck/manifest.yml', prefix: :ritual
+      #   import_page deck, :monthly, outline: true
+      def import_pdf(manifest, prefix: nil)
+        PdfImport.new(manifest, prefix: prefix)
+      end
+
+      # Insert one page of an imported PDF, copied verbatim (no chrome).
+      #
+      # The page is declared under its page id (the key, or prefix_key), so the
+      # outline, tabs and link resolution can target it like any other page.
+      # An imported page cannot be the first page of the document.
+      #
+      # @param deck [PdfImport] From {#import_pdf}
+      # @param key [Symbol] A key from the deck's manifest
+      # @param id [Symbol, nil] Overrides the page id, to place one key twice
+      # @param outline [String, Boolean, nil] Same meaning as for {#page}; true
+      #   uses the manifest title
+      # @return [ImportedPageDeclaration]
+      # @raise [PdfImport::Error] If the key is not in the manifest
+      # @raise [ArgumentError] If the page id is already declared
+      def import_page(deck, key, id: nil, outline: nil)
+        entry = deck.page(key)
+        create_imported_page(deck, entry, id: id || deck.page_id(entry.key), outline: outline)
+      end
+
+      # Insert every page of an imported PDF, in PDF order.
+      #
+      # @param deck [PdfImport] From {#import_pdf}
+      # @param outline [Boolean, nil] Applied to each page, as for {#import_page}
+      # @return [Array<ImportedPageDeclaration>]
+      def import_pages(deck, outline: nil)
+        deck.pages.map { |entry| import_page(deck, entry.key, outline: outline) }
       end
 
       # Declare a group of related pages.
@@ -527,6 +575,32 @@ module BujoPdf
 
         decl = PageDeclaration.new(type, id: id, outline: outline_title, chrome: chrome, **params)
         add_page_declaration(decl, outline_title, id || type)
+        decl
+      end
+
+      # Create an imported page declaration.
+      #
+      # @param deck [PdfImport] The import the page comes from
+      # @param entry [PdfImport::ImportedPage] The manifest entry
+      # @param id [Symbol] The page id
+      # @param outline [String, Boolean, nil] Outline entry specification
+      # @return [ImportedPageDeclaration] The created declaration
+      # @raise [ArgumentError] If the page id is already declared
+      def create_imported_page(deck, entry, id:, outline:)
+        if @pages.any? { |page| page.destination_key == id.to_s }
+          raise ArgumentError, "page id :#{id} is already declared (pass id: to place :#{entry.key} twice)"
+        end
+
+        effective = resolve_effective_outline(outline, @current_outline_mode)
+        outline_title = effective == :auto ? entry.title : effective
+
+        decl = ImportedPageDeclaration.new(
+          id: id,
+          pdf_path: deck.pdf_path,
+          template_page: entry.page_number,
+          outline: outline_title
+        )
+        add_page_declaration(decl, outline_title, id)
         decl
       end
 
