@@ -259,6 +259,37 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_equal :earth, context2.theme_name
   end
 
+  # Ritual deck (opt-in)
+
+  def test_rituals_are_off_by_default
+    context = evaluate_recipe(year: 2025)
+
+    assert_empty context.pages.select(&:imported?)
+  end
+
+  def test_rituals_adds_one_imported_page_per_manifest_key
+    deck = BujoPdf::PdfDSL::PdfImport.new(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__))
+    context = evaluate_recipe(year: 2025, rituals: true)
+    imported = context.pages.select(&:imported?)
+
+    assert_equal deck.keys.map { |key| :"ritual_#{key}" }, imported.map(&:id)
+  end
+
+  def test_rituals_sit_between_the_year_overview_and_the_weeks
+    ids = evaluate_recipe(year: 2025, rituals: true).pages.map(&:destination_key)
+
+    assert_operator ids.index('multi_year'), :<, ids.index('ritual_daily')
+    assert_operator ids.index('ritual_pausing'), :<, ids.index('week_1')
+  end
+
+  def test_rituals_get_an_outline_section
+    context = evaluate_recipe(year: 2025, rituals: true)
+    section = context.outline_entries.find { |entry| entry.title == 'Rituals' }
+
+    assert_equal ['The Daily Protocol', 'The Weekly Review'], section.children.first(2).map(&:title)
+    assert_equal :ritual_daily, section.children.first.dest
+  end
+
   private
 
   def evaluate_recipe(**params)
