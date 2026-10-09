@@ -1,0 +1,298 @@
+// BujoPDF Architecture Views
+
+views {
+  // =============================================
+  // View 1: System Context - High-level overview
+  // =============================================
+  view systemContext of bujo {
+    title 'BujoPDF - System Context'
+    description 'High-level view showing the system and its external dependencies'
+
+    include
+      user,
+      bujo,
+      prawn,
+      configFiles,
+      outputPdf
+
+    style bujo {
+      color blue
+    }
+  }
+
+  // =============================================
+  // View 2: Container Overview - All modules
+  // =============================================
+  view containers of bujo {
+    title 'BujoPDF - Container Overview'
+    description 'All major modules and their relationships'
+
+    include
+      user,
+      bujo.*,
+      prawn,
+      configFiles,
+      outputPdf
+
+    style bujo.cli {
+      color green
+    }
+    style bujo.dsl {
+      color sky
+    }
+    style bujo.pdfs {
+      color sky
+    }
+    style bujo.pages {
+      color amber
+    }
+    style bujo.layouts {
+      color secondary
+    }
+    style bujo.components {
+      color green
+    }
+    style bujo.themes {
+      color amber
+    }
+    style bujo.utilities {
+      color secondary
+    }
+    style bujo.canvas {
+      color slate
+    }
+  }
+
+  // =============================================
+  // View 3: DSL Module - Planner definition system
+  // =============================================
+  view dslModule of bujo.dsl {
+    title 'DSL Module - Planner Definition System'
+    description 'Builder, Context, Registry, Configuration, and Runtime'
+
+    include
+      bujo.dsl.*,
+      bujo.cli,
+      bujo.pdfs.standardPlanner,
+      bujo.pages,
+      configFiles,
+      outputPdf,
+      -> bujo.dsl.* ->
+
+    style bujo.dsl.builder {
+      color blue
+    }
+    style bujo.dsl.context {
+      color indigo
+    }
+    style bujo.dsl.registry {
+      color indigo
+    }
+    style bujo.dsl.configuration {
+      color amber
+    }
+    style bujo.dsl.runtime {
+      color green
+    }
+  }
+
+  // =============================================
+  // View 4: Pages Module - All page types
+  // =============================================
+  view pagesModule of bujo.pages {
+    title 'Pages Module - Page Types'
+    description 'All page classes and their dependencies'
+
+    include
+      bujo.pages.*,
+      bujo.components.allMixin,
+      bujo.layouts.layoutFactory,
+      bujo.utilities.gridSystem,
+      bujo.utilities.dateCalculator,
+      bujo.utilities.gridRenderers,
+      -> bujo.pages.* ->
+
+    style bujo.pages.pagesBase {
+      color blue
+    }
+    style bujo.pages.frontMatter {
+      color green
+    }
+    style bujo.pages.yearOverview {
+      color green
+    }
+    style bujo.pages.weeklyPage {
+      color green
+    }
+    style bujo.pages.gridPages {
+      color green
+    }
+    style bujo.pages.wheelPages {
+      color green
+    }
+  }
+
+  // =============================================
+  // View 5: Layout System - Declarative layouts
+  // =============================================
+  view layoutSystem of bujo.layouts {
+    title 'Layout System - Declarative Page Chrome'
+    description 'How pages declare layout intent and layouts render chrome'
+
+    include
+      bujo.layouts.*,
+      bujo.pages.pagesBase,
+      bujo.components.navComponents,
+      bujo.utilities.gridSystem,
+      prawn,
+      -> bujo.layouts.* ->
+
+    style bujo.layouts.layoutFactory {
+      color secondary
+    }
+    style bujo.layouts.baseLayout {
+      color secondary
+    }
+    style bujo.layouts.fullPageLayout {
+      color amber
+    }
+    style bujo.layouts.standardLayout {
+      color amber
+    }
+  }
+
+  // =============================================
+  // View 6: Components Module - Verb pattern
+  // =============================================
+  view componentsModule of bujo.components {
+    title 'Components Module - Verb Pattern'
+    description 'Mixin-based verb system for reusable rendering'
+
+    include
+      bujo.components.*,
+      bujo.pages.pagesBase,
+      bujo.layouts.standardLayout,
+      bujo.utilities.gridSystem,
+      prawn,
+      -> bujo.components.* ->
+
+    style bujo.components.allMixin {
+      color blue
+    }
+    style bujo.components.contentVerbs {
+      color green
+    }
+    style bujo.components.drawingVerbs {
+      color green
+    }
+    style bujo.components.navComponents {
+      color amber
+    }
+    style bujo.components.complexComponents {
+      color green
+    }
+  }
+
+  // =============================================
+  // View 7: Themes Module
+  // =============================================
+  view themesModule of bujo.themes {
+    title 'Themes Module - Color Schemes'
+    description 'Theme registry and available color schemes'
+
+    include
+      bujo.themes.*,
+      bujo.dsl.context,
+      -> bujo.themes.* ->
+
+    style bujo.themes.themeRegistry {
+      color secondary
+    }
+    style bujo.themes.lightTheme {
+      color slate
+    }
+    style bujo.themes.earthTheme {
+      color amber
+    }
+    style bujo.themes.darkTheme {
+      color muted
+    }
+  }
+
+  // =============================================
+  // View 8: Generation Flow - End-to-end
+  // =============================================
+  view generationFlow of bujo {
+    title 'PDF Generation Flow'
+    description 'End-to-end flow from CLI invocation to PDF output'
+
+    include
+      user,
+      bujo.cli,
+      bujo.pdfs.standardPlanner,
+      bujo.dsl.builder,
+      bujo.dsl.context,
+      bujo.dsl.registry,
+      bujo.dsl.configuration,
+      bujo.dsl.runtime,
+      bujo.pages.frontMatter,
+      bujo.pages.yearOverview,
+      bujo.pages.weeklyPage,
+      bujo.pages.gridPages,
+      bujo.pages.wheelPages,
+      bujo.canvas,
+      configFiles,
+      prawn,
+      outputPdf
+
+    style bujo.dsl.builder {
+      color sky
+    }
+    style bujo.dsl.runtime {
+      color sky
+    }
+    style bujo.pages.frontMatter {
+      color green
+    }
+    style bujo.pages.yearOverview {
+      color green
+    }
+    style bujo.pages.weeklyPage {
+      color green
+    }
+    style bujo.pages.gridPages {
+      color green
+    }
+    style bujo.pages.wheelPages {
+      color green
+    }
+  }
+
+  // =============================================
+  // View 9: Utilities - Grid & Date systems
+  // =============================================
+  view utilitiesModule of bujo.utilities {
+    title 'Utilities Module - Grid & Date Systems'
+    description 'GridSystem coordinate abstraction and DateCalculator'
+
+    include
+      bujo.utilities.*,
+      bujo.pages.pagesBase,
+      bujo.pages.gridPages,
+      bujo.components,
+      bujo.layouts,
+      bujo.canvas,
+      prawn,
+      -> bujo.utilities.* ->
+
+    style bujo.utilities.gridSystem {
+      color secondary
+    }
+    style bujo.utilities.dateCalculator {
+      color secondary
+    }
+    style bujo.utilities.gridRenderers {
+      color secondary
+    }
+  }
+}
