@@ -50,18 +50,27 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
     end
   end
 
+  # Ritual deck: pages from assets/ritual_deck, inserted as they are (no chrome).
+  # Loaded here because the first index page lists them.
+  if rituals
+    deck = import_pdf(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__), prefix: :ritual)
+    ritual_index_entries = deck.pages.map { |entry| { title: entry.title, dest: deck.page_id(entry.key) } }
+  end
+
   # 1. Front matter: Seasonal calendar, Index, Future log
   page :seasonal, id: :seasonal, year: year, outline: true
 
   # Index pages (2 pages with numbered lines for TOC entries)
   # Full page layout - no sidebars
   2.times do |i|
+    prefill = i.zero? && ritual_index_entries ? { prefill: ritual_index_entries } : {}
     page :index, id: :"index_#{i + 1}",
          index_page_num: i + 1,
          index_page_count: 2,
          year: year,
          chrome: false,
-         outline: i.zero?  # Only first page gets outline entry
+         outline: i.zero?,  # Only first page gets outline entry
+         **prefill
   end
 
   # Future log pages (2 pages covering 12 months)
@@ -79,9 +88,7 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
   page :year_highlights, id: :year_highlights, year: year, outline: true
   page :multi_year, id: :multi_year, year: year, year_count: 4, outline: true
 
-  # Ritual deck: pages from assets/ritual_deck, inserted as they are (no chrome)
   if rituals
-    deck = import_pdf(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__), prefix: :ritual)
     group :rituals, outline: 'Rituals' do
       import_pages deck, outline: true
     end

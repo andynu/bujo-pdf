@@ -292,6 +292,21 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_operator ids.index('ritual_pausing'), :<, ids.index('week_1')
   end
 
+  def test_rituals_are_prefilled_into_the_first_index_page_only
+    deck = BujoPdf::PdfDSL::PdfImport.new(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__))
+    pages = evaluate_recipe(year: 2025, rituals: true).pages
+    expected = deck.pages.map { |entry| { title: entry.title, dest: :"ritual_#{entry.key}" } }
+
+    assert_equal expected, pages.find { |page| page.id == :index_1 }.params[:prefill]
+    refute pages.find { |page| page.id == :index_2 }.params.key?(:prefill)
+  end
+
+  def test_index_pages_have_no_prefill_without_rituals
+    pages = evaluate_recipe(year: 2025).pages.select { |page| page.type == :index }
+
+    assert(pages.none? { |page| page.params.key?(:prefill) })
+  end
+
   def test_rituals_get_an_outline_section
     context = evaluate_recipe(year: 2025, rituals: true)
     section = context.outline_entries.find { |entry| entry.title == 'Rituals' }
