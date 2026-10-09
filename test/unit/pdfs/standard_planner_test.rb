@@ -27,9 +27,10 @@ class TestStandardPlannerRecipe < Minitest::Test
     context = evaluate_recipe(year: 2025)
 
     total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(2025)
-    # New structure: 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
-    #               + weekly pages + 8 grids + 4 templates + 3 collections (from config/collections.yml)
-    expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + 3
+    # Structure: 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
+    #           + weekly pages + 8 grids + 4 templates + N collections (from config/collections.yml if present)
+    collections_count = BujoPdf::CollectionsConfiguration.load.length
+    expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + collections_count
 
     assert_equal expected_pages, context.pages.length
   end
@@ -129,6 +130,57 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_equal (1..12).to_a, months
   end
 
+  def test_monthly_review_follows_the_weeks_of_the_month_it_reviews
+    [2024, 2025, 2026, 2027].each do |year|
+      context = evaluate_recipe(year: year)
+      pages = context.pages
+
+      (1..12).each do |month|
+        review_index = pages.index { |p| p.destination_key == "review_#{month}" }
+        refute_nil review_index, "#{year}: missing review for month #{month}"
+
+        weeks_of_month = pages.each_with_index.select do |p, _i|
+          p.type == :weekly && p.params[:week].interleaving_month == month
+        end
+        refute_empty weeks_of_month, "#{year}: no weeks filed under month #{month}"
+
+        last_week_index = weeks_of_month.map(&:last).max
+        assert_operator review_index, :>, last_week_index,
+                        "#{year}: review for month #{month} precedes that month's last week"
+      end
+    end
+  end
+
+  def test_no_weekly_page_precedes_the_first_quarterly_planning_page
+    # Week 1 starts in the previous December in most years; it must still be
+    # filed under January, after Q1 planning.
+    [2024, 2025, 2026, 2027].each do |year|
+      pages = evaluate_recipe(year: year).pages
+
+      quarter_1_index = pages.index { |p| p.destination_key == 'quarter_1' }
+      first_weekly_index = pages.index { |p| p.type == :weekly }
+
+      assert_operator quarter_1_index, :<, first_weekly_index,
+                      "#{year}: week 1 appears before Q1 planning"
+    end
+  end
+
+  def test_quarterly_planning_precedes_every_week_in_its_quarter
+    pages = evaluate_recipe(year: 2026).pages
+
+    (1..4).each do |quarter|
+      quarter_index = pages.index { |p| p.destination_key == "quarter_#{quarter}" }
+      months = ((quarter - 1) * 3 + 1..(quarter - 1) * 3 + 3)
+
+      first_week_index = pages.index do |p|
+        p.type == :weekly && months.include?(p.params[:week].interleaving_month)
+      end
+
+      assert_operator quarter_index, :<, first_week_index,
+                      "Q#{quarter} planning appears after its first week"
+    end
+  end
+
   def test_standard_planner_destination_keys
     context = evaluate_recipe(year: 2025)
 
@@ -180,13 +232,15 @@ class TestStandardPlannerRecipe < Minitest::Test
   end
 
   def test_standard_planner_works_for_different_years
+    collections_count = BujoPdf::CollectionsConfiguration.load.length
+
     [2024, 2025, 2026, 2030].each do |year|
       context = evaluate_recipe(year: year)
 
       total_weeks = BujoPdf::Utilities::DateCalculator.total_weeks(year)
       # 1 seasonal + 2 index + 2 future_log + 3 overview + 4 quarterly + 12 monthly
-      # + weekly pages + 8 grids + 4 templates + 3 collections
-      expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + 3
+      # + weekly pages + 8 grids + 4 templates + N collections
+      expected_pages = 1 + 2 + 2 + 3 + 4 + 12 + total_weeks + 8 + 4 + collections_count
 
       assert_equal expected_pages, context.pages.length, "Wrong page count for year #{year}"
 

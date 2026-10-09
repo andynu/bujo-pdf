@@ -6,92 +6,37 @@ module BujoPdf
   module Pages
     # Base class for pages that use the standard sidebar layout.
     #
-    # Automatically sets up:
-    # - Left week sidebar
-    # - Right navigation tabs
-    # - Content area for page content
+    # With the new chrome inheritance system, this class is now a thin
+    # organizational layer. Pages that inherit from StandardLayoutPage
+    # automatically get sidebars from PDF chrome config, with current
+    # week and tab highlighting auto-detected from page_key.
     #
-    # Subclasses must implement:
-    # - current_week: Which week to highlight (or nil)
-    # - highlight_tab: Which tab to highlight (or nil)
+    # This class remains for:
+    # - Organizational grouping of sidebar pages
+    # - Backward compatibility with existing subclasses
+    #
+    # Subclasses typically inherit from this when they want sidebars
+    # and the default auto-detection behavior.
     #
     # @example Year overview page
     #   class YearAtGlanceEvents < StandardLayoutPage
-    #     protected
-    #
-    #     def current_week
-    #       nil  # Year overview doesn't highlight weeks
-    #     end
-    #
-    #     def highlight_tab
-    #       :year_events  # Highlight the Events tab
-    #     end
-    #
-    #     def render_content
-    #       # Render year-at-a-glance grid here
+    #     def render
+    #       # Tab highlighting auto-detected from page_key :year_events
     #     end
     #   end
     #
     # @example Weekly page
     #   class WeeklyPage < StandardLayoutPage
-    #     protected
-    #
-    #     def current_week
-    #       context.week_num  # Highlight this week in sidebar
-    #     end
-    #
-    #     def highlight_tab
-    #       nil  # Weekly pages don't highlight tabs
-    #     end
-    #
-    #     def render_content
-    #       # Render daily section and Cornell notes here
+    #     def render
+    #       # Week highlighting auto-detected from page_key :week_42
     #     end
     #   end
     class StandardLayoutPage < Base
-      def setup
-        use_layout :standard_with_sidebars,
-          current_week: current_week,
-          highlight_tab: highlight_tab,
-          year: year_for_layout,
-          total_weeks: total_weeks_for_layout
-      end
-
-      protected
-
-      # Which week to highlight in sidebar (override in subclass).
+      # No explicit use_layout needed: inherits PDF chrome, auto-detects
+      # current_week and highlight_tab from page_key context.
       #
-      # @return [Integer, nil] Week number or nil for no highlight
-      def current_week
-        nil
-      end
-
-      # Which tab to highlight in right sidebar (override in subclass).
-      #
-      # @return [Symbol, nil] Tab key or nil for no highlight
-      def highlight_tab
-        nil
-      end
-
-      # Year value for layout (override in subclass if needed).
-      #
-      # Defaults to context[:year]. Subclasses can override if they compute
-      # year differently (e.g., storing in @year instance variable).
-      #
-      # @return [Integer] Year value
-      def year_for_layout
-        @year || context[:year]
-      end
-
-      # Total weeks value for layout (override in subclass if needed).
-      #
-      # Defaults to context[:total_weeks]. Subclasses can override if they
-      # compute total weeks differently (e.g., storing in @total_weeks).
-      #
-      # @return [Integer] Total weeks in year
-      def total_weeks_for_layout
-        @total_weeks || context[:total_weeks]
-      end
+      # Subclasses can override setup to call super and add their own
+      # setup logic (e.g., set_destination, initialize instance vars).
     end
   end
 end

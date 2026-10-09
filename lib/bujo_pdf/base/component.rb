@@ -179,6 +179,25 @@ module BujoPdf
       pdf.font original_family, size: original_size
     end
 
+    # Execute block with temporary line width, then restore previous width.
+    #
+    # @param width [Float] Line width in points
+    # @yield Block to execute with line width applied
+    # @return [void]
+    #
+    # @example Draw thick line without manual reset
+    #   with_line_width(2.0) do
+    #     pdf.stroke_line [x1, y1], [x2, y2]
+    #   end
+    #   # Line width automatically restored to previous value
+    def with_line_width(width)
+      original = pdf.line_width
+      pdf.line_width width
+      yield
+    ensure
+      pdf.line_width = original
+    end
+
     # Content Area Positioning Helpers
     # ---------------------------------
     # These methods help position elements relative to the content area

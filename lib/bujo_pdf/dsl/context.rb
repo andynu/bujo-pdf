@@ -1,15 +1,29 @@
 # frozen_string_literal: true
 
+require_relative 'chrome_builder'
 require_relative 'page_declaration'
 require_relative 'inline_page'
 require_relative 'metadata'
 require_relative 'outline'
+require_relative 'sidebar_definition'
 require_relative 'sidebar_overrides'
 require_relative 'week'
 
 module BujoPdf
   module PdfDSL
     # DeclarationContext provides the DSL methods for PDF definition evaluation.
+    #
+    # ## Outline System
+    #
+    # The DSL supports three outline modes controlled by {#outline_mode}:
+    #
+    # - **:manual** (default): Only pages with explicit `outline:` params get entries.
+    #   Backward compatible with existing recipes.
+    # - **:auto**: Automatically generates outline entries from page registry titles.
+    #   Groups create hierarchical sections. Use `outline: false` to suppress.
+    # - **:none**: Disables all outline generation.
+    #
+    # See {#create_standard_page} and {#create_inline_page} for resolution logic.
     #
     # When a PdfDefinition is evaluated, its block runs in the context of this
     # class, collecting page declarations, groups, and metadata.
@@ -28,7 +42,8 @@ module BujoPdf
     #   end
     #
     class DeclarationContext
-      attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries, :sidebar_overrides
+      attr_reader :pages, :groups, :metadata_builder, :theme_name, :outline_entries, :sidebar_overrides,
+                  :current_outline_mode, :chrome_config, :sidebar_definitions
 
       # Initialize a new declaration context.
       def initialize
@@ -40,6 +55,26 @@ module BujoPdf
         @outline_entries = []
         @current_section = nil
         @sidebar_overrides = SidebarOverrides.new
+        @sidebar_definitions = {}
+        @current_outline_mode = :manual
+        @chrome_config = nil
+      end
+
+      # Set the outline generation mode.
+      #
+      # @param mode [Symbol] The outline mode
+      #   - :manual - Outline entries only added when explicitly specified (default)
+      #   - :auto - Automatically generate outline entries from page registry titles
+      #   - :none - No outline entries are generated
+      # @return [Symbol] The set outline mode
+      #
+      # @example Enable automatic outline generation
+      #   outline_mode :auto
+      def outline_mode(mode)
+        valid_modes = %i[manual auto none]
+        raise ArgumentError, "Invalid outline mode: #{mode}. Must be one of: #{valid_modes.join(', ')}" unless valid_modes.include?(mode)
+
+        @current_outline_mode = mode
       end
 
       # Declare a page.
@@ -48,18 +83,20 @@ module BujoPdf
       # 1. Reference a predefined page type: page :seasonal_calendar, year: 2025
       # 2. Define an inline page with a block: page id: :notes do ... end
       #
-      # @overload page(type, id: nil, outline: nil, **params)
+      # @overload page(type, id: nil, outline: nil, chrome: nil, **params)
       #   Reference a predefined page type.
       #   @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
       #   @param id [Symbol, nil] Optional explicit page ID
       #   @param outline [String, Boolean, nil] Outline entry
+      #   @param chrome [false, Hash, nil] Per-page chrome override
       #   @param params [Hash] Parameters for the page
       #   @return [PageDeclaration] The created declaration
       #
-      # @overload page(id: nil, outline: nil, **params, &block)
+      # @overload page(id: nil, outline: nil, chrome: nil, **params, &block)
       #   Define an inline page with a block.
       #   @param id [Symbol, nil] Optional explicit page ID
       #   @param outline [String, Boolean, nil] Outline entry
+      #   @param chrome [false, Hash, nil] Per-page chrome override
       #   @param params [Hash] Additional parameters
       #   @yield Block defining inline page configuration and body
       #   @return [InlinePageDeclaration] The created inline declaration
@@ -94,65 +131,85 @@ module BujoPdf
       #       h1(2, 1, "Blank")
       #     end
       #   end
-      def page(type = nil, id: nil, outline: nil, **params, &block)
+      #
+      # @example Full chrome opt-out (no sidebars)
+      #   page :cover, id: :cover, chrome: false
+      #
+      # @example Partial chrome override (disable right sidebar)
+      #   page :notes, id: :notes, chrome: { right: false }
+      #
+      # @example Override left sidebar type
+      #   page :special, id: :special, chrome: { left: :month_sidebar }
+      def page(type = nil, id: nil, outline: nil, chrome: nil, **params, &block)
         if block_given?
           # Inline page definition with block
-          create_inline_page(id: id, outline: outline, params: params, &block)
+          create_inline_page(id: id, outline: outline, chrome: chrome, params: params, &block)
         else
           # Standard page type reference
           raise ArgumentError, 'page type is required when not using a block' if type.nil?
 
-          create_standard_page(type, id: id, outline: outline, **params)
+          create_standard_page(type, id: id, outline: outline, chrome: chrome, **params)
         end
       end
 
       # Declare a group of related pages.
       #
+      # In :auto outline mode, groups automatically create hierarchical outline entries.
+      # Pages declared inside the group become children of the group's outline section.
+      #
       # @param name [Symbol] The group name
-      # @param outline [String, nil] Optional outline entry title for the group
+      # @param outline [String, Boolean, nil] Outline entry title for the group
+      #   - String: Use this as the section title
+      #   - false: Suppress the group entry (pages appear at current level)
+      #   - nil: In :auto mode, derive title from name; in :manual mode, no section
       # @param options [Hash] Group options
       # @option options [Boolean] :cycle Enable cycling through pages
       # @yield Block containing page declarations for this group
       # @return [GroupDeclaration] The created group
       #
-      # @example Simple group
-      #   group :grids, cycle: true do
-      #     page :dot_grid
-      #     page :graph_grid
+      # @example Simple group (auto mode creates section)
+      #   outline_mode :auto
+      #   group :monthly_pages do
+      #     page :monthly_overview, id: :january, month: 1, year: 2025
+      #   end
+      #   # Creates: "Monthly Pages" section with child entries
+      #
+      # @example Group with explicit outline title
+      #   group :months, outline: 'All Months' do
+      #     page :monthly_overview, id: :january, month: 1, year: 2025
       #   end
       #
-      # @example Group with outline entry
-      #   group :grids, cycle: true, outline: 'Grid Types Showcase' do
-      #     page :grid_showcase, id: :grid_showcase
-      #     page :grid_dot, id: :grid_dot
+      # @example Suppress group outline entry (pages at root level)
+      #   group :grids, outline: false do
+      #     page :dot_grid, id: :dot_grid
       #   end
       def group(name, outline: nil, **options, &block)
         group_decl = GroupDeclaration.new(name, outline: outline, **options)
         @groups << group_decl
 
-        # Track where to insert the group's outline entry
-        # We'll determine the first page destination after evaluating the block
-        outline_placeholder_index = nil
-        if outline
-          outline_placeholder_index = @outline_entries.length
-        end
+        # Determine effective outline title for the group
+        # - outline: false -> no section, pages appear at current level
+        # - outline: "Title" -> use that title
+        # - outline: nil + auto mode -> derive from name
+        # - outline: nil + manual mode -> no section
+        effective_outline = determine_group_outline_title(name, outline)
 
         if block_given?
           previous_group = @current_group
           @current_group = group_decl
-          instance_eval(&block)
-          @current_group = previous_group
-        end
 
-        # Add outline entry for the group if specified
-        # Insert at the recorded position (before any pages added during block eval)
-        if outline && group_decl.pages.any?
-          first_page = group_decl.pages.first
-          entry = OutlineDeclaration.new(
-            title: outline,
-            dest: first_page.id || first_page.type
-          )
-          @outline_entries.insert(outline_placeholder_index, entry)
+          if effective_outline
+            # Create a section for the group; pages inside will be children
+            # We use :first so the section links to its first child's destination
+            outline_section(effective_outline, dest: :first) do
+              instance_eval(&block)
+            end
+          else
+            # No section - pages appear at current outline level
+            instance_eval(&block)
+          end
+
+          @current_group = previous_group
         end
 
         group_decl
@@ -181,6 +238,81 @@ module BujoPdf
       #   theme :earth
       def theme(name)
         @theme_name = name
+      end
+
+      # Configure default chrome (sidebars) for all pages.
+      #
+      # Chrome refers to the visual frame around page content: sidebars, tabs,
+      # and navigation elements. This sets the default configuration that pages
+      # inherit unless they opt out or override.
+      #
+      # @yield Block containing chrome DSL calls (left, right, top, bottom)
+      # @return [ChromeBuilder] The chrome configuration builder
+      #
+      # @example Basic chrome with left and right sidebars
+      #   chrome do
+      #     left :week_sidebar
+      #     right :right_sidebar
+      #   end
+      #
+      # @example Right sidebar with inline tabs
+      #   chrome do
+      #     left :week_sidebar
+      #     right :right_sidebar do
+      #       tab "Index", dest: :index
+      #       tab "Future", dest: :future_log_1
+      #     end
+      #   end
+      #
+      # @example Full chrome configuration
+      #   chrome do
+      #     top :header_bar, title: "2025 Planner"
+      #     bottom :footer_bar
+      #     left :week_sidebar
+      #     right :nav_tabs
+      #   end
+      def chrome(&block)
+        @chrome_config = ChromeBuilder.new
+        @chrome_config.instance_eval(&block) if block_given?
+        @chrome_config
+      end
+
+      # Define an inline sidebar for use in chrome configuration.
+      #
+      # Inline sidebars allow recipes to define custom sidebar rendering
+      # directly in the PDF definition, rather than referencing pre-registered
+      # sidebar types. The body block receives page context when rendered.
+      #
+      # @param name [Symbol] Unique identifier for this sidebar
+      # @param position [Symbol] Where the sidebar appears (:left or :right)
+      # @param width [Integer] Width in grid columns (default: 3)
+      # @yield [context] Block defining sidebar content using component verbs
+      # @return [SidebarDefinition] The created sidebar definition
+      # @raise [ArgumentError] if name is nil or already defined
+      #
+      # @example Simple sidebar
+      #   sidebar :project_nav, position: :left, width: 3 do |context|
+      #     h2(0, 0, "Projects")
+      #     ruled_lines(0, 2, 3, 10)
+      #   end
+      #
+      # @example Then reference in chrome
+      #   chrome do
+      #     left :project_nav
+      #   end
+      def sidebar(name, position:, width: SidebarDefinition::DEFAULT_WIDTH, &block)
+        if @sidebar_definitions.key?(name)
+          raise ArgumentError, "sidebar :#{name} is already defined"
+        end
+
+        definition = SidebarDefinition.new(
+          name: name,
+          position: position,
+          width: width,
+          &block
+        )
+        @sidebar_definitions[name] = definition
+        definition
       end
 
       # Get all weeks in a year.
@@ -380,45 +512,48 @@ module BujoPdf
 
       # Create a standard page declaration referencing a predefined page type.
       #
-      # @param type [Symbol] The page type
-      # @param id [Symbol, nil] Optional explicit page ID
-      # @param outline [String, Boolean, nil] Outline entry
-      # @param params [Hash] Parameters for the page
+      # @param type [Symbol] The page type (e.g., :weekly, :seasonal_calendar)
+      # @param id [Symbol, nil] Optional explicit page ID for the destination
+      # @param outline [String, Boolean, nil] Outline entry specification
+      # @param chrome [false, Hash, nil] Per-page chrome override
+      # @param params [Hash] Parameters passed to the page class
       # @return [PageDeclaration] The created declaration
-      def create_standard_page(type, id: nil, outline: nil, **params)
-        # Resolve outline: true to the page class's registered title
-        outline_title = resolve_outline_title(type, outline, params)
+      #
+      # @see resolve_effective_outline for outline resolution priority
+      # @see resolve_outline_title for title generation from page registry
+      def create_standard_page(type, id: nil, outline: nil, chrome: nil, **params)
+        effective = resolve_effective_outline(outline, @current_outline_mode)
+        outline_title = resolve_outline_title(type, effective, params)
 
-        decl = PageDeclaration.new(type, id: id, outline: outline_title, **params)
+        decl = PageDeclaration.new(type, id: id, outline: outline_title, chrome: chrome, **params)
         add_page_declaration(decl, outline_title, id || type)
         decl
       end
 
       # Create an inline page declaration from a block.
       #
-      # @param id [Symbol, nil] Optional explicit page ID
-      # @param outline [String, Boolean, nil] Outline entry
-      # @param params [Hash] Additional parameters
-      # @yield Block defining inline page configuration
+      # Unlike standard pages, inline pages don't have a page registry entry,
+      # so `outline: true` or `:auto` derives the title from the page id using title case.
+      #
+      # @param id [Symbol, nil] Optional explicit page ID (also used for title derivation)
+      # @param outline [String, Boolean, nil] Outline entry specification
+      # @param chrome [false, Hash, nil] Per-page chrome override
+      # @param params [Hash] Additional parameters passed to the inline page
+      # @yield Block defining inline page configuration (layout, background, body)
       # @return [InlinePageDeclaration] The created inline declaration
-      def create_inline_page(id: nil, outline: nil, params: {}, &block)
-        # Create context and evaluate the block
+      #
+      # @see resolve_effective_outline for outline resolution priority
+      def create_inline_page(id: nil, outline: nil, chrome: nil, params: {}, &block)
         inline_context = InlinePageContext.new
         inline_context.evaluate(&block)
 
-        # Resolve outline title (for inline pages, true just uses id)
-        outline_title = case outline
-        when true
-          id&.to_s&.tr('_', ' ')&.split&.map(&:capitalize)&.join(' ') || 'Untitled'
-        when String
-          outline
-        else
-          nil
-        end
+        effective = resolve_effective_outline(outline, @current_outline_mode)
+        outline_title = resolve_inline_outline_title(effective, id)
 
         decl = InlinePageDeclaration.new(
           id: id,
           outline: outline_title,
+          chrome: chrome,
           inline_context: inline_context,
           **params
         )
@@ -426,26 +561,46 @@ module BujoPdf
         decl
       end
 
-      # Resolve outline title based on outline parameter type.
+      # Resolve outline title for a standard page.
       #
       # @param type [Symbol] Page type
-      # @param outline [String, Boolean, nil] Outline specification
+      # @param effective [Symbol, String, nil] Effective outline value from resolve_effective_outline
       # @param params [Hash] Page parameters
       # @return [String, nil] Resolved outline title
-      def resolve_outline_title(type, outline, params)
-        case outline
-        when true
+      def resolve_outline_title(type, effective, params)
+        case effective
+        when :auto
           page_class = PageFactory.registry[type]
           if page_class&.respond_to?(:generate_title)
-            page_class.generate_title(params) || type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+            page_class.generate_title(params) || titleize(type)
           else
-            type.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+            titleize(type)
           end
         when String
-          outline
-        else
-          nil
+          effective
         end
+      end
+
+      # Resolve outline title for an inline page.
+      #
+      # @param effective [Symbol, String, nil] Effective outline value from resolve_effective_outline
+      # @param id [Symbol, nil] Page id for title derivation
+      # @return [String, nil] Resolved outline title
+      def resolve_inline_outline_title(effective, id)
+        case effective
+        when :auto
+          id ? titleize(id) : 'Untitled'
+        when String
+          effective
+        end
+      end
+
+      # Convert a symbol to title case.
+      #
+      # @param sym [Symbol] Symbol to convert (e.g., :my_notes)
+      # @return [String] Title case string (e.g., "My Notes")
+      def titleize(sym)
+        sym.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
       end
 
       # Add a page declaration to the context.
@@ -475,6 +630,76 @@ module BujoPdf
           @current_section.add_child(entry)
         else
           @outline_entries << entry
+        end
+      end
+
+      # Resolve the effective outline value based on mode and parameter.
+      #
+      # This method centralizes the outline resolution logic used by both
+      # create_standard_page and create_inline_page.
+      #
+      # Resolution by mode:
+      #
+      # | outline_param | :none  | :auto  | :manual |
+      # |---------------|--------|--------|---------|
+      # | nil           | nil    | :auto  | nil     |
+      # | false         | nil    | nil    | nil     |
+      # | true          | nil    | :auto  | :auto   |
+      # | "Title"       | nil    | "Title"| "Title" |
+      #
+      # @param outline_param [String, Boolean, nil] The outline parameter from page()
+      # @param mode [Symbol] The current outline mode (:manual, :auto, or :none)
+      # @return [Symbol, String, nil] The effective outline value:
+      #   - nil: No outline entry
+      #   - :auto: Auto-generate title from page class or id
+      #   - String: Use this explicit title
+      def resolve_effective_outline(outline_param, mode)
+        case mode
+        when :none
+          nil
+        when :auto
+          return nil if outline_param == false
+          outline_param == true ? :auto : (outline_param || :auto)
+        when :manual
+          # In manual mode: nil/false -> no entry, true -> :auto, string -> string
+          return nil if outline_param.nil? || outline_param == false
+          outline_param == true ? :auto : outline_param
+        end
+      end
+
+      # Determine the effective outline title for a group.
+      #
+      # This method controls whether groups create hierarchical outline sections:
+      #
+      # - **outline: false**: No section created; pages appear at current level
+      # - **outline: "Title"**: Creates section with explicit title
+      # - **outline: nil + :auto mode**: Creates section with title from group name
+      #   (e.g., :monthly_pages -> "Monthly Pages")
+      # - **outline: nil + :manual mode**: No section created (backward compatible)
+      #
+      # When a section is created, all pages declared inside the group block
+      # become children of that section in the PDF outline hierarchy.
+      #
+      # @param name [Symbol] The group name (used for title derivation in :auto mode)
+      # @param outline [String, Boolean, nil] The outline parameter from group()
+      # @return [String, nil] The title to use, or nil if no section should be created
+      def determine_group_outline_title(name, outline)
+        case outline
+        when false
+          # Explicitly suppressed
+          nil
+        when String
+          # Explicit title provided
+          outline
+        when nil
+          # Derive from name in auto mode, no section in manual mode
+          if @current_outline_mode == :auto
+            name.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
+          else
+            nil
+          end
+        else
+          nil
         end
       end
     end

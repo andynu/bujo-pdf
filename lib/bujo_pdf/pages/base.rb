@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
+require 'ostruct'
 require_relative '../utilities/styling'
 require_relative '../utilities/grid_system'
 require_relative '../utilities/dot_grid'
 require_relative '../utilities/diagnostics'
-require_relative '../base/layout'
 require_relative '../dsl/runtime/render_context'
 require_relative '../components/all'
 require_relative 'page_registry'
@@ -17,28 +17,31 @@ module BujoPdf
     # Template Method pattern. Subclasses implement specific rendering logic
     # by overriding the hook methods: setup, render, and finalize.
     #
-    # Plan 05 Enhancement: Layout Support
-    # -----------------------------------
-    # Pages can now specify a Layout to separate chrome (sidebars, navigation)
-    # from content. The layout defines:
+    # Layout System
+    # -------------
+    # Pages specify a Layout to separate chrome (sidebars, navigation) from
+    # content. The layout defines:
     # - Content area boundaries (where page-specific content goes)
     # - Sidebar positions (left, right, top, bottom)
-    # - Background type (dot grid, ruled, blank)
-    # - Debug mode for diagnostic overlays
+    #
+    # Background and debug settings are controlled by class-level methods:
+    # - self.background_enabled? - Whether to draw background (default: true)
+    # - self.background_type - Background type (:dot_grid, :blank, :ruled)
+    # - self.debug_mode? - Whether to show debug grid (default: false)
+    # - self.footer_enabled? - Whether to draw footer (default: false)
     #
     # Lifecycle:
-    #   1. initialize(pdf, context, layout:) - Create page with PDF, context, and optional layout
-    #   2. setup - Prepare page-specific state and calculations
-    #   3. setup_page - Draw background (dot grid, etc.) - NEW
-    #   4. render_chrome - Draw sidebars and navigation (outside content area) - NEW
+    #   1. initialize(pdf, context) - Create page with PDF and context
+    #   2. setup - Prepare page-specific state and calculations, call use_layout
+    #   3. setup_page - Draw background (dot grid, etc.)
+    #   4. render_chrome - Draw sidebars and navigation (outside content area)
     #   5. render - Draw the actual page content (within content area)
-    #   6. finalize_page - Post-render tasks - NEW
-    #   7. finalize - Legacy hook for backward compatibility
+    #   6. finalize_page - Post-render tasks
+    #   7. finalize - Final hook for backward compatibility
     #
-    # Example (Legacy, no layout):
+    # Example (Simple page):
     #   class MyPage < Base
     #     def render
-    #       draw_dot_grid
     #       @pdf.text "Hello World"
     #     end
     #   end
@@ -48,12 +51,8 @@ module BujoPdf
     #
     # Example (With layout):
     #   class MyPage < Base
-    #     def initialize(pdf, context)
-    #       super(pdf, context, layout: Layout.full_page)
-    #     end
-    #
-    #     def render_chrome
-    #       # Draw sidebars, navigation - outside content area
+    #     def setup
+    #       use_layout :standard_with_sidebars, current_week: @week_num
     #     end
     #
     #     def render
@@ -61,28 +60,27 @@ module BujoPdf
     #     end
     #   end
     class Base
+      include Styling::Colors
       include Components::All
       include PageRegistry
 
-      attr_reader :pdf, :context, :grid_system, :grid, :layout, :content_area, :new_layout
+      attr_reader :pdf, :context, :grid_system, :grid, :layout, :content_area
 
       # Initialize a new page instance.
       #
       # @param pdf [Prawn::Document] The PDF document to render into
       # @param context [RenderContext, Hash] Rendering context
-      # @param layout [Layout, nil] Optional legacy layout specification (deprecated)
-      def initialize(pdf, context, layout: nil)
+      def initialize(pdf, context)
         @pdf = pdf
         # Accept both RenderContext objects and hashes for backward compatibility
         @context = context.is_a?(RenderContext) ? context : wrap_context_hash(context)
         @grid_system = GridSystem.new(pdf)
         @grid = @grid_system  # Alias for component compatibility
-        @layout = layout || default_layout  # Legacy layout system
-        @new_layout = nil  # New declarative layout system (set via use_layout)
+        @layout = nil  # Layout system (set via use_layout or auto-created in generate)
         @components = []
 
-        # Calculate content area from layout
-        @content_area = calculate_content_area
+        # Content area will be calculated when layout is established
+        @content_area = default_content_area
       end
 
       # Generate the page (template method).
@@ -95,27 +93,43 @@ module BujoPdf
       def generate
         setup              # Page-specific state setup
 
-        # If new layout system is used, default to full_page if not specified
-        if @new_layout.nil?
+        # If layout not yet set via use_layout, create default layout
+        # Check for PDF-level chrome config first
+        if @layout.nil?
           require_relative '../layouts/layout_factory'
-          @new_layout = Layouts::LayoutFactory.create(:full_page, @pdf, @grid_system)
-          # Update content area from new layout
-          @content_area = calculate_content_area_from_new_layout
+
+          # Check if PDF-level chrome config exists
+          pdf_chrome = convert_chrome_config_to_hash(context.chrome_config)
+          if pdf_chrome
+            # Use configurable layout with PDF chrome
+            @layout = Layouts::LayoutFactory.create(
+              :configurable,
+              @pdf,
+              @grid_system,
+              chrome: pdf_chrome,
+              page_context: @context
+            )
+          else
+            # No chrome config, use full page layout
+            @layout = Layouts::LayoutFactory.create(:full_page, @pdf, @grid_system)
+          end
+          # Update content area from layout
+          @content_area = calculate_content_area_from_layout
         end
 
-        setup_page         # Background, grid (NEW)
+        setup_page         # Background, grid
 
-        # Render layout chrome (sidebars) using new system
-        @new_layout.render_before(self)
+        # Render layout chrome (sidebars)
+        @layout.render_before(self)
 
-        render_chrome      # Legacy chrome rendering hook
+        render_chrome      # Additional chrome rendering hook
         render             # Main content
-        finalize_page      # Post-render tasks (NEW)
+        finalize_page      # Post-render tasks
 
-        # Render layout overlays using new system
-        @new_layout.render_after(self)
+        # Render layout overlays
+        @layout.render_after(self)
 
-        finalize           # Legacy hook
+        finalize           # Final hook
       end
 
       protected
@@ -136,12 +150,14 @@ module BujoPdf
       # Called after setup, before render_chrome. Override to customize
       # background rendering or add page-level decorations.
       #
-      # Default implementation draws background based on layout settings.
+      # Default implementation draws background based on class configuration.
+      # Subclasses can override this entirely (like InlinePage) or override
+      # the class-level config methods.
       #
       # @return [void]
       def setup_page
-        draw_background if @layout.background_enabled?
-        draw_debug_grid_if_enabled
+        draw_background if self.class.background_enabled?
+        draw_debug_grid_if_enabled if self.class.debug_mode?
       end
 
       # Hook: Render chrome elements (sidebars, navigation).
@@ -179,7 +195,7 @@ module BujoPdf
       #
       # @return [void]
       def finalize_page
-        draw_footer if @layout.footer_enabled?
+        draw_footer if self.class.footer_enabled?
       end
 
       # Hook: Post-render tasks (legacy).
@@ -226,83 +242,123 @@ module BujoPdf
         merged_options[:total_weeks] ||= context[:total_weeks] if context[:total_weeks]
         merged_options[:page_context] = @context  # Pass context for page detection
 
-        @new_layout = Layouts::LayoutFactory.create(
+        # If no explicit chrome provided, check for PDF-level chrome config
+        unless merged_options.key?(:chrome)
+          pdf_chrome = convert_chrome_config_to_hash(context.chrome_config)
+          merged_options[:chrome] = pdf_chrome if pdf_chrome
+        end
+
+        @layout = Layouts::LayoutFactory.create(
           layout_name,
           @pdf,
           @grid_system,
           **merged_options
         )
-        # Update content area from new layout
-        @content_area = calculate_content_area_from_new_layout
+        # Update content area from layout
+        @content_area = calculate_content_area_from_layout
       end
 
-      # Get the default layout for this page type (legacy system).
+      # Class-level configuration for background rendering.
+      # Override in subclasses to disable background.
       #
-      # Override in subclasses to provide a specific default layout.
-      # The default is a full-page layout with no sidebars.
-      #
-      # @return [Layout] Default layout for this page type
-      def default_layout
-        Layout.full_page
+      # @return [Boolean] Whether to draw background (default: true)
+      def self.background_enabled?
+        true
       end
 
-      # Calculate content area from layout specification (legacy system).
+      # Class-level configuration for background type.
+      # Override in subclasses to change background type.
       #
-      # Converts layout's grid-based content area spec to a hash with both
-      # grid coordinates (col, row, width_boxes, height_boxes) and point
-      # coordinates (x, y, width_pt, height_pt).
+      # @return [Symbol] Background type (:dot_grid, :blank, :ruled)
+      def self.background_type
+        :dot_grid
+      end
+
+      # Class-level configuration for debug mode.
+      # Override in subclasses to enable debug grid.
       #
-      # @return [Hash] Content area with grid and point coordinates
-      def calculate_content_area
-        area = @layout.content_area_spec
+      # @return [Boolean] Whether to show debug grid (default: false)
+      def self.debug_mode?
+        false
+      end
+
+      # Class-level configuration for footer rendering.
+      # Override in subclasses to enable footer.
+      #
+      # @return [Boolean] Whether to draw footer (default: false)
+      def self.footer_enabled?
+        false
+      end
+
+      # Get default content area (full page).
+      #
+      # Used before layout is established. Returns full page dimensions.
+      #
+      # @return [Hash] Default full-page content area
+      def default_content_area
         {
-          col: area[:col],
-          row: area[:row],
-          width_boxes: area[:width],
-          height_boxes: area[:height],
-          # Computed point values
-          x: @grid_system.x(area[:col]),
-          y: @grid_system.y(area[:row]),
-          width_pt: @grid_system.width(area[:width]),
-          height_pt: @grid_system.height(area[:height])
+          col: 0,
+          row: 0,
+          width_boxes: 43,
+          height_boxes: 55,
+          x: @grid_system.x(0),
+          y: @grid_system.y(0),
+          width_pt: @grid_system.width(43),
+          height_pt: @grid_system.height(55)
         }
       end
 
-      # Calculate content area from new layout system.
+      # Calculate content area from layout.
       #
-      # Converts new layout's content area to the same format as legacy system
-      # for backward compatibility.
+      # Converts layout's content area to a normalized format with both
+      # grid coordinates and point coordinates.
       #
       # @return [Hash] Content area with grid and point coordinates
-      def calculate_content_area_from_new_layout
-        area = @new_layout.content_area
+      def calculate_content_area_from_layout
+        normalize_content_area(@layout.content_area)
+      end
+
+      # Normalize a content area specification to a standard format.
+      #
+      # Handles both key naming conventions:
+      # - Legacy: :width, :height (from legacy layout system)
+      # - New: :width_boxes, :height_boxes (from new layout system)
+      #
+      # Returns a hash with standardized keys and computed point values.
+      #
+      # @param area [Hash] Content area with :col, :row, and width/height keys
+      # @return [Hash] Normalized content area with grid and point coordinates
+      def normalize_content_area(area)
+        width = area[:width_boxes] || area[:width]
+        height = area[:height_boxes] || area[:height]
+
         {
           col: area[:col],
           row: area[:row],
-          width_boxes: area[:width_boxes],
-          height_boxes: area[:height_boxes],
+          width_boxes: width,
+          height_boxes: height,
           # Computed point values
           x: @grid_system.x(area[:col]),
           y: @grid_system.y(area[:row]),
-          width_pt: @grid_system.width(area[:width_boxes]),
-          height_pt: @grid_system.height(area[:height_boxes])
+          width_pt: @grid_system.width(width),
+          height_pt: @grid_system.height(height)
         }
       end
 
-      # Draw background based on layout settings.
+      # Draw background based on class configuration.
       #
       # @return [void]
       def draw_background
         # Draw page background color if not white
-        bg_color = Styling::Colors.BACKGROUND
+        bg_color = color_background
         unless bg_color == 'FFFFFF'
           @pdf.fill_color bg_color
           @pdf.fill_rectangle [0, Styling::Grid::PAGE_HEIGHT], Styling::Grid::PAGE_WIDTH, Styling::Grid::PAGE_HEIGHT
-          @pdf.fill_color Styling::Colors.TEXT_BLACK  # Reset to text color
+          @pdf.fill_color color_text_black  # Reset to text color
         end
 
         # Draw background pattern (dots, rules, etc.)
-        case @layout.background_type
+        case self.class.background_type
         when :dot_grid
           @pdf.stamp("page_dots")
         when :ruled
@@ -312,13 +368,11 @@ module BujoPdf
         end
       end
 
-      # Draw debug grid if layout debug mode is enabled.
+      # Draw debug grid.
       #
       # @return [void]
       def draw_debug_grid_if_enabled
-        if @layout.debug_mode?
-          Diagnostics.draw_grid(@pdf, @grid_system, enabled: true, label_every: 5)
-        end
+        Diagnostics.draw_grid(@pdf, @grid_system, enabled: true, label_every: 5)
       end
 
       # Draw footer (placeholder for future implementation).
@@ -524,9 +578,59 @@ module BujoPdf
           week_end: hash[:week_end],
           total_weeks: hash[:total_weeks],
           total_pages: hash[:total_pages],
+          chrome_config: hash[:chrome_config],
           **hash.except(:page_key, :page_number, :year, :week_num,
-                        :week_start, :week_end, :total_weeks, :total_pages)
+                        :week_start, :week_end, :total_weeks, :total_pages, :chrome_config)
         )
+      end
+
+      # Convert a ChromeBuilder config to a hash suitable for LayoutFactory.
+      #
+      # Transforms PdfDSL::ChromeBuilder's SidebarConfig objects into the
+      # format expected by LayoutFactory.build_chrome_spec.
+      #
+      # @param chrome_config [PdfDSL::ChromeBuilder, nil] PDF-level chrome configuration
+      # @return [Hash, nil] Chrome hash with :left, :right, :top, :bottom keys, or nil
+      #
+      # @example
+      #   # ChromeBuilder with left: :week_sidebar, right: :tab_sidebar
+      #   convert_chrome_config_to_hash(chrome_config)
+      #   # => { left: :week_sidebar, right: :tab_sidebar }
+      def convert_chrome_config_to_hash(chrome_config)
+        return nil if chrome_config.nil?
+        return nil if chrome_config.empty?
+
+        result = {}
+
+        # Convert each region's SidebarConfig to appropriate format
+        %i[left right top bottom].each do |region|
+          config = chrome_config.send("#{region}_config")
+          next unless config
+
+          result[region] = convert_sidebar_config(config)
+        end
+
+        result.empty? ? nil : result
+      end
+
+      # Convert a SidebarConfig to the format expected by ChromeSpec/LayoutFactory.
+      #
+      # @param config [PdfDSL::ChromeBuilder::SidebarConfig] Sidebar configuration
+      # @return [Symbol, Hash] Simple symbol or hash with component and options
+      def convert_sidebar_config(config)
+        # If no options and no tabs, just return the sidebar name
+        if config.options.empty? && !config.tabs?
+          config.sidebar_name
+        else
+          # Build a hash with component name and options
+          result = { component: config.sidebar_name }
+          result.merge!(config.options)
+
+          # Include tabs if present
+          result[:tabs] = config.tabs if config.tabs?
+
+          result
+        end
       end
     end
   end

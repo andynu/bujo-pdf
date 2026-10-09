@@ -10,7 +10,7 @@ module BujoPdf
   # interleaving monthly reviews and quarterly planning pages.
   #
   # @example Basic usage
-  #   week = Week.new(year: 2025, number: 1)
+  #   week = Week[year: 2025, number: 1]
   #   week.start_date  # => 2024-12-30 (Monday)
   #   week.end_date    # => 2025-01-05 (Sunday)
   #   week.month       # => 1 (January - based on start_date in target year)
@@ -26,18 +26,19 @@ module BujoPdf
   #     weekly_page(week: week.number)
   #   end
   #
-  class Week
-    attr_reader :year, :number, :start_date, :end_date
-
-    # Create a new Week.
+  Week = Data.define(:year, :number) do
+    # Get the start date (Monday) of this week.
     #
-    # @param year [Integer] The planner year
-    # @param number [Integer] Week number (1-based)
-    def initialize(year:, number:)
-      @year = year
-      @number = number
-      @start_date = Utilities::DateCalculator.week_start(year, number)
-      @end_date = Utilities::DateCalculator.week_end(year, number)
+    # @return [Date] The Monday starting this week
+    def start_date
+      Utilities::DateCalculator.week_start(year, number)
+    end
+
+    # Get the end date (Sunday) of this week.
+    #
+    # @return [Date] The Sunday ending this week
+    def end_date
+      Utilities::DateCalculator.week_end(year, number)
     end
 
     # Month number of the week's start date.
@@ -67,6 +68,22 @@ module BujoPdf
     # @return [Integer, nil] Month number or nil if week starts in previous year
     def primary_month
       start_date.year == year ? start_date.month : nil
+    end
+
+    # Month this week should be filed under when interleaving month-specific
+    # pages into the weekly sequence.
+    #
+    # Unlike {#primary_month}, this never returns nil for a week that overlaps
+    # the target year: a week starting in the previous December is filed under
+    # the month it ends in (January), so the first week of the year is not
+    # orphaned ahead of its month's pages.
+    #
+    # @return [Integer, nil] Month number (1-12), or nil if the week does not
+    #   overlap the target year at all
+    def interleaving_month
+      return nil unless overlaps_year?
+
+      start_date.year == year ? start_date.month : end_date.month
     end
 
     # Quarter number (1-4).
@@ -103,23 +120,16 @@ module BujoPdf
       }
     end
 
-    # Equality based on year and number.
-    def ==(other)
-      other.is_a?(Week) && year == other.year && number == other.number
-    end
-
-    def eql?(other)
-      self == other
-    end
-
-    def hash
-      [year, number].hash
-    end
-
+    # String representation.
+    #
+    # @return [String]
     def to_s
       "Week #{number} (#{start_date} - #{end_date})"
     end
 
+    # Inspection string.
+    #
+    # @return [String]
     def inspect
       "#<Week year=#{year} number=#{number} #{start_date}..#{end_date}>"
     end

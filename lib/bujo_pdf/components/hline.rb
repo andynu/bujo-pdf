@@ -77,13 +77,11 @@ module BujoPdf
 
         # Draw the line at the aligned y position
         y = aligned_y
-        pdf.stroke_color @color
-        pdf.line_width @stroke
-        pdf.stroke_line [@rect.x, y], [@rect.x + @rect.width_pt, y]
-
-        # Restore defaults
-        pdf.stroke_color '000000'
-        pdf.line_width 0.5
+        with_stroke_color(@color) do
+          with_line_width(@stroke) do
+            pdf.stroke_line [@rect.x, y], [@rect.x + @rect.width_pt, y]
+          end
+        end
       end
 
       private

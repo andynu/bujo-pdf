@@ -31,6 +31,7 @@ module BujoPdf
     #   todo.render
     #
     class TodoList < Component
+      include Styling::Colors
       include RuledLines::Mixin
       # Default bullet radius in points (larger than 1pt dot grid dots)
       BULLET_RADIUS = 2.0
@@ -217,14 +218,14 @@ module BujoPdf
       #
       # @return [String] Hex color
       def bullet_color
-        @bullet_color || Styling::Colors.TEXT_BLACK
+        @bullet_color || color_text_black
       end
 
       # Get the effective divider color
       #
       # @return [String] Hex color
       def divider_color
-        @divider_color || Styling::Colors.BORDERS
+        @divider_color || color_borders
       end
     end
   end

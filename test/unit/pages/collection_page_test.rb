@@ -119,12 +119,12 @@ class TestCollectionPage < Minitest::Test
 
   def test_uses_full_page_layout
     page = BujoPdf::Pages::CollectionPage.new(@pdf, @context)
-    page.send(:setup)
+    page.generate
 
     # full_page layout means no sidebars, 43x55 content area
-    # We can verify this by checking that use_layout was called with :full_page
-    # The layout is stored in @layout after setup
+    # Layout is created during generate
     assert page.instance_variable_get(:@layout)
+    assert_kind_of BujoPdf::Layouts::ConfigurableLayout, page.layout
   end
 end
 

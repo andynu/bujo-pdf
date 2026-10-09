@@ -38,6 +38,7 @@ module BujoPdf
     #   )
     #   column.render
     class WeekColumn < Component
+      include Styling::Colors
       include Box::Mixin
       include HLine::Mixin
       include Text::Mixin
@@ -50,9 +51,9 @@ module BujoPdf
         header_font_size: 8,
         time_label_font_size: 6,
         text_inset: 0.2,          # Inset from column edges in grid boxes (~3pt)
-        header_color: nil,        # Will use Styling::Colors.SECTION_HEADERS if nil
-        border_color: nil,        # Will use Styling::Colors.BORDERS if nil
-        weekend_bg_color: nil,    # Will use Styling::Colors.WEEKEND_BG if nil
+        header_color: nil,        # Will use color_section_headers if nil
+        border_color: nil,        # Will use color_borders if nil
+        weekend_bg_color: nil,    # Will use color_weekend_bg if nil
         show_time_labels: false,
         weekend: false
       }.freeze
@@ -104,15 +105,15 @@ module BujoPdf
       private
 
       def effective_header_color
-        @header_color || Styling::Colors.SECTION_HEADERS
+        @header_color || color_section_headers
       end
 
       def effective_border_color
-        @border_color || Styling::Colors.BORDERS
+        @border_color || color_borders
       end
 
       def effective_weekend_bg_color
-        @weekend_bg_color || Styling::Colors.WEEKEND_BG
+        @weekend_bg_color || color_weekend_bg
       end
 
       # Draw subtle weekend background
@@ -239,28 +240,27 @@ module BujoPdf
 
         # Background
         label_x = @rect.x + h_padding
-        pdf.fill_color bg_color
-        pdf.fill_rectangle [label_x, label_y], width - (h_padding * 2), label_height
-        pdf.fill_color '000000'
+        with_fill_color(bg_color) do
+          pdf.fill_rectangle [label_x, label_y], width - (h_padding * 2), label_height
+        end
 
         # Text (with small vertical and horizontal padding)
         v_padding = 1
         text_h_padding = 2
 
-        pdf.font('Helvetica-Bold') if bold
-
-        pdf.fill_color text_color
-        pdf.text_box label_text,
-                      at: [label_x + text_h_padding, label_y - v_padding],
-                      width: width - (h_padding * 2) - (text_h_padding * 2),
-                      height: label_height - (v_padding * 2),
-                      size: 7,
-                      align: :center,
-                      valign: :center,
-                      overflow: :shrink_to_fit
-
-        pdf.fill_color '000000'
-        pdf.font('Helvetica')  # Reset font
+        font_family = bold ? 'Helvetica-Bold' : 'Helvetica'
+        with_font(font_family, 7) do
+          with_fill_color(text_color) do
+            pdf.text_box label_text,
+                          at: [label_x + text_h_padding, label_y - v_padding],
+                          width: width - (h_padding * 2) - (text_h_padding * 2),
+                          height: label_height - (v_padding * 2),
+                          size: 7,
+                          align: :center,
+                          valign: :center,
+                          overflow: :shrink_to_fit
+          end
+        end
       end
     end
   end

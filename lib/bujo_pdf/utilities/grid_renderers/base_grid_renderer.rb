@@ -27,6 +27,8 @@ module BujoPdf
       #   renderer = MyGridRenderer.new(pdf, 612, 792)
       #   renderer.render
       class BaseGridRenderer
+        include Styling::Colors
+
         attr_reader :pdf, :width, :height, :spacing, :options
 
         # Initialize a new grid renderer
@@ -65,7 +67,7 @@ module BujoPdf
         #
         # @return [String] 6-digit hex color code
         def line_color
-          @options.fetch(:line_color, Styling::Colors.DOT_GRID)
+          @options.fetch(:line_color, color_dot_grid)
         end
 
         # Get line width from options or default
@@ -79,7 +81,7 @@ module BujoPdf
         #
         # @return [String] 6-digit hex color code
         def fill_color
-          @options.fetch(:fill_color, Styling::Colors.DOT_GRID)
+          @options.fetch(:fill_color, color_dot_grid)
         end
 
         # Calculate how many grid columns fit in the given width
@@ -102,8 +104,8 @@ module BujoPdf
         #
         # @return [void]
         def restore_colors
-          @pdf.fill_color Styling::Colors.TEXT_BLACK
-          @pdf.stroke_color Styling::Colors.TEXT_BLACK
+          @pdf.fill_color color_text_black
+          @pdf.stroke_color color_text_black
         end
       end
     end

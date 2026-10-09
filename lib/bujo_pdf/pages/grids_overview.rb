@@ -40,11 +40,10 @@ module BujoPdf
         { label: 'Ruled Lines', dest: 'grid_lined', description: 'Standard ruled lines for writing' }
       ].freeze
 
-      # Set up layout with Grids tab highlighted
+      # Set up named destination
       def setup
         set_destination('grids_overview')
-        use_layout :standard_with_sidebars,
-          highlight_tab: :grids
+        # No use_layout needed: inherits PDF chrome, auto-detects highlight from page_key
       end
 
       # Render the grids overview with sample links
