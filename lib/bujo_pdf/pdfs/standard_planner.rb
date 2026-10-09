@@ -41,6 +41,7 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
     left :week_sidebar
     right :tab_sidebar do
       tab "Year", dest: :seasonal
+      tab "Index", dest: [:index_1, :index_2]
       tab "Future", dest: [:future_log_1, :future_log_2]
       tab "Events", dest: :year_events
       tab "Highlights", dest: :year_highlights
