@@ -28,3 +28,9 @@ config/collections.yml
 # YARD documentation output
 doc/
 .yardoc/
+
+# LikeC4 diagram tooling (sources in docs/likec4/*.c4 are tracked)
+node_modules/
+docs/likec4/out/
+docs/likec4/site/
+likec4.json
