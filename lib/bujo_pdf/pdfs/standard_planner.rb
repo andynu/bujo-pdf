@@ -13,6 +13,7 @@
 # - Year events
 # - Year highlights
 # - Multi-year overview
+# - Ritual deck (only with rituals: true)
 # - Quarterly planning + Monthly reviews + Weekly pages (interleaved)
 # - Grid pages (showcase, overview, dot, graph, lined, isometric, perspective, hexagon)
 # - Tracker example
@@ -24,7 +25,7 @@
 # @example Generate a standard planner
 #   BujoPdf.generate_from_recipe :standard_planner, year: 2025, output: 'planner_2025.pdf'
 #
-BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
+BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
   metadata do
     title "Planner #{year}"
     author 'BujoPdf'
@@ -76,6 +77,14 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil|
   page :year_events, id: :year_events, year: year, outline: true
   page :year_highlights, id: :year_highlights, year: year, outline: true
   page :multi_year, id: :multi_year, year: year, year_count: 4, outline: true
+
+  # Ritual deck: pages from assets/ritual_deck, inserted as they are (no chrome)
+  if rituals
+    deck = import_pdf(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__), prefix: :ritual)
+    group :rituals, outline: 'Rituals' do
+      import_pages deck, outline: true
+    end
+  end
 
   # 3. Weekly pages with interleaved monthly reviews and quarterly planning
   outline_entry :quarter_1, 'Quarterly Planning'
