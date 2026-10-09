@@ -1,0 +1,29 @@
+# Page keys for bujo_ritual_deck.pdf, by page number (1-based).
+# Append a line when the deck grows. Keys become page ids (optionally
+# prefixed by import_pdf), so renaming one breaks links that use it.
+pdf: bujo_ritual_deck.pdf
+pages:
+  daily:
+    page: 1
+    title: The Daily Protocol
+  weekly:
+    page: 2
+    title: The Weekly Review
+  monthly:
+    page: 3
+    title: The Monthly Ritual
+  seasonal:
+    page: 4
+    title: The Seasonal Check-in
+  quarterly:
+    page: 5
+    title: The Quarterly Review
+  yearly_migration:
+    page: 6
+    title: The Yearly Migration
+  birthday:
+    page: 7
+    title: The Birthday Review
+  pausing:
+    page: 8
+    title: The Pausing Page
