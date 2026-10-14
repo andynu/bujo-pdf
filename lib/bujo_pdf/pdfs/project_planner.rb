@@ -23,22 +23,22 @@
 # Expected outline structure:
 #   - Year Overview (cover)
 #   - Months (section, links to January)
-#     - January 2025
-#     - February 2025
-#     - March 2025
-#     - April 2025
-#     - May 2025
+#     - January 2026
+#     - February 2026
+#     - March 2026
+#     - April 2026
+#     - May 2026
 #     - (June suppressed)
-#     - July 2025
-#     - August 2025
-#     - September 2025
-#     - October 2025
-#     - November 2025
-#     - December 2025
+#     - July 2026
+#     - August 2026
+#     - September 2026
+#     - October 2026
+#     - November 2026
+#     - December 2026
 #   - Notes
 #
 # @example Generate a project planner
-#   BujoPdf.generate_from_recipe :project_planner, year: 2025, output: 'project_planner_2025.pdf'
+#   BujoPdf.generate_from_recipe :project_planner, year: 2026, output: 'project_planner_2026.pdf'
 #
 BujoPdf.define_pdf :project_planner do |year:, theme: nil|
   metadata do
