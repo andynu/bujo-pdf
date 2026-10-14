@@ -4,14 +4,14 @@
 require 'simplecov'
 
 SimpleCov.start do
-  add_filter '/test/'
-  add_filter '/vendor/'
+  skip '/test/'
+  skip '/vendor/'
 
-  add_group 'Utilities', 'lib/bujo_pdf/utilities'
-  add_group 'Components', 'lib/bujo_pdf/components'
-  add_group 'Pages', 'lib/bujo_pdf/pages'
-  add_group 'Layouts', 'lib/bujo_pdf/layouts'
-  add_group 'Core', 'lib/bujo_pdf'
+  group 'Utilities', 'lib/bujo_pdf/utilities'
+  group 'Components', 'lib/bujo_pdf/components'
+  group 'Pages', 'lib/bujo_pdf/pages'
+  group 'Layouts', 'lib/bujo_pdf/layouts'
+  group 'Core', 'lib/bujo_pdf'
 
   # Overall coverage target: 80%
   minimum_coverage 80
@@ -19,7 +19,7 @@ SimpleCov.start do
   # Per-file coverage: lower threshold since some files are presentation layer
   # and harder to test without full PDF generation.
   # In CI, skip per-file checks to avoid failing on edge cases.
-  minimum_coverage_by_file 15 unless ENV['CI']
+  coverage(:line) { minimum 15, per: :file } unless ENV['CI']
 end
 
 require 'minitest/autorun'
