@@ -1,5 +1,7 @@
 # BujoPdf
 
+[![Personal Software](https://andynu.com/personalsoftware/badge.svg)](http://andynu.com/personalsoftware)
+
 A Ruby gem for generating programmable bullet journal PDFs optimized for digital note-taking apps like Noteshelf and GoodNotes.
 
 ## Download Example PDFs
