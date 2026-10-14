@@ -28,7 +28,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'icalendar', '~> 2.10'
 
   spec.add_development_dependency 'rake', '~> 13.0'
-  spec.add_development_dependency 'minitest', '~> 5.0'
+  spec.add_development_dependency 'minitest', '~> 6.0'
+  spec.add_development_dependency 'minitest-mock', '~> 5.27'
   spec.add_development_dependency 'minitest-reporters', '~> 1.5'
   spec.add_development_dependency 'simplecov', '~> 0.22'
   spec.add_development_dependency 'webmock', '~> 3.0'
