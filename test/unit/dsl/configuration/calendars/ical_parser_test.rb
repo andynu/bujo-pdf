@@ -239,6 +239,18 @@ module BujoPdf
         assert_equal 'Important Event', events.first.summary
       end
 
+      def test_exclude_patterns_match_description
+        ical_data = build_ical_with_events([
+          { summary: 'Memorial Day', description: 'Public holiday', dtstart: '20270531', dtend: '20270601', all_day: true },
+          { summary: "Mother's Day", description: 'Observance', dtstart: '20270509', dtend: '20270510', all_day: true },
+          { summary: 'Lunch', dtstart: '20270117', dtend: '20270118', all_day: true }
+        ])
+
+        events = @parser.parse(ical_data, exclude_patterns: ['^Observance'])
+
+        assert_equal ['Lunch', 'Memorial Day'], events.map(&:summary).sort
+      end
+
       # ============================================
       # Events Without Summary Tests
       # ============================================
@@ -348,6 +360,7 @@ module BujoPdf
         event_specs.each do |spec|
           event = Icalendar::Event.new
           event.summary = spec[:summary]
+          event.description = spec[:description] if spec[:description]
 
           if spec[:all_day]
             event.dtstart = Icalendar::Values::Date.new(spec[:dtstart])
