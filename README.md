@@ -125,7 +125,7 @@ BujoPdf can automatically highlight events from iCal calendars (Google Calendar,
 ```yaml
 calendars:
   - name: "US Federal Holidays"
-    url: "https://www.officeholidays.com/ics-fed/usa"
+    url: "https://calendar.google.com/calendar/ical/en.usa%23holiday%40group.v.calendar.google.com/public/basic.ics"
     enabled: true
     color: "FFE5E5"  # Light red background
     icon: "*"        # Displayed with event
@@ -135,6 +135,10 @@ calendars:
     enabled: true
     color: "E5F0FF"  # Light blue
     icon: "+"
+
+filters:
+  exclude_patterns:
+    - "^Observance"  # Drop non-holidays (Valentine's, Halloween) from Google's holiday feed
 ```
 
 3. Generate your planner - events automatically appear!
@@ -156,14 +160,14 @@ bujo-pdf 2025
 See `config/calendars.yml.example` for full configuration options including:
 - Cache TTL and directory
 - Network timeout and retry settings
-- Event filtering (exclude patterns, max events per day)
+- Event filtering (exclude patterns matched against title or description, max events per day)
 - Skip all-day events option
 
 #### Public Holiday Calendars
 
 Free holiday calendar URLs available from:
-- [OfficeHolidays.com](https://www.officeholidays.com/countries) - Federal holidays for US, UK, Canada, and 100+ countries
-- US Federal Holidays: `https://www.officeholidays.com/ics-fed/usa` (11 federal holidays per year)
+- Google's public holiday calendars - several years either side of today, so next year's planner gets holidays too. US: `https://calendar.google.com/calendar/ical/en.usa%23holiday%40group.v.calendar.google.com/public/basic.ics`; swap `en.usa` for another region (`en.uk`, `en.canadian`). Non-holidays carry an "Observance" description; filter them with `^Observance`
+- [OfficeHolidays.com](https://www.officeholidays.com/countries) - US, UK, Canada, and 100+ countries, but each feed covers the current year only
 
 ### Output
 
