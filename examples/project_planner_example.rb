@@ -20,14 +20,14 @@
 # Usage:
 #   bundle exec ruby examples/project_planner_example.rb
 #
-# After running, open project_planner_2025.pdf and check the PDF outline
+# After running, open project_planner_2026.pdf and check the PDF outline
 # (bookmarks panel) to see the hierarchical structure.
 #
 # =============================================================================
 
 require_relative '../lib/bujo_pdf'
 
-OUTPUT_FILE = 'project_planner_2025.pdf'
+OUTPUT_FILE = 'project_planner_2026.pdf'
 
 puts "=" * 70
 puts "Convention-Based Outline System Demo"
@@ -50,9 +50,9 @@ end
 puts
 
 # Generate the PDF
-puts "Generating project planner for 2025..."
+puts "Generating project planner for 2026..."
 begin
-  BujoPdf.generate_from_recipe(:project_planner, year: 2025, output: OUTPUT_FILE)
+  BujoPdf.generate_from_recipe(:project_planner, year: 2026, output: OUTPUT_FILE)
   puts "Success! Generated: #{OUTPUT_FILE}"
   puts "File size: #{File.size(OUTPUT_FILE)} bytes"
 rescue => e
@@ -68,18 +68,18 @@ puts "-" * 70
 puts <<~OUTLINE
   - 'Year Overview'      <- Cover page (outline: "Year Overview" override)
   - 'Months'             <- Group section header (links to first child)
-      - January 2025     <- Auto-generated from page title
-      - February 2025
-      - March 2025
-      - April 2025
-      - May 2025
+      - January 2026     <- Auto-generated from page title
+      - February 2026
+      - March 2026
+      - April 2026
+      - May 2026
       (June MISSING)     <- Suppressed with outline: false
-      - July 2025
-      - August 2025
-      - September 2025
-      - October 2025
-      - November 2025
-      - December 2025
+      - July 2026
+      - August 2026
+      - September 2026
+      - October 2026
+      - November 2026
+      - December 2026
   - 'Notes'              <- Auto-generated from page ID
 OUTLINE
 puts

@@ -23,7 +23,7 @@
 # - Collection pages (user-configured)
 #
 # @example Generate a standard planner
-#   BujoPdf.generate_from_recipe :standard_planner, year: 2025, output: 'planner_2025.pdf'
+#   BujoPdf.generate_from_recipe :standard_planner, year: 2026, output: 'planner_2026.pdf'
 #
 BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
   metadata do
