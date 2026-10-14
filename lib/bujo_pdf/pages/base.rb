@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'ostruct'
 require_relative '../utilities/styling'
 require_relative '../utilities/grid_system'
 require_relative '../utilities/dot_grid'
