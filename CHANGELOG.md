@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Year Wheel**: Circular year-at-a-glance visualization
 - **Grid Renderers**: Modular renderer classes for each grid type via GridFactory
 - **WeekGrid Component**: Quantized 7-column layouts aligned to dot grid
-- **generate-examples script**: Generates planners for current+next year in all themes
+- **generate-examples script** (renamed `bin/generate-downloadable-pdfs` after this release): Generates planners for current+next year in all themes
 
 ### Changed
 - Grids tab now starts with Grid Showcase (was Grids Overview)
