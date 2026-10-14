@@ -20,9 +20,10 @@ calendars:
     color: "4285F4"  # Blue for work events
     icon: "●"
 
-  # US Federal Holidays (from OfficeHolidays.com)
+  # US Federal Holidays (Google's public US holidays, covers several years
+  # either side of today; observances are dropped by exclude_patterns below)
   - name: "US Federal Holidays"
-    url: "https://www.officeholidays.com/ics-fed/usa"
+    url: "https://calendar.google.com/calendar/ical/en.usa%23holiday%40group.v.calendar.google.com/public/basic.ics"
     enabled: true
     color: "FFE5E5"  # Light red for holidays
     icon: "*"
@@ -57,15 +58,18 @@ filters:
   # Maximum number of events to show per day (prevents overcrowding)
   max_events_per_day: 3
 
-  # Event title patterns to exclude (regex)
+  # Event title or description patterns to exclude (regex)
   exclude_patterns:
     - "^\\[Private\\]"
     - "^Out of office$"
+    - "^Observance"  # Non-holiday days in Google's public holiday feeds
 
 # Notes:
 # - Get Google Calendar iCal URL: Settings → Integrate calendar → Secret address in iCal format
 # - For public holiday calendars, see:
-#   - US Federal Holidays: https://www.officeholidays.com/subscribe/usa
-#   - Other countries: https://www.officeholidays.com/countries
+#   - Google's public holiday calendars cover several years; swap "en.usa" in
+#     the URL above for another region (e.g. "en.uk", "en.canadian")
+#   - OfficeHolidays.com feeds (https://www.officeholidays.com/countries) only
+#     cover the current year, so next year's planner gets no holidays from them
 # - Colors are hex codes without # (e.g., "FF0000" for red)
 # - Icons: Use simple ASCII characters (* + # o) - emojis may not render in PDF
