@@ -75,9 +75,10 @@ module BujoPdf
         end
 
         # Check exclude patterns
-        summary = ical_event.summary.to_s
+        fields = [ical_event.summary.to_s, ical_event.description.to_s]
         exclude_patterns.any? do |pattern|
-          Regexp.new(pattern).match?(summary)
+          regex = Regexp.new(pattern)
+          fields.any? { |field| regex.match?(field) }
         end
       rescue StandardError => e
         warn "Error checking exclusion for event: #{e.message}"
