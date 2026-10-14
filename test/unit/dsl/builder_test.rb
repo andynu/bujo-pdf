@@ -178,7 +178,7 @@ class TestPdfBuilderPrivateMethods < Minitest::Test
 
   def test_build_page_context_with_month
     page_decl = BujoPdf::PdfDSL::PageDeclaration.new(:monthly_review)
-    month = BujoPdf::PdfDSL::Month.new(3, 2025)  # March
+    month = BujoPdf::PdfDSL::Month.new(year: 2025, number: 3)  # March
     page_decl.params[:month] = month
 
     base_context = { year: 2025, total_weeks: 53 }
@@ -202,7 +202,7 @@ class TestPdfBuilderPrivateMethods < Minitest::Test
   end
 
   def test_expand_dsl_params_with_month
-    month = BujoPdf::PdfDSL::Month.new(6, 2025)  # June
+    month = BujoPdf::PdfDSL::Month.new(year: 2025, number: 6)  # June
     params = { month: month }
 
     expanded = @builder.send(:expand_dsl_params, params)
