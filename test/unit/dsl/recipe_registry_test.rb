@@ -256,4 +256,33 @@ class TestRecipeRegistry < Minitest::Test
     assert_equal "Planner 2025", info[:Title]
     assert_equal "BujoPdf", info[:Author]
   end
+
+  # Built-in recipe loading
+
+  def test_load_recipes_registers_built_ins_again_after_clear
+    BujoPdf::PdfDSL.load_recipes!
+    BujoPdf::PdfDSL.clear_recipes!
+    BujoPdf::PdfDSL.load_recipes!
+
+    %i[standard_planner daily monthly project_planner].each do |name|
+      assert BujoPdf::PdfDSL.recipe?(name), "#{name} should be registered"
+    end
+  end
+
+  def test_load_recipes_reuses_definitions_instead_of_reloading_files
+    BujoPdf::PdfDSL.load_recipes!
+    first = BujoPdf::PdfDSL.recipes[:daily]
+    BujoPdf::PdfDSL.clear_recipes!
+    BujoPdf::PdfDSL.load_recipes!
+
+    assert_same first, BujoPdf::PdfDSL.recipes[:daily]
+  end
+
+  def test_load_recipes_keeps_user_defined_recipes
+    BujoPdf.define_pdf :mine do |year:|; end
+    BujoPdf::PdfDSL.load_recipes!
+
+    assert BujoPdf::PdfDSL.recipe?(:mine)
+    assert BujoPdf::PdfDSL.recipe?(:standard_planner)
+  end
 end

@@ -125,11 +125,21 @@ module BujoPdf
       #
       # Call this after requiring pdf_dsl to register standard recipes.
       # Uses load instead of require to allow re-loading after clear_recipes!
+      # Each file is loaded only once; later calls re-register the cached
+      # definitions, since loading a file again resets its line coverage.
       def load_recipes!
-        recipe_dir = File.expand_path('pdfs', __dir__)
-        Dir[File.join(recipe_dir, '*.rb')].sort.each do |recipe_path|
-          load recipe_path
+        @builtin_recipes ||= begin
+          existing = @recipes
+          @recipes = {}
+          recipe_dir = File.expand_path('pdfs', __dir__)
+          Dir[File.join(recipe_dir, '*.rb')].sort.each do |recipe_path|
+            load recipe_path
+          end
+          @recipes
+        ensure
+          @recipes = existing
         end
+        @recipes.merge!(@builtin_recipes)
       end
     end
   end
