@@ -6,13 +6,13 @@ A Ruby gem for generating programmable bullet journal PDFs optimized for digital
 
 Pre-generated planners with US Federal Holidays:
 
-| Theme | 2025 | 2026 |
+| Theme | 2026 | 2027 |
 |-------|------|------|
-| **Light** | [planner_2025_light.pdf](examples/planner_2025_light.pdf) | [planner_2026_light.pdf](examples/planner_2026_light.pdf) |
-| **Earth** | [planner_2025_earth.pdf](examples/planner_2025_earth.pdf) | [planner_2026_earth.pdf](examples/planner_2026_earth.pdf) |
-| **Dark** | [planner_2025_dark.pdf](examples/planner_2025_dark.pdf) | [planner_2026_dark.pdf](examples/planner_2026_dark.pdf) |
+| **Light** | [planner_2026_light.pdf](examples/planner_2026_light.pdf) | [planner_2027_light.pdf](examples/planner_2027_light.pdf) |
+| **Earth** | [planner_2026_earth.pdf](examples/planner_2026_earth.pdf) | [planner_2027_earth.pdf](examples/planner_2027_earth.pdf) |
+| **Dark** | [planner_2026_dark.pdf](examples/planner_2026_dark.pdf) | [planner_2027_dark.pdf](examples/planner_2027_dark.pdf) |
 
-Or generate your own with custom calendars using `bin/generate-examples`.
+Or generate your own with custom calendars using `bin/generate-downloadable-pdfs`.
 
 ## Features
 
