@@ -123,7 +123,7 @@ end
 ```
 
 - `:full_page` - No sidebars, full 43x55 content area
-- `:standard_with_sidebars` - Week sidebar + nav tabs, 39-col content area
+- `:standard_with_sidebars` - Week sidebar + nav tabs, 40-col content area (cols 2-41)
 - `:configurable` - Uses ChromeSpec for flexible chrome configuration
 
 ### Component Verbs

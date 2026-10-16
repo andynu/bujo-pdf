@@ -39,7 +39,7 @@ Details how pages declare layout intent and the layout system handles rendering:
 - **Page classes** call `setup()` method
 - **LayoutFactory** creates appropriate layout instances
 - **BaseLayout** provides render hooks (render_before, render_after)
-- **StandardWithSidebarsLayout**: Renders week sidebar (3 cols) + nav tabs (1 col), calculates 39-col content area
+- **StandardWithSidebarsLayout**: Renders week sidebar (2 cols) + nav tabs (1 col), calculates 40-col content area
 - **FullPageLayout**: Provides full 43×55 grid access (no sidebars)
 - **Content area hash** passed to page render() methods with grid coordinates
 

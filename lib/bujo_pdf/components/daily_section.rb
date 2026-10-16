@@ -22,9 +22,9 @@ module BujoPdf
     #   section = DailySection.new(
     #     canvas: canvas,
     #     week_start: Date.new(2025, 10, 13),
-    #     content_start_col: 3,
+    #     content_start_col: 2,
     #     content_start_row: 2,
-    #     content_width_boxes: 39,
+    #     content_width_boxes: 40,
     #     daily_rows: 9
     #   )
     #   section.render

@@ -141,9 +141,9 @@ end
 ### Layout Types
 
 **StandardWithSidebarsLayout**
-- Left sidebar: 3 columns (week list 1-52/53)
+- Left sidebar: 2 columns (week list 1-52/53)
 - Right sidebar: 1 column (year page tabs)
-- Content area: 39 columns × 55 rows
+- Content area: 40 columns × 55 rows (cols 2-41)
 - Used by: WeeklyPage, YearEvents, YearHighlights
 
 **FullPageLayout**

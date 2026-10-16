@@ -85,7 +85,7 @@ module BujoPdf
       #   { col: 0, row: 0, width_boxes: 43, height_boxes: 55 }
       #
       # @example Content area with sidebars
-      #   { col: 3, row: 0, width_boxes: 39, height_boxes: 55 }
+      #   { col: 2, row: 0, width_boxes: 40, height_boxes: 55 }
       def content_area
         if @chrome_spec
           @chrome_spec.content_area(PAGE_WIDTH_BOXES, PAGE_HEIGHT_BOXES)
