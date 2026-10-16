@@ -53,7 +53,7 @@ module BujoPdf
       # @param content_start_col [Integer] Starting column for content area
       # @param content_width_boxes [Integer] Width of content area in grid boxes
       def initialize(canvas:, week_context: nil, year: nil, week_num: nil, total_weeks: nil,
-                     week_start: nil, week_end: nil, content_start_col: 3, content_width_boxes: 39,
+                     week_start: nil, week_end: nil, content_start_col: 2, content_width_boxes: 40,
                      chips: false)
         super(canvas: canvas)
         @chips = chips

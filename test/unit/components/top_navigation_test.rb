@@ -34,6 +34,21 @@ class TestTopNavigation < Minitest::Test
     assert_equal @week_end, nav.instance_variable_get(:@week_end)
   end
 
+  def test_default_content_area_matches_standard_sidebars
+    nav = BujoPdf::Components::TopNavigation.new(
+      canvas: @canvas,
+      year: 2025,
+      week_num: 42,
+      total_weeks: 52,
+      week_start: @week_start,
+      week_end: @week_end
+    )
+    standard = BujoPdf::Layouts::ChromeSpec.new(left: :week_sidebar, right: :tab_sidebar).content_area
+
+    assert_equal standard[:col], nav.instance_variable_get(:@content_start_col)
+    assert_equal standard[:width_boxes], nav.instance_variable_get(:@content_width_boxes)
+  end
+
   def test_initialize_with_custom_content_area
     nav = BujoPdf::Components::TopNavigation.new(
       canvas: @canvas,
@@ -198,7 +213,7 @@ class TestTopNavigation < Minitest::Test
       week_end: @week_end
     )
 
-    nav_box = @grid.rect(3, 0, 39, 2)
+    nav_box = @grid.rect(2, 0, 40, 2)
     nav.send(:draw_title, nav_box)
   end
 
