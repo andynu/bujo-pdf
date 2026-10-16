@@ -441,6 +441,8 @@ end
 
 All positioning in the planner uses a grid-based coordinate system that abstracts Prawn's point-based system.
 
+![Grid orientation](grid-orientation.svg)
+
 ![Grid System](grid-system.svg)
 
 ### Grid Specifications

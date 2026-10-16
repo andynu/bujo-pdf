@@ -20,4 +20,7 @@ for diagram in "${diagrams[@]}"; do
   d2 "${diagram}.d2" "${diagram}.svg"
 done
 
+echo "  - grid-orientation.rb → grid-orientation.svg"
+bundle exec ruby grid-orientation.rb
+
 echo "Done! All diagrams regenerated."
