@@ -57,7 +57,7 @@ end
 
 **Available layouts:**
 - `:full_page` - No sidebars, full 43×55 content area
-- `:standard_with_sidebars` - Left week sidebar (3 cols) + right nav tabs (1 col)
+- `:standard_with_sidebars` - Left week sidebar (2 cols) + right nav tabs (1 col)
 
 Layouts automatically:
 - Render navigation sidebars
