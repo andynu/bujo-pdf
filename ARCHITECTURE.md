@@ -26,6 +26,8 @@ All positioning uses a **grid coordinate system** rather than raw PDF points:
 - **Box size**: 14.17pt (≈5mm) matching dot spacing
 - **Page size**: 612pt × 792pt (US Letter)
 
+![Grid orientation](docs/grid-orientation.png)
+
 **Coordinate conversion methods:**
 - `grid_x(col)` - Convert column to x-coordinate
 - `grid_y(row)` - Convert row to y-coordinate (row 0 = top)

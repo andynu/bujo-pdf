@@ -22,5 +22,8 @@ done
 
 echo "  - grid-orientation.rb → grid-orientation.svg"
 bundle exec ruby grid-orientation.rb
+echo "  - grid-orientation.svg → grid-orientation.png"
+inkscape grid-orientation.svg --export-type=png --export-dpi=192 \
+  --export-background=white --export-filename=grid-orientation.png
 
 echo "Done! All diagrams regenerated."

@@ -228,6 +228,10 @@ The gem uses a component-based architecture with:
 - **Pages** - Page classes that compose components
 - **Utilities** - Date calculations, dot grids, styling helpers
 
+Pages place everything on a 43×55 grid of 5mm boxes, counted from the top-left, and `GridSystem` converts those positions to Prawn's bottom-left point coordinates:
+
+[![Grid orientation: the 43x55 grid on a US Letter page, both coordinate origins, the standard sidebars and a worked grid.rect conversion](docs/grid-orientation.png)](docs/grid-orientation.png)
+
 See **[ARCHITECTURE.md](ARCHITECTURE.md)** for detailed technical documentation.
 
 ## Testing
