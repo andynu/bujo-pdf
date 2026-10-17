@@ -62,6 +62,7 @@ module BujoPdf
       # Strokes sit just inside their rect so adjacent outlines stay distinct.
       INSET = 0.25
       LINE_WIDTH = 0.5
+      GRID_OPACITY = 0.4
 
       # @param option [true, String, Array, nil, false] true for every kind,
       #   or kinds as "grid,link" or %i[grid link]
@@ -113,18 +114,27 @@ module BujoPdf
       # @param content_area [Hash, nil] The page's content area in grid boxes
       # @return [void]
       def draw(pdf, grid, chrome_spec: nil, content_area: nil)
-        pdf.save_graphics_state do
-          Diagnostics.draw_grid(pdf, grid, label_every: 5) if enabled?(:grid)
-          pdf.line_width LINE_WIDTH
-          chrome_rects(grid, chrome_spec).each { |rect| stroke(pdf, :chrome, rect) } if enabled?(:chrome)
-          stroke(pdf, :content, grid_rect(grid, content_area)) if content_area && enabled?(:content)
-          @rects.each { |rect| stroke(pdf, rect[:kind], rect) }
+        # Font is document state, not graphics state, and would carry over
+        # to the next page.
+        pdf.save_font do
+          draw_outlines(pdf, grid, chrome_spec, content_area)
         end
       ensure
         @rects.clear
       end
 
       private
+
+      def draw_outlines(pdf, grid, chrome_spec, content_area)
+        pdf.save_graphics_state do
+          # The grid's dots and label backgrounds would hide the page if opaque.
+          pdf.transparent(GRID_OPACITY) { Diagnostics.draw_grid(pdf, grid, label_every: 5) } if enabled?(:grid)
+          pdf.line_width LINE_WIDTH
+          chrome_rects(grid, chrome_spec).each { |rect| stroke(pdf, :chrome, rect) } if enabled?(:chrome)
+          stroke(pdf, :content, grid_rect(grid, content_area)) if content_area && enabled?(:content)
+          @rects.each { |rect| stroke(pdf, rect[:kind], rect) }
+        end
+      end
 
       def stroke(pdf, kind, rect)
         pdf.stroke_color COLORS.fetch(kind)

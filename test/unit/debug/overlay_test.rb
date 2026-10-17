@@ -158,6 +158,14 @@ class TestDebugOverlay < Minitest::Test
     assert_equal 3, @pdf.line_width
   end
 
+  def test_draw_restores_font
+    @pdf.font 'Times-Roman', size: 14
+    Overlay.build(true).draw(@pdf, @grid)
+
+    assert_equal 'Times-Roman', @pdf.font.family
+    assert_equal 14, @pdf.font_size
+  end
+
   private
 
   def reader_for(pdf)
