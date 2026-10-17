@@ -12,6 +12,7 @@ module BujoPdf
       # Parse arguments
       year = nil
       theme = nil
+      strict = false
 
       i = 0
       while i < args.length
@@ -34,6 +35,8 @@ module BujoPdf
         when '--list-themes'
           list_themes
           exit 0
+        when '--strict'
+          strict = true
         else
           # Assume it's a year
           year = arg.to_i
@@ -54,13 +57,24 @@ module BujoPdf
       puts "Generating planner for #{year}#{theme_info}..."
 
       begin
-        BujoPdf.generate(year, output_path: output_file, theme: theme)
+        BujoPdf::PdfDSL.load_recipes!
+        recipe = BujoPdf::PdfDSL.recipes.fetch(:standard_planner)
+        build(recipe, output: output_file, strict: strict, year: year, theme: theme)
         puts "✓ Generated: #{output_file}"
       rescue StandardError => e
         warn "Error generating planner: #{e.message}"
         warn e.backtrace.join("\n") if ENV['DEBUG']
         exit 1
       end
+    end
+
+    # Build a recipe, printing each warning the build collected to stderr.
+    # A strict build raises PdfDSL::WarningsError instead of writing.
+    def self.build(definition, output:, strict:, **params)
+      builder = BujoPdf::PdfDSL::PdfBuilder.new
+      builder.build(definition, output: output, strict: strict, **params)
+      builder.warnings.each { |w| warn "Warning: #{w.message}" }
+      output
     end
 
     # Generate the sticker pack: transparent PNGs of standalone widgets, sized
@@ -176,6 +190,9 @@ module BujoPdf
         Options:
           --theme, -t THEME    Color theme (light, earth, dark; default: light)
           --list-themes        Show available themes
+          --strict             Fail instead of writing the PDF when a link,
+                               tab or outline entry has no destination, or
+                               two pages share an id
           --version, -v        Show version
           --help, -h           Show this help message
 
