@@ -44,7 +44,7 @@ module PdfAssertions
     broken = pdf_inspector(subject).links.select { |link| link.dest && link.page.nil? }
     assert broken.empty?, message(msg) {
       'Links to undeclared destinations: ' +
-        broken.map { |link| "page #{link.from_page} -> #{link.dest}" }.join(', ')
+        broken.group_by(&:dest).map { |dest, links| "#{dest} (from #{pages_list(links)})" }.join(', ')
     }
   end
 
@@ -80,6 +80,12 @@ module PdfAssertions
     return 'nothing' if links.empty?
 
     links.map { |link| link.dest || link.uri || "page #{link.page}" }.join(', ')
+  end
+
+  def pages_list(links, limit: 5)
+    pages = links.map(&:from_page).uniq
+    listed = pages.first(limit).join(', ')
+    "page#{'s' if pages.size > 1} #{listed}#{", ... #{pages.size} pages" if pages.size > limit}"
   end
 
   def outline_shape(items, depth)

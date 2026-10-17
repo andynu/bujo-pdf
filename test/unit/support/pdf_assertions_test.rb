@@ -70,7 +70,30 @@ class TestPdfAssertions < Minitest::Test
 
     @document.go_to_page(2)
     @document.link_annotation([1, 1, 2, 2], Dest: 'nowhere')
-    assert_fails_with(/page 2.*nowhere/) { assert_links_resolve PdfInspector.new(@document) }
+    assert_fails_with(/nowhere \(from page 2\)/) { assert_links_resolve PdfInspector.new(@document) }
+  end
+
+  def test_assert_links_resolve_groups_broken_links_by_destination
+    @document.go_to_page(2)
+    7.times { @document.link_annotation([1, 1, 2, 2], Dest: 'nowhere') }
+    @document.go_to_page(3)
+    @document.link_annotation([1, 1, 2, 2], Dest: 'nowhere')
+
+    assert_fails_with(/: nowhere \(from pages 2, 3\)\.?\z/) do
+      assert_links_resolve PdfInspector.new(@document)
+    end
+  end
+
+  def test_assert_links_resolve_shortens_a_long_page_list
+    4.times { @document.start_new_page }
+    (1..7).each do |page|
+      @document.go_to_page(page)
+      @document.link_annotation([1, 1, 2, 2], Dest: 'nowhere')
+    end
+
+    assert_fails_with(/nowhere \(from pages 1, 2, 3, 4, 5, \.\.\. 7 pages\)/) do
+      assert_links_resolve PdfInspector.new(@document)
+    end
   end
 
   def test_assert_outline_compares_the_whole_tree
