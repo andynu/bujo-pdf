@@ -27,20 +27,17 @@ module BujoPdf
       module Mixin
         # Render dots over a grid region
         #
-        # @param col [Integer] Starting column (left edge)
+        # @param col [Integer, GridRect] Starting column (left edge), or a GridRect for the whole region
         # @param row [Integer] Starting row (top edge)
         # @param width [Integer] Width in grid boxes
         # @param height [Integer] Height in grid boxes
         # @param color [String, nil] Optional hex color override
         # @return [void]
-        def grid_dots(col, row, width, height, color: nil)
+        def grid_dots(col, row = nil, width = nil, height = nil, color: nil)
           c = @canvas || Canvas.new(@pdf, @grid)
           GridDots.new(
             canvas: c,
-            col: col,
-            row: row,
-            width: width,
-            height: height,
+            **GridRect.from(col, row, width, height),
             color: color
           ).render
         end

@@ -39,16 +39,22 @@ module BujoPdf
       module Mixin
         # Render a ruled list with numbered entries
         #
-        # @param col [Integer] Starting column (left edge)
+        # @param col [Integer, GridRect] Starting column (left edge), or a GridRect to fill
         # @param row [Integer] Starting row (top of first line)
         # @param width [Integer] Width in grid boxes
-        # @param entries [Integer] Number of entry lines to draw
+        # @param entries [Integer] Number of entry lines to draw (default with a GridRect: as many as fit)
         # @param start_num [Integer] First entry number (default: 1)
         # @param show_page_box [Boolean] Show page number box at end (default: true)
         # @param line_color [String] Color for ruled lines (default: 'CCCCCC')
         # @param num_color [String] Color for entry numbers (default: '999999')
         # @return [void]
-        def ruled_list(col, row, width, entries:, start_num: 1, show_page_box: true, line_color: 'CCCCCC', num_color: '999999')
+        def ruled_list(col, row = nil, width = nil, entries: nil, start_num: 1, show_page_box: true, line_color: 'CCCCCC', num_color: '999999')
+          if col.is_a?(GridRect)
+            entries ||= col.height / LINE_HEIGHT
+            col, row, width = col.to_a
+          end
+          raise ArgumentError, 'ruled_list needs entries: unless given a GridRect' unless entries
+
           c = @canvas || Canvas.new(@pdf, @grid)
           RuledList.new(
             canvas: c,

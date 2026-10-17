@@ -26,7 +26,7 @@ module BujoPdf
       module Mixin
         # Render ruled lines over a grid region with dots on top
         #
-        # @param col [Integer] Starting column (left edge)
+        # @param col [Integer, GridRect] Starting column (left edge), or a GridRect for the whole region
         # @param row [Integer] Starting row (top edge)
         # @param width [Integer] Width in grid boxes
         # @param height [Integer] Number of lines/rows
@@ -35,14 +35,11 @@ module BujoPdf
         # @param dash [Array, nil] Dash pattern [length, space] or nil for solid (default: nil)
         # @param redraw_dots [Boolean] Whether to redraw dots on top of lines (default: true)
         # @return [void]
-        def ruled_lines(col, row, width, height, color: 'E5E5E5', stroke: 0.5, dash: nil, redraw_dots: true)
+        def ruled_lines(col, row = nil, width = nil, height = nil, color: 'E5E5E5', stroke: 0.5, dash: nil, redraw_dots: true)
           c = @canvas || Canvas.new(@pdf, @grid)
           RuledLines.new(
             canvas: c,
-            col: col,
-            row: row,
-            width: width,
-            height: height,
+            **GridRect.from(col, row, width, height),
             color: color,
             stroke: stroke,
             dash: dash,

@@ -382,3 +382,28 @@ class TestBoxEdgeCases < Minitest::Test
     box.render
   end
 end
+
+class TestBoxMixinCell < Minitest::Test
+  def test_box_accepts_a_cell_in_place_of_coordinates
+    by_coords = TestBoxMixin::TestComponent.new
+    by_coords.box(2, 4, 10, 3)
+    by_cell = TestBoxMixin::TestComponent.new
+    by_cell.box(BujoPdf::GridRect.new(2, 4, 10, 3))
+
+    assert_equal by_coords.pdf.render, by_cell.pdf.render
+  end
+
+  def test_box_returns_its_area
+    component = TestBoxMixin::TestComponent.new
+
+    assert_equal BujoPdf::GridRect.new(2, 4, 10, 3), component.box(2, 4, 10, 3)
+  end
+
+  def test_box_yields_its_area
+    component = TestBoxMixin::TestComponent.new
+    yielded = nil
+    component.box(2, 4, 10, 3) { |cell| yielded = cell }
+
+    assert_equal BujoPdf::GridRect.new(2, 4, 10, 3), yielded
+  end
+end
