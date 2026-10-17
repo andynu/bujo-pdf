@@ -42,7 +42,7 @@ module BujoPdf
       module Mixin
         # Render a fieldset (bordered box with legend) at grid coordinates
         #
-        # @param col [Integer] Starting column (left edge)
+        # @param col [Integer, GridRect] Starting column (left edge), or a GridRect for the whole fieldset
         # @param row [Integer] Starting row (top edge)
         # @param width [Integer] Width in grid boxes
         # @param height [Integer] Height in grid boxes
@@ -55,16 +55,26 @@ module BujoPdf
         # @param inset_boxes [Float] Border inset from edge in grid boxes (default: 0.5)
         # @param legend_offset_x [Integer] Fine-tuning X offset (default: 0)
         # @param legend_offset_y [Integer] Fine-tuning Y offset (default: 0)
-        # @return [void]
-        def fieldset(col, row, width, height, legend:, position: :top_left, **options)
+        # @yieldparam inner [GridRect] Content area inside the border and clear of the legend
+        # @return [GridRect] Content area inside the border and clear of the legend
+        #
+        # @example Lay out contents without computing the inset
+        #   fieldset(2, 4, 38, 12, legend: 'Tasks') do |inner|
+        #     ruled_list(inner, show_page_box: false)
+        #   end
+        def fieldset(col, row = nil, width = nil, height = nil, legend:, position: :top_left, **options)
           canvas = @canvas || Canvas.new(@pdf, @grid)
-          Fieldset.new(
+          fieldset = Fieldset.new(
             canvas: canvas,
-            col: col, row: row, width: width, height: height,
+            **GridRect.from(col, row, width, height),
             legend: legend,
             position: position,
             **options
-          ).render
+          )
+          fieldset.render
+          inner = fieldset.content_rect
+          yield inner if block_given?
+          inner
         end
       end
 
@@ -132,6 +142,27 @@ module BujoPdf
         draw_border
         draw_legend
         record_debug_rects
+      end
+
+      # Grid-snapped area inside the border, clear of the legend.
+      #
+      # The border plus half a box of padding is rounded up to whole boxes on
+      # every side, and the edge carrying the legend gives up one more box.
+      #
+      # @return [GridRect]
+      def content_rect
+        inset = (@inset_boxes + 0.5).ceil
+        left = top = right = bottom = inset
+
+        case @config[:edge]
+        when :top then top += 1
+        when :bottom then bottom += 1
+        when :right then right += 1
+        when :left then left += 1
+        end
+
+        GridRect.new(@col + left, @row + top,
+                     @width_boxes - left - right, @height_boxes - top - bottom)
       end
 
       private

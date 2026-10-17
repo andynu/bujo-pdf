@@ -508,3 +508,14 @@ class TestRuledLinesEdgeCases < Minitest::Test
     ruled.render
   end
 end
+
+class TestRuledLinesMixinCell < Minitest::Test
+  def test_ruled_lines_accepts_a_cell_in_place_of_coordinates
+    by_coords = TestRuledLinesMixin::TestComponent.new
+    by_coords.ruled_lines(2, 4, 10, 3, color: 'CCCCCC')
+    by_cell = TestRuledLinesMixin::TestComponent.new
+    by_cell.ruled_lines(BujoPdf::GridRect.new(2, 4, 10, 3), color: 'CCCCCC')
+
+    assert_equal by_coords.pdf.render, by_cell.pdf.render
+  end
+end

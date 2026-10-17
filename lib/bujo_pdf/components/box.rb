@@ -21,7 +21,7 @@ module BujoPdf
       module Mixin
         # Render a box at grid coordinates
         #
-        # @param col [Integer] Starting column (left edge)
+        # @param col [Integer, GridRect] Starting column (left edge), or a GridRect for the whole box
         # @param row [Integer] Starting row (top edge)
         # @param width [Integer] Width in grid boxes
         # @param height [Integer] Height in grid boxes
@@ -30,21 +30,22 @@ module BujoPdf
         # @param fill [String, nil] Fill color (nil for no fill)
         # @param radius [Float] Corner radius in points (default: 0 for square)
         # @param opacity [Float] Opacity 0.0-1.0 (default: 1.0)
-        # @return [void]
-        def box(col, row, width, height, stroke: 'CCCCCC', stroke_width: 0.5, fill: nil, radius: 0, opacity: 1.0)
+        # @yieldparam area [GridRect] The box's area, for laying out its contents
+        # @return [GridRect] The box's area
+        def box(col, row = nil, width = nil, height = nil, stroke: 'CCCCCC', stroke_width: 0.5, fill: nil, radius: 0, opacity: 1.0)
           c = @canvas || Canvas.new(@pdf, @grid)
+          area = GridRect.from(col, row, width, height)
           Box.new(
             canvas: c,
-            col: col,
-            row: row,
-            width: width,
-            height: height,
+            **area,
             stroke: stroke,
             stroke_width: stroke_width,
             fill: fill,
             radius: radius,
             opacity: opacity
           ).render
+          yield area if block_given?
+          area
         end
       end
 

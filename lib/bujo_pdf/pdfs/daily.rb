@@ -75,36 +75,30 @@ BujoPdf.define_pdf :daily do |year:, theme: nil|
         h1(2, 1, day_title, width: 38)
         h2(2, 2, day_name, width: 38)
         
-        # Tasks section
-        # Fieldset: col=2, row=4, width=38, height=12
-        # Border inset: 0.5 boxes, so border at col=2.5, row=4.5, width=37, height=11
-        # Legend at top (row 4.0) takes ~1 row, so content starts at row 6
-        # Available height: 12 - 0.5 (top) - 1 (legend) - 0.5 (bottom) = 10 rows
-        # Each entry is 2 rows, so max 5 entries fit
-        fieldset(2, 4, 38, 12, legend: 'Tasks')
-        # Position: col=3 (0.5 inside border at 2.5), row=6 (below legend), width=36 (fits inside border)
-        ruled_list(3, 6, 36, entries: 5, show_page_box: false)
-        
-        # Notes section
-        # Fieldset: col=2, row=17, width=38, height=20
-        # Border: col=2.5, row=17.5, width=37, height=19
-        # Content starts below legend at row 19
-        fieldset(2, 17, 38, 20, legend: 'Notes')
-        ruled_lines(3, 19, 36, 17)
-        
-        # Events/Appointments section
-        # Fieldset: col=2, row=38, width=38, height=8
-        # Border: col=2.5, row=38.5, width=37, height=7
-        # Content starts below legend at row 40
-        fieldset(2, 38, 38, 8, legend: 'Events')
-        ruled_lines(3, 40, 36, 5)
-        
-        # Reflection section
-        # Fieldset: col=2, row=47, width=38, height=6
-        # Border: col=2.5, row=47.5, width=37, height=5
-        # Content starts below legend at row 49
-        fieldset(2, 47, 38, 6, legend: 'Reflection')
-        ruled_lines(3, 49, 36, 3)
+        column(2, 4, 38, 49, gap: 1) do |c|
+          # Five two-row entries plus the fieldset's three rows of border and legend
+          c.slot(13) do |cell|
+            fieldset(cell, legend: 'Tasks') { |inner| ruled_list(inner, show_page_box: false) }
+          end
+          c.slot(:fill) do |cell|
+            fieldset(cell, legend: 'Notes') { |inner| ruled_lines(inner) }
+          end
+          c.slot(8) do |cell|
+            # No gap: the fieldset insets already space the borders a box apart,
+            # and the 38-box cell splits into two equal halves
+            row(cell, gap: 0) do |r|
+              r.slot(:fill) do |half|
+                fieldset(half, legend: 'Events') { |inner| ruled_lines(inner) }
+              end
+              r.slot(:fill) do |half|
+                fieldset(half, legend: 'Events') { |inner| ruled_lines(inner) }
+              end
+            end
+          end
+          c.slot(6) do |cell|
+            fieldset(cell, legend: 'Reflection') { |inner| ruled_lines(inner) }
+          end
+        end
       end
     end
   end

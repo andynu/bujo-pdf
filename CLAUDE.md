@@ -146,6 +146,29 @@ def render
 end
 ```
 
+### Grid-Snapped Layout (cells, column, row)
+
+Rectangle verbs (`box`, `fieldset`, `ruled_lines`, `ruled_list`, `grid_dots`, `column`, `row`) take either `col, row, width, height` or a single `GridRect` cell as their first argument. `fieldset` returns and yields its content area (inside the border, clear of the legend); `box` returns and yields its own area. `ruled_list` given a cell draws as many entries as fit unless `entries:` is passed.
+
+`column` stacks slots top to bottom and `row` left to right. Each slot is a whole number of boxes or `:fill` (shares the remainder; extra boxes go to the earliest fills). Slots are laid out after the block, so `:fill` can sit anywhere. A stack that does not fit raises `ArgumentError`.
+
+```ruby
+column(2, 4, 38, 49, gap: 1) do |c|
+  c.slot(13) do |cell|
+    fieldset(cell, legend: 'Tasks') { |inner| ruled_list(inner, show_page_box: false) }
+  end
+  c.slot(:fill) { |cell| fieldset(cell, legend: 'Notes') { |inner| ruled_lines(inner) } }
+  c.slot(8) do |cell|
+    row(cell, gap: 1) do |r|
+      r.slot(:fill) { |half| box(half) }
+      r.slot(:fill) { |half| box(half) }
+    end
+  end
+end
+```
+
+Fieldset content area for the default 0.5 inset: one box in from each edge, two on the legend's edge (top legend: `col+1, row+2, width-2, height-3`).
+
 ## Key File Locations
 
 ```

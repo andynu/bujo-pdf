@@ -66,6 +66,7 @@ require_relative 'bujo_pdf/components/mini_month'
 require_relative 'bujo_pdf/components/ruled_list'
 require_relative 'bujo_pdf/components/list'
 require_relative 'bujo_pdf/components/layout_helpers'
+require_relative 'bujo_pdf/components/stack'
 require_relative 'bujo_pdf/components/link_box'
 require_relative 'bujo_pdf/components/all'
 

@@ -233,3 +233,14 @@ class TestGridDotsEdgeCases < Minitest::Test
     dots.render
   end
 end
+
+class TestGridDotsMixinCell < Minitest::Test
+  def test_grid_dots_accepts_a_cell_in_place_of_coordinates
+    by_coords = TestGridDotsMixin::TestComponent.new
+    by_coords.grid_dots(2, 4, 10, 3)
+    by_cell = TestGridDotsMixin::TestComponent.new
+    by_cell.grid_dots(BujoPdf::GridRect.new(2, 4, 10, 3))
+
+    assert_equal by_coords.pdf.render, by_cell.pdf.render
+  end
+end

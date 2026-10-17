@@ -329,3 +329,29 @@ class TestRuledListEdgeCases < Minitest::Test
     list.render
   end
 end
+
+class TestRuledListMixinCell < Minitest::Test
+  def test_ruled_list_accepts_a_cell_in_place_of_coordinates
+    by_coords = TestRuledListMixin::TestComponent.new
+    by_coords.ruled_list(2, 4, 18, entries: 3)
+    by_cell = TestRuledListMixin::TestComponent.new
+    by_cell.ruled_list(BujoPdf::GridRect.new(2, 4, 18, 6), entries: 3)
+
+    assert_equal by_coords.pdf.render, by_cell.pdf.render
+  end
+
+  def test_ruled_list_fills_a_cell_when_entries_are_omitted
+    explicit = TestRuledListMixin::TestComponent.new
+    explicit.ruled_list(2, 4, 18, entries: 4)
+    filled = TestRuledListMixin::TestComponent.new
+    filled.ruled_list(BujoPdf::GridRect.new(2, 4, 18, 9))
+
+    assert_equal explicit.pdf.render, filled.pdf.render
+  end
+
+  def test_ruled_list_requires_entries_without_a_cell
+    component = TestRuledListMixin::TestComponent.new
+
+    assert_raises(ArgumentError) { component.ruled_list(2, 4, 18) }
+  end
+end
