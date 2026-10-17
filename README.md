@@ -271,6 +271,7 @@ open coverage/index.html
 
 **Integration Tests**
 - Full PDF generation and validation
+- Planner navigation read back from the PDF: week links, tabs, outline, unresolved links
 - Multi-year support and leap year handling
 - Performance benchmarks
 
@@ -279,6 +280,7 @@ open coverage/index.html
 - **Framework**: Minitest with minitest-reporters
 - **Coverage**: SimpleCov with HTML reports
 - **Test Helper**: Custom assertions (assert_grid_position, assert_valid_link_bounds, assert_rect_equals)
+- **PDF Read-back**: `PdfInspector` and `PdfAssertions` (`test/support/`) check the rendered PDF's destinations, links, outline and page text (assert_destination, assert_link, assert_links_resolve, assert_outline, assert_pdf_text_on_page)
 - **Mock Objects**: MockPDF class for testing without PDF generation
 - **Structure**: Organized into test/unit/ and test/integration/ directories
 

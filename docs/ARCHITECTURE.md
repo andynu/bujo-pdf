@@ -791,6 +791,13 @@ Tests help verify:
 - Grid system produces correct coordinates
 - Prawn coordinate system behavior
 
+Navigation is checked in the rendered PDF itself. `PdfInspector` (`test/support/pdf_inspector.rb`)
+reads a document back with pdf-reader: named destinations from the `/Dests` name tree (root
+`/Names` or `/Kids` leaves), link annotations per page with their rect, destination name and
+landing page, the outline tree, and page text. `PdfAssertions` (`test/support/pdf_assertions.rb`)
+wraps it in Minitest assertions; `test/integration/planner_navigation_test.rb` uses them on a
+full standard planner.
+
 ---
 
 ## Value Objects

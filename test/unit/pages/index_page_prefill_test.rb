@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 require_relative '../../test_helper'
+require_relative '../../support/pdf_assertions'
 require 'bujo_pdf/pdf_dsl'
-require 'pdf/reader'
-require 'stringio'
 
 class TestIndexPagePrefill < Minitest::Test
+  include PdfAssertions
+
   ENTRIES = [
     { title: 'The Daily Protocol', dest: :ritual_daily },
     { title: 'The Weekly Review', dest: :ritual_weekly },
@@ -35,28 +36,24 @@ class TestIndexPagePrefill < Minitest::Test
       prefill: prefill, link_resolver: link_resolver
     )
     BujoPdf::Pages::IndexPage.new(@pdf, context).generate
-    PDF::Reader.new(StringIO.new(@pdf.render))
-  end
-
-  def annotations(reader)
-    (reader.pages.first.attributes[:Annots] || []).map { |ref| reader.objects.deref(ref) }
+    PdfInspector.new(@pdf)
   end
 
   def test_prefilled_titles_and_page_numbers_are_printed
-    text = generate.pages.first.text
+    pdf = generate
 
-    assert_includes text, 'The Daily Protocol'
-    assert_includes text, 'The Mood Meter'
-    assert_match(/\b109\b/, text)
-    assert_match(/\b118\b/, text)
+    assert_pdf_text_on_page pdf, 1, 'The Daily Protocol'
+    assert_pdf_text_on_page pdf, 1, 'The Mood Meter'
+    assert_pdf_text_on_page pdf, 1, /\b109\b/
+    assert_pdf_text_on_page pdf, 1, /\b118\b/
   end
 
   def test_each_entry_links_to_its_page
-    assert_equal %w[ritual_daily ritual_weekly ritual_mood_grid], annotations(generate).map { |a| a[:Dest] }
+    assert_equal %w[ritual_daily ritual_weekly ritual_mood_grid], generate.links(1).map(&:dest)
   end
 
   def test_link_covers_the_whole_entry_row_and_rows_stack_downward
-    rects = annotations(generate).map { |a| a[:Rect] }
+    rects = generate.links(1).map(&:rect)
 
     assert_equal rects.map { |r| r[3] }.sort.reverse, rects.map { |r| r[3] }
     rects.each do |left, bottom, right, top|
@@ -67,21 +64,21 @@ class TestIndexPagePrefill < Minitest::Test
 
   def test_entries_beyond_one_column_continue_in_the_second
     many = Array.new(27) { |i| { title: "Entry #{i}", dest: :ritual_daily } }
-    rects = annotations(generate(prefill: many)).map { |a| a[:Rect] }
+    rects = generate(prefill: many).links(1).map(&:rect)
 
     assert_operator rects[25][0], :>, rects[24][2], 'entry 26 should start in the right column'
     assert_in_delta rects[0][3], rects[25][3], 0.5, 'right column restarts at the first row'
   end
 
   def test_second_index_page_is_not_prefilled
-    reader = generate(page_num: 2)
+    pdf = generate(page_num: 2)
 
-    assert_empty annotations(reader)
-    refute_includes reader.pages.first.text, 'The Daily Protocol'
+    assert_empty pdf.links(1)
+    refute_includes pdf.text(1), 'The Daily Protocol'
   end
 
   def test_no_prefill_adds_no_links
-    assert_empty annotations(generate(prefill: nil))
+    assert_empty generate(prefill: nil).links(1)
   end
 
   def test_an_entry_for_an_undeclared_page_raises
@@ -99,9 +96,9 @@ class TestIndexPagePrefill < Minitest::Test
   end
 
   def test_entries_are_still_linked_without_a_resolver_but_show_no_page_number
-    reader = generate(link_resolver: nil)
+    pdf = generate(link_resolver: nil)
 
-    assert_equal 3, annotations(reader).length
-    refute_match(/\b1[01]\d\b/, reader.pages.first.text)
+    assert_equal 3, pdf.links(1).length
+    refute_match(/\b1[01]\d\b/, pdf.text(1))
   end
 end

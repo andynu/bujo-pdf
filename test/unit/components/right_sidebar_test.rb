@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require_relative '../../test_helper'
+require_relative '../../support/pdf_inspector'
 
 class TestRightSidebar < Minitest::Test
   def setup
@@ -38,8 +39,7 @@ class TestRightSidebar < Minitest::Test
   end
 
   def tab_link_destinations
-    reader = PDF::Reader.new(StringIO.new(@pdf.render))
-    reader.pages.first.attributes[:Annots].map { |ref| reader.objects.deref(ref)[:Dest] }
+    PdfInspector.new(@pdf).links(1).map(&:dest)
   end
 
   def test_tabs_from_the_chrome_dsl_replace_the_default_tabs
