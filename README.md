@@ -88,6 +88,12 @@ List available themes:
 bujo-pdf --list-themes
 ```
 
+Every build prints a warning to stderr for a link, tab or outline entry with no destination and for two pages sharing an id. To fail instead of writing the PDF:
+
+```bash
+bujo-pdf 2025 --strict
+```
+
 Show help:
 
 ```bash

@@ -161,7 +161,8 @@ lib/bujo_pdf/
 ├── dsl/             # PDF DSL components
 │   ├── chrome_builder.rb        # chrome do...end DSL
 │   ├── sidebar_definition.rb    # sidebar :name do...end DSL
-│   └── context.rb               # DeclarationContext with chrome support
+│   ├── context.rb               # DeclarationContext with chrome support
+│   └── link_check.rb            # Link warnings and WarningsError (strict)
 ├── components/      # Component verbs (text.rb, box.rb, ruled_lines.rb, etc.)
 ├── utilities/       # GridSystem, DateCalculator
 ├── themes/          # Color schemes (light, earth, dark)
@@ -181,6 +182,30 @@ PDF internal links use named destinations:
 - `index_N`, `future_log_N`, `review_N`, `quarter_N` - Front matter
 - `grid_*` - Grid template pages
 - `collection_<id>` - User-configured collection pages
+
+### Link Warnings and Strict Builds
+
+Every build checks its links. `PdfBuilder#warnings` holds one entry per problem, each with a `message`:
+
+- `UnresolvedLink` - a link or tab on a page points at a destination no page wrote
+- `UnresolvedOutline` - an outline entry's `dest` matches no declared page
+- `DuplicatePageId` - two pages declare the same `id:`
+- `DuplicateDestination` - two pages write the same named destination
+
+`LinkCheck` records Prawn's `add_dest` and `link_annotation` on the document, so any `link_annotation` call is covered without the caller reporting it. `bin/bujo-pdf` prints warnings to stderr.
+
+```ruby
+BujoPdf.define_pdf :my_planner do |year:|
+  strict                          # raise PdfDSL::WarningsError instead of writing
+  # ...
+end
+
+builder = BujoPdf::PdfDSL::PdfBuilder.new
+builder.build(definition, year: 2026, strict: true)  # overrides the recipe; false opts out
+builder.warnings.map(&:message)
+```
+
+CLI: `bin/bujo-pdf 2026 --strict` exits 1 listing every warning. `test/unit/pdfs/recipe_links_test.rb` builds every shipped recipe and fails on any new warning.
 
 ## Convention-Based Outline System
 

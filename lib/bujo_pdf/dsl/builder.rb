@@ -3,6 +3,7 @@
 require_relative 'context'
 require_relative 'definition'
 require_relative 'registry'
+require_relative 'link_check'
 
 module BujoPdf
   module PdfDSL
@@ -24,15 +25,20 @@ module BujoPdf
     #   builder.build(definition, year: 2025, output: 'my_planner.pdf')
     #
     class PdfBuilder
-      attr_reader :link_registry
+      attr_reader :link_registry, :warnings
 
       # Build a PDF from a definition.
       #
       # @param definition [PdfDefinition] The PDF definition to build
       # @param output [String, nil] Optional output file path
+      # @param strict [Boolean, nil] Raise instead of writing when the build
+      #   collects warnings; nil uses the recipe's `strict` setting
       # @param params [Hash] Parameters to pass to the definition
       # @return [Prawn::Document, String] The PDF document or output path
-      def build(definition, output: nil, **params)
+      # @raise [WarningsError] When strict and any warning was collected
+      def build(definition, output: nil, strict: nil, **params)
+        @warnings = Warnings.new
+
         # Phase 1: Declaration pass
         context = DeclarationContext.new
         definition.evaluate(context, **params)
@@ -45,6 +51,7 @@ module BujoPdf
 
         # Create PDF document
         pdf = create_document(context)
+        link_check = LinkCheck.attach(pdf, @warnings)
 
         # Create grid stamps for all grid types for efficiency
         create_grid_stamps(pdf)
@@ -54,9 +61,13 @@ module BujoPdf
 
         # Phase 2: Render pass - generate pages with resolved links
         render_pages(pdf, context.pages, base_context)
+        link_check.finish
 
         # Build PDF outline/bookmarks
         build_outline(pdf, context.pages, base_context, context.outline_entries)
+
+        strict = context.strict? if strict.nil?
+        raise WarningsError, @warnings if strict && !@warnings.empty?
 
         # Output
         if output
@@ -82,7 +93,9 @@ module BujoPdf
         registry = LinkRegistry.new
 
         # Register all pages with their page numbers
+        first_pages = {}
         context.pages.each_with_index do |page_decl, index|
+          warn_duplicate_id(page_decl, index + 1, first_pages)
           registry.register(page_decl, page_number: index + 1)
         end
 
@@ -92,6 +105,25 @@ module BujoPdf
         end
 
         registry
+      end
+
+      # Warn when a page reuses an explicit id an earlier page declared.
+      #
+      # The registry keeps only the last page per key, so links and outline
+      # entries for the earlier page silently go to the later one.
+      #
+      # @param page_decl [PageDeclaration] The page declaration
+      # @param page_number [Integer] Its 1-based page number
+      # @param first_pages [Hash<String, Integer>] Page number of each id seen so far
+      def warn_duplicate_id(page_decl, page_number, first_pages)
+        return unless page_decl.id
+
+        id = page_decl.id.to_s
+        if first_pages.key?(id)
+          @warnings << Warnings::DuplicatePageId.new(id: id, page: page_number, first_page: first_pages[id])
+        else
+          first_pages[id] = page_number
+        end
       end
 
       # Apply the specified theme.
@@ -482,6 +514,9 @@ module BujoPdf
             outline_scope.page destination: page_info[:page_number], title: entry.title
           end
           # Skip entries without valid destinations
+          if dest_key && !page_info
+            @warnings << Warnings::UnresolvedOutline.new(dest: dest_key, title: entry.title)
+          end
         end
 
         pdf.outline.define do

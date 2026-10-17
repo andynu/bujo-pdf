@@ -288,6 +288,24 @@ module BujoPdf
         @theme_name = name
       end
 
+      # Make the build raise instead of writing the PDF when it collects
+      # warnings (dead links, duplicate page ids). A `strict:` passed to the
+      # build overrides this.
+      #
+      # @param value [Boolean] Whether the build is strict
+      # @return [Boolean] The setting
+      #
+      # @example
+      #   strict
+      def strict(value = true)
+        @strict = value
+      end
+
+      # @return [Boolean] Whether the recipe asked for a strict build
+      def strict?
+        @strict == true
+      end
+
       # Configure default chrome (sidebars) for all pages.
       #
       # Chrome refers to the visual frame around page content: sidebars, tabs,
