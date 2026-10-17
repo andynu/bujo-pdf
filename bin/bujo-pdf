@@ -12,6 +12,7 @@ module BujoPdf
       # Parse arguments
       year = nil
       theme = nil
+      debug = nil
 
       i = 0
       while i < args.length
@@ -34,6 +35,16 @@ module BujoPdf
         when '--list-themes'
           list_themes
           exit 0
+        when '--debug'
+          debug = true
+        when /\A--debug=(.*)\z/
+          debug = Regexp.last_match(1)
+          begin
+            BujoPdf::Debug::Overlay.build(debug)
+          rescue ArgumentError => e
+            warn "Error: #{e.message}"
+            exit 1
+          end
         else
           # Assume it's a year
           year = arg.to_i
@@ -54,7 +65,7 @@ module BujoPdf
       puts "Generating planner for #{year}#{theme_info}..."
 
       begin
-        BujoPdf.generate(year, output_path: output_file, theme: theme)
+        BujoPdf.generate(year, output_path: output_file, theme: theme, debug: debug)
         puts "✓ Generated: #{output_file}"
       rescue StandardError => e
         warn "Error generating planner: #{e.message}"
@@ -176,6 +187,8 @@ module BujoPdf
         Options:
           --theme, -t THEME    Color theme (light, earth, dark; default: light)
           --list-themes        Show available themes
+          --debug[=KINDS]      Outline layout on every page; KINDS is a comma list
+                               of grid, chrome, content, fieldset, link (default: all)
           --version, -v        Show version
           --help, -h           Show this help message
 
@@ -187,6 +200,8 @@ module BujoPdf
           bujo-pdf 2025               # Generate planner for 2025
           bujo-pdf --theme earth      # Generate with earth theme
           bujo-pdf 2025 -t dark       # Generate 2025 with dark theme
+          bujo-pdf 2025 --debug       # Generate 2025 with the layout debug overlay
+          bujo-pdf --debug=grid,link  # Overlay only the grid and link rects
           bujo-pdf --list-themes      # Show all available themes
           bujo-pdf --version          # Show version number
 
