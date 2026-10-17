@@ -88,6 +88,13 @@ List available themes:
 bujo-pdf --list-themes
 ```
 
+Outline the layout on every page (grid, sidebar regions, content area, fieldsets, links):
+
+```bash
+bujo-pdf 2025 --debug
+bujo-pdf 2025 --debug=grid,link    # only some kinds
+```
+
 Show help:
 
 ```bash
@@ -107,6 +114,9 @@ BujoPdf.generate(2025)
 
 # Specify theme and output path
 BujoPdf.generate(2025, theme: :earth, output_path: 'my_planner.pdf')
+
+# Layout debug overlay (true, or kinds such as %i[fieldset link])
+BujoPdf.generate_from_recipe(:daily, year: 2025, output: 'daily.pdf', debug: true)
 ```
 
 ### Calendar Integration

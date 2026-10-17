@@ -649,18 +649,18 @@ base.include MyComponent::Mixin
 
 ## Debug Mode
 
-Toggle `DEBUG_GRID` in `planner_generator.rb`:
+Pass `--debug` to the CLI or `debug: true` to `BujoPdf.generate` / `generate_from_recipe`:
 
-```ruby
-DEBUG_GRID = true  # Show diagnostic grid overlay
+```bash
+bin/bujo-pdf 2026 --debug              # grid, chrome, content, fieldset, link
+bin/bujo-pdf 2026 --debug=grid,link    # only the kinds listed
 ```
 
-Adds:
-- Red dots at grid intersections
-- Dashed red lines every 5 boxes
-- Coordinate labels `(col, row)`
+Adds, on top of every page:
+- The diagnostic grid: red dots at intersections, dashed lines and `(col, row)` labels every 5 boxes
+- Outlines colour-coded by kind: chrome regions, the content area, fieldsets and link annotation rects
 
-Useful for verifying layout calculations.
+Useful for verifying layout calculations and link placement. See docs/ARCHITECTURE.md (Debug Mode) for how the overlay hooks in.
 
 ## Further Reading
 
