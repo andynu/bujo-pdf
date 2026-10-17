@@ -39,6 +39,7 @@ module BujoPdf
         base.include List::Mixin
         base.include Fieldset::Mixin
         base.include LayoutHelpers::Mixin
+        base.include Stack::Mixin
         base.include LinkBox::Mixin
       end
     end
