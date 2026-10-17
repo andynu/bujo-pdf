@@ -84,11 +84,14 @@ BujoPdf.define_pdf :daily do |year:, theme: nil|
             fieldset(cell, legend: 'Notes') { |inner| ruled_lines(inner) }
           end
           c.slot(8) do |cell|
-            fieldset(cell, legend: 'Events') do |inner|
-              # A gap of 2 splits the 36-box content area into two equal columns
-              row(inner, gap: 2) do |r|
-                r.slot(:fill) { |half| ruled_lines(half) }
-                r.slot(:fill) { |half| ruled_lines(half) }
+            # No gap: the fieldset insets already space the borders a box apart,
+            # and the 38-box cell splits into two equal halves
+            row(cell, gap: 0) do |r|
+              r.slot(:fill) do |half|
+                fieldset(half, legend: 'Events') { |inner| ruled_lines(inner) }
+              end
+              r.slot(:fill) do |half|
+                fieldset(half, legend: 'Events') { |inner| ruled_lines(inner) }
               end
             end
           end
