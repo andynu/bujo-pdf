@@ -32,6 +32,29 @@ module BujoPdf
       @height = height
     end
 
+    # Normalize a component verb's leading area arguments, which are either a
+    # GridRect or explicit col, row, width, height.
+    #
+    # @example
+    #   GridRect.from(cell)            # => cell
+    #   GridRect.from(2, 4, 38, 12)    # => #<GridRect col=2 row=4 width=38 height=12>
+    #
+    # @return [GridRect]
+    # @raise [ArgumentError] if given a rect plus coordinates, or partial coordinates
+    def self.from(col_or_rect, row = nil, width = nil, height = nil)
+      rest = [row, width, height]
+
+      if col_or_rect.is_a?(GridRect)
+        raise ArgumentError, 'expected a GridRect or col, row, width, height, not both' unless rest.all?(&:nil?)
+
+        return col_or_rect
+      end
+
+      raise ArgumentError, 'expected a GridRect or col, row, width, height' if rest.any?(&:nil?)
+
+      new(col_or_rect, row, width, height)
+    end
+
     # Grid constants (from Styling::Grid)
     DOT_SPACING = Styling::Grid::DOT_SPACING
     PAGE_HEIGHT = Styling::Grid::PAGE_HEIGHT
