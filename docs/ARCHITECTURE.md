@@ -846,7 +846,12 @@ ruled_lines(*rect, color: 'red')  # => ruled_lines(5, 10, 20, 15, color: 'red')
 
 # Keyword splatting into constructors
 Component.new(**rect)  # => Component.new(col: 5, row: 10, width: 20, height: 15)
+
+# Rectangle verbs also take the rect itself as a cell
+ruled_lines(rect, color: 'red')
 ```
+
+`GridRect.from(col_or_rect, row, width, height)` is the normalization those verbs share. The `column` and `row` stack verbs (`components/stack.rb`) hand each slot a GridRect, and `fieldset` returns its content area as one, so nested sections need no inset arithmetic. See CLAUDE.md "Grid-Snapped Layout" for the API.
 
 ---
 
@@ -896,10 +901,15 @@ ruled_lines(col, row, width, height, color:, stroke:)
 # Complex components
 mini_month(col, row, width, month:, year:, align:, show_links:, show_weekend_bg:, quantize:)
 ruled_list(col, row, width, entries:, start_num:, show_page_box:, line_color:, num_color:)
-fieldset(col, row, width, height, legend:, position:, **options)
+fieldset(col, row, width, height, legend:, position:, **options) { |inner| }  # => content GridRect
 
 # Layout helpers
 margins(col, row, width, height, left:, right:, top:, bottom:, all:)
+column(col, row, width, height, gap:) { |c| c.slot(rows_or_fill) { |cell| } }  # => [GridRect]
+row(col, row, width, height, gap:) { |r| r.slot(cols_or_fill) { |cell| } }     # => [GridRect]
+
+# box, fieldset, ruled_lines, ruled_list, grid_dots, column and row accept a
+# GridRect in place of col, row, width, height
 ```
 
 ### Adding a New Component
