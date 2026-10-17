@@ -471,4 +471,64 @@ class TestFieldsetMixin < Minitest::Test
 
     # Should render without error
   end
+
+  def test_mixin_fieldset_returns_its_content_area
+    inner = @includer.fieldset(2, 4, 38, 12, legend: "Tasks")
+
+    assert_equal BujoPdf::GridRect.new(3, 6, 36, 9), inner
+  end
+
+  def test_mixin_fieldset_yields_its_content_area
+    yielded = nil
+    @includer.fieldset(2, 4, 38, 12, legend: "Tasks") { |inner| yielded = inner }
+
+    assert_equal BujoPdf::GridRect.new(3, 6, 36, 9), yielded
+  end
+
+  def test_mixin_fieldset_accepts_a_cell_in_place_of_coordinates
+    by_cell = TestIncluder.new
+    inner = by_cell.fieldset(BujoPdf::GridRect.new(2, 4, 38, 12), legend: "Tasks")
+    @includer.fieldset(2, 4, 38, 12, legend: "Tasks")
+
+    assert_equal BujoPdf::GridRect.new(3, 6, 36, 9), inner
+    assert_equal @includer.pdf.render, by_cell.pdf.render
+  end
+end
+
+class TestFieldsetContentRect < Minitest::Test
+  def setup
+    pdf = Prawn::Document.new(page_size: 'LETTER', margin: 0)
+    @canvas = BujoPdf::Canvas.new(pdf, GridSystem.new(pdf))
+  end
+
+  def content_rect(**options)
+    BujoPdf::Components::Fieldset.new(
+      canvas: @canvas, col: 2, row: 4, width: 20, height: 10, legend: "Test", **options
+    ).content_rect
+  end
+
+  def test_top_legend_reserves_an_extra_row_at_the_top
+    assert_equal BujoPdf::GridRect.new(3, 6, 18, 7), content_rect(position: :top_left)
+    assert_equal BujoPdf::GridRect.new(3, 6, 18, 7), content_rect(position: :top_center)
+  end
+
+  def test_bottom_legend_reserves_an_extra_row_at_the_bottom
+    assert_equal BujoPdf::GridRect.new(3, 5, 18, 7), content_rect(position: :bottom_left)
+  end
+
+  def test_right_edge_legend_reserves_an_extra_column_on_the_right
+    assert_equal BujoPdf::GridRect.new(3, 5, 17, 8), content_rect(position: :top_right)
+  end
+
+  def test_left_edge_legend_reserves_an_extra_column_on_the_left
+    assert_equal BujoPdf::GridRect.new(4, 5, 17, 8), content_rect(position: :bottom_right)
+  end
+
+  def test_larger_border_inset_rounds_the_content_inset_up_to_whole_boxes
+    assert_equal BujoPdf::GridRect.new(4, 7, 16, 5), content_rect(inset_boxes: 1)
+  end
+
+  def test_content_rect_does_not_need_render
+    assert_kind_of BujoPdf::GridRect, content_rect
+  end
 end
