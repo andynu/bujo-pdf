@@ -30,6 +30,7 @@ The bujo-pdf generator is built on a modular architecture with clear separation 
 - `ChromeBuilder` - Captures chrome block DSL (`left`, `right`, `top`, `bottom`)
 - `SidebarDefinition` - Captures inline sidebar definitions
 - `Registry` - Page registration and named destinations
+- `LinkCheck` - Records destinations and links during render; collects `Warnings` (dead links, dead outline entries, duplicate ids) that a `strict` build raises on
 - `Configuration` - Config file loaders (dates, calendars, collections)
 - `Runtime` - Execution-time support (page factory, render context)
 
