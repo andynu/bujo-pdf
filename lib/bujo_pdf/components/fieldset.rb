@@ -131,9 +131,21 @@ module BujoPdf
 
         draw_border
         draw_legend
+        record_debug_rects
       end
 
       private
+
+      # Outer rect solid, the area inside the border dashed.
+      def record_debug_rects
+        overlay = Debug.overlay(pdf)
+        return unless overlay
+
+        overlay.record(:fieldset, grid.x(@col), grid.y(@row),
+                       grid.width(@width_boxes), grid.height(@height_boxes))
+        overlay.record(:fieldset, grid.x(@border_col), grid.y(@border_row),
+                       grid.width(@border_width), grid.height(@border_height), dashed: true)
+      end
 
       def border_color
         @border_color ||= @border_color_option || Themes.current[:colors][:borders]

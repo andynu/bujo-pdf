@@ -20,6 +20,7 @@ require_relative 'bujo_pdf/utilities/grid_rect'
 require_relative 'bujo_pdf/utilities/grid_system'
 require_relative 'bujo_pdf/utilities/dot_grid'
 require_relative 'bujo_pdf/utilities/diagnostics'
+require_relative 'bujo_pdf/debug/overlay'
 require_relative 'bujo_pdf/utilities/date_calculator'
 
 # Load shared infrastructure
