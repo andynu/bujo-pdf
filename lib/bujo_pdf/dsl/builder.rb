@@ -33,10 +33,12 @@ module BujoPdf
       # @param output [String, nil] Optional output file path
       # @param strict [Boolean, nil] Raise instead of writing when the build
       #   collects warnings; nil uses the recipe's `strict` setting
+      # @param debug [Boolean, String, Array<Symbol>, nil] Layout debug overlay
+      #   kinds (see Debug::Overlay.build); not passed to the definition
       # @param params [Hash] Parameters to pass to the definition
       # @return [Prawn::Document, String] The PDF document or output path
       # @raise [WarningsError] When strict and any warning was collected
-      def build(definition, output: nil, strict: nil, **params)
+      def build(definition, output: nil, strict: nil, debug: nil, **params)
         @warnings = Warnings.new
 
         # Phase 1: Declaration pass
@@ -55,6 +57,8 @@ module BujoPdf
 
         # Create grid stamps for all grid types for efficiency
         create_grid_stamps(pdf)
+
+        Debug.install(pdf, debug)
 
         # Build render context base
         base_context = build_base_context(params, context)

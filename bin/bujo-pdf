@@ -13,6 +13,7 @@ module BujoPdf
       year = nil
       theme = nil
       strict = false
+      debug = nil
 
       i = 0
       while i < args.length
@@ -37,6 +38,16 @@ module BujoPdf
           exit 0
         when '--strict'
           strict = true
+        when '--debug'
+          debug = true
+        when /\A--debug=(.*)\z/
+          debug = Regexp.last_match(1)
+          begin
+            BujoPdf::Debug::Overlay.build(debug)
+          rescue ArgumentError => e
+            warn "Error: #{e.message}"
+            exit 1
+          end
         else
           # Assume it's a year
           year = arg.to_i
@@ -59,7 +70,7 @@ module BujoPdf
       begin
         BujoPdf::PdfDSL.load_recipes!
         recipe = BujoPdf::PdfDSL.recipes.fetch(:standard_planner)
-        build(recipe, output: output_file, strict: strict, year: year, theme: theme)
+        build(recipe, output: output_file, strict: strict, debug: debug, year: year, theme: theme)
         puts "✓ Generated: #{output_file}"
       rescue StandardError => e
         warn "Error generating planner: #{e.message}"
@@ -193,6 +204,8 @@ module BujoPdf
           --strict             Fail instead of writing the PDF when a link,
                                tab or outline entry has no destination, or
                                two pages share an id
+          --debug[=KINDS]      Outline layout on every page; KINDS is a comma list
+                               of grid, chrome, content, fieldset, link (default: all)
           --version, -v        Show version
           --help, -h           Show this help message
 
@@ -204,6 +217,8 @@ module BujoPdf
           bujo-pdf 2025               # Generate planner for 2025
           bujo-pdf --theme earth      # Generate with earth theme
           bujo-pdf 2025 -t dark       # Generate 2025 with dark theme
+          bujo-pdf 2025 --debug       # Generate 2025 with the layout debug overlay
+          bujo-pdf --debug=grid,link  # Overlay only the grid and link rects
           bujo-pdf --list-themes      # Show all available themes
           bujo-pdf --version          # Show version number
 

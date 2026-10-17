@@ -294,7 +294,7 @@ ruby test_links.rb              # Debug link annotations
 ruby test_coords.rb             # Debug coordinate system
 ```
 
-Enable debug grid overlay: Set `DEBUG_GRID = true` in `lib/bujo_pdf/planner_generator.rb`
+Layout debug overlay: `bin/bujo-pdf 2026 --debug` (or `--debug=grid,link`), or `debug: true` on `BujoPdf.generate` / `generate_from_recipe`. It draws on top of every page after it renders: `grid` (diagnostic grid), `chrome` (sidebar regions), `content` (content area), `fieldset` (outer solid, inside the border dashed), `link` (link annotation rects). Code is `lib/bujo_pdf/debug/overlay.rb`; to outline another kind of rect, record it with `Debug.overlay(pdf)&.record(kind, left, top, width, height)` and add the kind to `Overlay::KINDS` and `COLORS`.
 
 ### Checking the Rendered PDF
 

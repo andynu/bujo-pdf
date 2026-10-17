@@ -509,10 +509,26 @@ grid_link(5, 10, 10, 2, "week_1")  # Links to week_1 destination
 
 ### Debug Mode
 
-Enable `DEBUG_GRID = true` in `lib/bujo_pdf/planner_generator.rb` to overlay diagnostic grid:
-- Red dots at grid intersections
-- Dashed red lines every 5 boxes
-- Coordinate labels showing `(col, row)`
+A build-level option outlines layout on every page without editing page classes:
+
+```bash
+bin/bujo-pdf 2026 --debug              # every kind
+bin/bujo-pdf 2026 --debug=grid,link    # just these
+```
+
+```ruby
+BujoPdf.generate_from_recipe :daily, year: 2026, debug: %i[fieldset link]
+```
+
+| Kind | Drawn as |
+|------|----------|
+| `grid` | Diagnostic grid: red dots at intersections, dashed lines and `(col, row)` labels every 5 boxes, at 40% opacity |
+| `chrome` | Cyan outline per active chrome region (from the layout's `ChromeSpec`) |
+| `content` | Green outline of the page's content area |
+| `fieldset` | Purple: outer rect solid, the area inside the border dashed |
+| `link` | Red outline of every link annotation rect |
+
+`PdfBuilder#build` installs a `Debug::Overlay` on the Prawn document. The document's `link_annotation` is wrapped to record each link rect, `Fieldset` records its own rects, and `Pages::Base#generate` draws the collected rects after `finalize`, so the outlines sit on top and cannot move anything. With debug off nothing is installed and the output is unchanged. The per-class `debug_mode?` override still draws the grid behind one page type.
 
 ---
 
