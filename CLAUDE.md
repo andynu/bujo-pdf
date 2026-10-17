@@ -263,6 +263,38 @@ ruby test_coords.rb             # Debug coordinate system
 
 Enable debug grid overlay: Set `DEBUG_GRID = true` in `lib/bujo_pdf/planner_generator.rb`
 
+### Checking the Rendered PDF
+
+Test navigation by reading the PDF back, not by inspecting the code that drew it.
+`test/support/pdf_inspector.rb` parses a `Prawn::Document`, bytes or a path with pdf-reader;
+`test/support/pdf_assertions.rb` adds Minitest assertions over it. Wherever a page is
+expected, a named destination works too.
+
+```ruby
+require_relative '../support/pdf_assertions'
+
+class TestMyNavigation < Minitest::Test
+  include PdfAssertions
+
+  def test_week_links
+    pdf = PdfInspector.new(BujoPdf::PdfDSL.generate(:standard_planner, year: 2025))
+
+    assert_page_count pdf, 89
+    assert_destination pdf, :seasonal, page: 1
+    assert_link pdf, from_page: :week_10, to: :week_9    # by name, or to: 19 by page
+    refute_link pdf, from_page: :week_10, to: :week_10
+    assert_links_resolve pdf                              # no link names a missing destination
+    assert_outline pdf, ['Seasonal Calendar', 'Index'], depth: 1
+    assert_pdf_text_on_page pdf, :week_10, /Week 10:/
+  end
+end
+```
+
+`PdfInspector` also exposes the data directly: `destinations` (name -> page), `links(page)`
+(`rect`, `dest`, `page`, `uri`), `outline` (`title`, `page`, `children`) and `text(page)`.
+Build one inspector per PDF and share it; a full planner takes about a second to parse.
+`test/integration/planner_navigation_test.rb` generates the planner once per class.
+
 ## Dependencies
 
 - **prawn** ~> 2.4 - PDF generation
