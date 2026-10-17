@@ -132,7 +132,7 @@ class PdfInspector
     dest = objects.deref(dest)
     dest = objects.deref(dest[:D]) if dest.is_a?(Hash)
     index = objects.page_references.index(dest.first)
-    index && index + 1
+    index + 1 if index
   end
 
   def decode(title)
