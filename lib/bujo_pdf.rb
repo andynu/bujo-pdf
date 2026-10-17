@@ -133,6 +133,8 @@ module BujoPdf
   # @param year [Integer] The year to generate the planner for (default: current year)
   # @param output_path [String, nil] The output file path (default: planner_YEAR.pdf)
   # @param theme [Symbol, String, nil] The theme to use (default: :light)
+  # @param debug [Boolean, String, Array<Symbol>, nil] Layout debug overlay
+  #   (true for every kind, or e.g. "grid,link"; default: off)
   # @return [String] The path to the generated PDF file
   #
   # @example Generate planner for current year
@@ -147,10 +149,10 @@ module BujoPdf
   # @example Generate with a specific theme
   #   BujoPdf.generate(2025, theme: :earth)
   #
-  def self.generate(year = Date.today.year, output_path: nil, theme: nil)
+  def self.generate(year = Date.today.year, output_path: nil, theme: nil, debug: nil)
     output_path ||= "planner_#{year}.pdf"
     PdfDSL.load_recipes!
-    generate_from_recipe(:standard_planner, year: year, theme: theme, output: output_path)
+    generate_from_recipe(:standard_planner, year: year, theme: theme, output: output_path, debug: debug)
   end
 
 end

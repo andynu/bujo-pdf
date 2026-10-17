@@ -129,6 +129,8 @@ module BujoPdf
         @layout.render_after(self)
 
         finalize           # Final hook
+
+        draw_debug_overlay
       end
 
       protected
@@ -372,6 +374,16 @@ module BujoPdf
       # @return [void]
       def draw_debug_grid_if_enabled
         Diagnostics.draw_grid(@pdf, @grid_system, enabled: true, label_every: 5)
+      end
+
+      # Draw the build-level debug overlay, if one is installed, on top of
+      # everything the page drew.
+      #
+      # @return [void]
+      def draw_debug_overlay
+        Debug.overlay(@pdf)&.draw(@pdf, @grid_system,
+                                  chrome_spec: @layout.chrome_spec,
+                                  content_area: @content_area)
       end
 
       # Draw footer (placeholder for future implementation).

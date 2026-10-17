@@ -30,9 +30,11 @@ module BujoPdf
       #
       # @param definition [PdfDefinition] The PDF definition to build
       # @param output [String, nil] Optional output file path
+      # @param debug [Boolean, String, Array<Symbol>, nil] Layout debug overlay
+      #   kinds (see Debug::Overlay.build); not passed to the definition
       # @param params [Hash] Parameters to pass to the definition
       # @return [Prawn::Document, String] The PDF document or output path
-      def build(definition, output: nil, **params)
+      def build(definition, output: nil, debug: nil, **params)
         # Phase 1: Declaration pass
         context = DeclarationContext.new
         definition.evaluate(context, **params)
@@ -48,6 +50,8 @@ module BujoPdf
 
         # Create grid stamps for all grid types for efficiency
         create_grid_stamps(pdf)
+
+        Debug.install(pdf, debug)
 
         # Build render context base
         base_context = build_base_context(params, context)
