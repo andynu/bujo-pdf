@@ -4,6 +4,14 @@ This file provides guidance to Claude Code when working with this repository.
 
 **Issue tracking**: This project uses [bd (beads)](https://github.com/steveyegge/beads). Use `bd` commands instead of markdown TODOs. See AGENTS.md for workflow details.
 
+## Public Repository
+
+This is a personal side project in a public GitHub repo. `.beads/` is committed on purpose, so planning in beads is public. Anything committed (code, beads, commit messages, PR text) is published, so watch for secrets:
+
+- `config/dates.yml`, `config/calendars.yml`, `config/collections.yml` and `.cache/` are gitignored personal data. Never commit them, and never copy their real values into `*.example` files, tests, fixtures, docs or beads. Private iCal URLs carry a secret token in the path.
+- `examples/*.pdf` and `assets/ritual_deck/*.pdf` are tracked. Generate committed PDFs without the personal config, since calendar events render into the pages.
+- No work hostnames, internal URLs, credentials or other people's names. Read the staged diff for tokens, keys, emails and `private-` calendar URLs before every commit.
+
 ## Project Overview
 
 Ruby-based PDF planner generator creating programmable bullet journal PDFs for digital note-taking apps (Noteshelf, GoodNotes). Generates a full year planner with seasonal calendars, year-at-a-glance grids, weekly pages with Cornell notes layout, and internal PDF navigation.
