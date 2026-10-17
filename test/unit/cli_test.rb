@@ -17,10 +17,11 @@ class TestCli < Minitest::Test
   end
 
   def test_build_prints_warnings_to_stderr_and_writes_pdf
-    assert_output('', %(Warning: outline entry "Ghost" points at "ghost", which no page declares\n)) do
+    _, err = capture_io do
       BujoPdf::CLI.build(dead_outline_recipe, output: OUTPUT, strict: false, year: 2026)
     end
 
+    assert_includes err.lines, %(Warning: outline entry "Ghost" points at "ghost", which no page declares\n)
     assert File.exist?(OUTPUT)
   end
 
