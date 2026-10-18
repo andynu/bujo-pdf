@@ -110,9 +110,9 @@ class TestPlannerNavigation < Minitest::Test
   end
 
   def test_front_matter_comes_first
-    assert_destination pdf, :seasonal, page: 1
-    assert_destination pdf, :index_1, page: 2
-    assert_destination pdf, :index_2, page: 3
+    assert_destination pdf, :index_1, page: 1
+    assert_destination pdf, :index_2, page: 2
+    assert_destination pdf, :seasonal, page: 3
   end
 
   def test_outline_top_level
@@ -120,7 +120,7 @@ class TestPlannerNavigation < Minitest::Test
     collections = BujoPdf::CollectionsConfiguration.load.map(&:title)
 
     assert_outline pdf, [
-      'Seasonal Calendar', 'Index', 'Future Log', 'Events', 'Highlights', 'Multi-Year Overview',
+      'Index', 'Seasonal Calendar', 'Events', 'Highlights', 'Multi-Year Overview', 'Future Log',
       'Quarterly Planning', 'Monthly Reviews', *months, 'Grids',
       'Tracker Ideas', 'Calibration & Reference', 'Daily Wheel', 'Year Wheel', *collections
     ], depth: 1

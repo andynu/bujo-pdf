@@ -38,21 +38,19 @@ class TestStandardPlannerRecipe < Minitest::Test
   def test_standard_planner_page_order
     context = evaluate_recipe(year: 2025)
 
-    # First page is seasonal calendar
-    assert_equal :seasonal, context.pages[0].type
-
-    # Next are index pages
+    # First are index pages
+    assert_equal :index, context.pages[0].type
     assert_equal :index, context.pages[1].type
-    assert_equal :index, context.pages[2].type
+
+    # Then the year set: seasonal calendar and the year overview pages
+    assert_equal :seasonal, context.pages[2].type
+    assert_equal :year_events, context.pages[3].type
+    assert_equal :year_highlights, context.pages[4].type
+    assert_equal :multi_year, context.pages[5].type
 
     # Then future log pages
-    assert_equal :future_log, context.pages[3].type
-    assert_equal :future_log, context.pages[4].type
-
-    # Then year overview pages
-    assert_equal :year_events, context.pages[5].type
-    assert_equal :year_highlights, context.pages[6].type
-    assert_equal :multi_year, context.pages[7].type
+    assert_equal :future_log, context.pages[6].type
+    assert_equal :future_log, context.pages[7].type
 
     # Weekly pages with interleaved monthly reviews and quarterly planning
     # The exact order depends on the week structure for the year
@@ -277,13 +275,28 @@ class TestStandardPlannerRecipe < Minitest::Test
   def test_sections_in_pdf_order
     labels = evaluate_recipe(year: 2025).nav_sections.map(&:label)
 
-    assert_equal %w[Year Index Future Grids Templates], labels.first(5)
+    assert_equal %w[Index Year Future Grids Templates], labels.first(5)
   end
 
   def test_rituals_section_sits_between_future_and_grids
     labels = evaluate_recipe(year: 2025, rituals: true).nav_sections.map(&:label)
 
-    assert_equal %w[Year Index Future Rituals Grids Templates], labels.first(6)
+    assert_equal %w[Index Year Future Rituals Grids Templates], labels.first(6)
+  end
+
+  # A section's tab and its expanded list read as one run of pages
+  def test_every_section_is_one_run_of_consecutive_pages
+    [false, true].each do |rituals|
+      context = evaluate_recipe(year: 2025, rituals: rituals)
+      order = context.pages.map(&:id)
+
+      context.nav_sections.each do |section|
+        positions = ([section.landing] + section.items.map(&:id)).uniq.map { |id| order.index(id) }.sort
+
+        assert_equal (positions.first..positions.last).to_a, positions,
+                     "#{section.label} pages are not consecutive (rituals: #{rituals})"
+      end
+    end
   end
 
   def test_section_items_and_landings

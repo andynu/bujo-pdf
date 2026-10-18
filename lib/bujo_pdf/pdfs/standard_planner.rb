@@ -7,12 +7,12 @@
 # the PDF DSL can fully replace the existing generator.
 #
 # Page structure:
-# - Seasonal calendar
 # - Index pages (2)
-# - Future log pages (2)
+# - Seasonal calendar
 # - Year events
 # - Year highlights
 # - Multi-year overview
+# - Future log pages (2)
 # - Ritual deck (only with rituals: true)
 # - Quarterly planning + Monthly reviews + Weekly pages (interleaved)
 # - Grid pages (index, dot, isometric, 1-point and 2-point perspective, graph, lined, hexagon)
@@ -50,9 +50,8 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
     deck = import_pdf(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__), prefix: :ritual)
   end
 
-  # 1. Front matter: Seasonal calendar, Index, Future log
-  page :seasonal, id: :seasonal, year: year, outline: true
-
+  # 1. Front matter: Index, the year set, Future log. Each nav section is one
+  # run of pages, so the year set (seasonal calendar and overviews) stays together.
   # Index pages (2 pages with numbered lines for TOC entries)
   2.times do |i|
     page :index, id: :"index_#{i + 1}",
@@ -61,6 +60,12 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
          year: year,
          outline: i.zero?  # Only first page gets outline entry
   end
+
+  # 2. Year set: seasonal calendar and year overview pages
+  page :seasonal, id: :seasonal, year: year, outline: true
+  page :year_events, id: :year_events, year: year, outline: true
+  page :year_highlights, id: :year_highlights, year: year, outline: true
+  page :multi_year, id: :multi_year, year: year, year_count: 4, outline: true
 
   # Future log pages (2 pages covering 12 months)
   2.times do |i|
@@ -71,11 +76,6 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
          year: year,
          outline: i.zero?  # Only first page gets outline entry
   end
-
-  # 2. Year overview pages
-  page :year_events, id: :year_events, year: year, outline: true
-  page :year_highlights, id: :year_highlights, year: year, outline: true
-  page :multi_year, id: :multi_year, year: year, year_count: 4, outline: true
 
   if rituals
     group :rituals, outline: 'Rituals' do
@@ -171,13 +171,12 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
          outline: collection.title
   end
 
-  # Navigation. Sections are listed in the order they appear in the PDF; a
-  # section need not be contiguous (Year spans pages on both sides of Index
-  # and Future).
+  # Navigation. Sections are listed in the order they appear in the PDF, and
+  # each one is a single run of pages.
+  nav_section :index, label: 'Index', items: [[:index_1, 'Index 1'], [:index_2, 'Index 2']]
   nav_section :year, label: 'Year', items: [
     [:seasonal, 'Seasonal'], [:year_events, 'Events'], [:year_highlights, 'Highlights'], [:multi_year, 'Multi']
   ]
-  nav_section :index, label: 'Index', items: [[:index_1, 'Index 1'], [:index_2, 'Index 2']]
   nav_section :future, label: 'Future', items: [[:future_log_1, 'Jan-Jun'], [:future_log_2, 'Jul-Dec']]
   if rituals
     nav_section :rituals, label: 'Rituals',
