@@ -7,8 +7,9 @@ module BujoPdf
     # ImportedPageDeclaration is a page copied verbatim from an external PDF.
     #
     # It takes part in link and outline resolution like any other declaration,
-    # but the builder inserts the source page as it is instead of rendering one,
-    # so it never carries chrome.
+    # but the builder inserts the source page as it is instead of rendering one.
+    # The recipe's chrome is drawn over it; without recipe chrome the page is
+    # left as it was.
     #
     # @example
     #   decl = ImportedPageDeclaration.new(
@@ -22,7 +23,7 @@ module BujoPdf
       # @param template_page [Integer] 1-based page of the source PDF
       # @param outline [String, nil] Outline entry title
       def initialize(id:, pdf_path:, template_page:, outline: nil)
-        super(:imported_pdf, id: id, outline: outline, chrome: false)
+        super(:imported_pdf, id: id, outline: outline)
         @pdf_path = pdf_path
         @template_page = template_page
       end

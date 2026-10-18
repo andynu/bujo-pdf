@@ -32,6 +32,34 @@ class TestPdfImportGeneration < Minitest::Test
     end
   end
 
+  def test_imported_pages_get_recipe_chrome
+    with_deck do |_dir, manifest|
+      pdf = PdfInspector.new(
+        build(manifest) do |deck|
+          chrome { right :section_nav }
+          nav_section :deck, label: 'Deck', items: deck.pages.map { |entry| [deck.page_id(entry.key), entry.title] }
+          import_pages(deck)
+        end
+      )
+
+      # Page 2 is the first deck page: the deck section is expanded, so the
+      # other two deck pages are one tap away
+      dests = pdf.links(2).map(&:dest)
+      assert_includes dests, 'second'
+      assert_includes dests, 'third'
+      assert_includes pdf.text(2), 'ALPHA', 'the imported content survives under the chrome'
+    end
+  end
+
+  def test_imported_page_without_chrome_is_unchanged
+    with_deck do |_dir, manifest|
+      pdf = PdfInspector.new(build(manifest) { |deck| import_pages(deck) })
+
+      assert_empty pdf.links(2)
+      assert_equal 'ALPHA', pdf.text(2).strip
+    end
+  end
+
   def test_single_pages_can_be_placed_anywhere
     with_deck do |_dir, manifest|
       pdf = BujoPdf::PdfDSL.generate(year: 2025) do
