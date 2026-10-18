@@ -98,6 +98,7 @@ module BujoPdf
 
         # Grid pages
         base.include GridShowcase::Mixin
+        base.include GridsIndex::Mixin
         base.include GridsOverview::Mixin
         base.include Grids::DotGridPage::Mixin
         base.include Grids::GraphGridPage::Mixin
