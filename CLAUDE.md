@@ -116,7 +116,23 @@ class WeekSidebar < SidebarBase
 end
 ```
 
-Available built-in sidebars: `:week_sidebar`, `:month_sidebar`, `:tab_sidebar`, `:right_sidebar`
+Available built-in sidebars: `:week_sidebar`, `:month_sidebar`, `:tab_sidebar`, `:right_sidebar`, `:calendar_nav`, `:section_nav`
+
+#### Section and Calendar Navigation
+
+`standard_planner` uses `:calendar_nav` (left) and `:section_nav` (right) on every page, imported ritual pages included. Both collapse to group labels and expand the group holding the current page, with its items bracketed and the current one unlinked. The recipe declares what they show:
+
+```ruby
+nav_section :grids, label: 'Grids', landing: :grids_index,
+            items: [[:grid_dot, 'Dot'], [:grid_isometric, 'Iso']]   # [page id, short label]
+nav_month 3, first_week: :week_10,
+          items: [[:week_10, 'w10'], [:week_11, 'w11'], [:review_3, 'Mar Review']]
+```
+
+- A section is declared for navigation only, so its pages need not be contiguous; `landing` defaults to the first item. A section with no items gets no tab, and one too long for the page raises.
+- A month links to `first_week`; on its own calendar pages it lists `items` in PDF order.
+- Imported pages get the recipe's chrome drawn over them; their content streams are wrapped in `q`/`Q` so a source PDF's leftover transform cannot move the nav. Ritual labels come from a `nav:` key per entry in `assets/ritual_deck/manifest.yml`.
+- Grid pages draw their grid in `setup_page`, before chrome, so the nav sits on top.
 
 ### Layout System
 
@@ -203,7 +219,7 @@ PDF internal links use named destinations:
 - `week_N` - Weekly pages (1-53)
 - `seasonal`, `year_events`, `year_highlights` - Year overview pages
 - `index_N`, `future_log_N`, `review_N`, `quarter_N` - Front matter
-- `grid_*` - Grid template pages
+- `grids_index`, `grid_*` - Grids landing page and grid template pages (`grid_perspective_2` is 2-point perspective)
 - `collection_<id>` - User-configured collection pages
 
 ### Link Warnings and Strict Builds

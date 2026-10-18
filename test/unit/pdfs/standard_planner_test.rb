@@ -58,12 +58,12 @@ class TestStandardPlannerRecipe < Minitest::Test
     # The exact order depends on the week structure for the year
 
     # Grid pages come after all weekly/review/quarterly pages
-    grid_showcase_page = context.pages.find { |p| p.type == :grid_showcase }
-    refute_nil grid_showcase_page
+    grids_index_page = context.pages.find { |p| p.type == :grids_index }
+    refute_nil grids_index_page
 
-    # Verify order of grid pages (sequential in the grids group)
-    grid_types = [:grid_showcase, :grids_overview, :grid_dot, :grid_graph,
-                  :grid_lined, :grid_isometric, :grid_perspective, :grid_hexagon]
+    # Verify order of grid pages (sequential in the grids group, in nav order)
+    grid_types = [:grids_index, :grid_dot, :grid_isometric, :grid_perspective,
+                  :grid_perspective_2, :grid_graph, :grid_lined, :grid_hexagon]
     grid_pages = context.pages.select { |p| grid_types.include?(p.type) }
     assert_equal grid_types, grid_pages.map(&:type)
 
@@ -189,7 +189,7 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert context.pages.any? { |p| p.destination_key == 'year_events' }
     assert context.pages.any? { |p| p.destination_key == 'year_highlights' }
     assert context.pages.any? { |p| p.destination_key == 'multi_year' }
-    assert context.pages.any? { |p| p.destination_key == 'grid_showcase' }
+    assert context.pages.any? { |p| p.destination_key == 'grids_index' }
     assert context.pages.any? { |p| p.destination_key == 'reference' }
     assert context.pages.any? { |p| p.destination_key == 'index_1' }
     assert context.pages.any? { |p| p.destination_key == 'index_2' }
@@ -211,7 +211,7 @@ class TestStandardPlannerRecipe < Minitest::Test
 
     grids_group = context.groups.first
     assert_equal :grids, grids_group.name
-    assert grids_group.cycle?, "Grids group should have cycling enabled"
+    refute grids_group.cycle?, 'the section nav lists every grid page, so the Grids tab no longer cycles'
     assert_equal 8, grids_group.pages.length
   end
 
@@ -259,14 +259,88 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_equal :earth, context2.theme_name
   end
 
-  # Sidebar tabs
+  # Navigation
 
-  def test_sidebar_has_an_index_tab_cycling_both_index_pages
-    tabs = evaluate_recipe(year: 2025).chrome_config.right_config.tabs
-    index_tab = tabs.find { |tab| tab.label == 'Index' }
+  def test_chrome_is_calendar_nav_and_section_nav
+    chrome = evaluate_recipe(year: 2025).chrome_config
 
-    assert_equal %i[index_1 index_2], index_tab.dest
-    assert_equal %w[Year Index], tabs.first(2).map(&:label)
+    assert_equal :calendar_nav, chrome.left_config.sidebar_name
+    assert_equal :section_nav, chrome.right_config.sidebar_name
+  end
+
+  def test_every_page_carries_the_chrome
+    pages = evaluate_recipe(year: 2025, rituals: true).pages
+
+    assert(pages.none? { |page| page.chrome == false }, 'no page opts out of the nav')
+  end
+
+  def test_sections_in_pdf_order
+    labels = evaluate_recipe(year: 2025).nav_sections.map(&:label)
+
+    assert_equal %w[Year Index Future Grids Templates], labels.first(5)
+  end
+
+  def test_rituals_section_sits_between_future_and_grids
+    labels = evaluate_recipe(year: 2025, rituals: true).nav_sections.map(&:label)
+
+    assert_equal %w[Year Index Future Rituals Grids Templates], labels.first(6)
+  end
+
+  def test_section_items_and_landings
+    sections = evaluate_recipe(year: 2025).nav_sections.to_h { |section| [section.key, section] }
+
+    assert_equal %w[Seasonal Events Highlights Multi], sections[:year].items.map(&:label)
+    assert_equal %i[seasonal year_events year_highlights multi_year], sections[:year].items.map(&:id)
+    assert_equal %w[Jan-Jun Jul-Dec], sections[:future].items.map(&:label)
+    assert_equal :grids_index, sections[:grids].landing
+    assert_equal %w[Dot Iso 1pp 2pp Graph Ruled Hex], sections[:grids].items.map(&:label)
+    assert_equal %i[grid_dot grid_isometric grid_perspective grid_perspective_2 grid_graph grid_lined grid_hexagon],
+                 sections[:grids].items.map(&:id)
+    assert_equal ['Tracker', 'Reference', 'Daily Wheel', 'Year Wheel'], sections[:templates].items.map(&:label)
+  end
+
+  def test_ritual_items_use_manifest_nav_labels
+    rituals = evaluate_recipe(year: 2025, rituals: true).nav_sections.find { |section| section.key == :rituals }
+
+    assert_equal %w[Daily Weekly Monthly Seasonal Quarterly Migration Birthday Pausing Feelings Mood],
+                 rituals.items.map(&:label)
+    assert_equal :ritual_daily, rituals.landing
+  end
+
+  def test_every_page_in_a_section_exists
+    context = evaluate_recipe(year: 2025, rituals: true)
+    ids = context.pages.map(&:id)
+
+    context.nav_sections.flat_map(&:items).each { |item| assert_includes ids, item.id }
+  end
+
+  def test_twelve_months_each_linking_to_their_first_week
+    months = evaluate_recipe(year: 2026).nav_months
+
+    assert_equal (1..12).to_a, months.map(&:month)
+    assert_equal :week_1, months.first.first_week
+    assert(months.all? { |month| month.items.map(&:id).include?(month.first_week) })
+  end
+
+  def test_each_week_appears_in_exactly_one_month
+    [2024, 2025, 2026].each do |year|
+      weeks = evaluate_recipe(year: year).nav_months.flat_map(&:items).map(&:id).grep(/\Aweek_/)
+      total = BujoPdf::Utilities::DateCalculator.total_weeks(year)
+
+      assert_equal (1..total).map { |n| :"week_#{n}" }, weeks, "weeks for #{year}"
+    end
+  end
+
+  def test_month_items_follow_pdf_order
+    context = evaluate_recipe(year: 2026)
+    order = context.pages.map(&:id)
+    april = context.nav_months.find { |month| month.month == 4 }
+
+    assert_equal :quarter_2, april.items.first.id
+    assert_equal 'Q2', april.items.first.label
+    assert_equal :review_4, april.items.last.id
+    assert_equal 'Apr Review', april.items.last.label
+    assert_equal april.items.map(&:id), april.items.map(&:id).sort_by { |id| order.index(id) }
   end
 
   # Ritual deck (opt-in)
@@ -292,13 +366,10 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_operator ids.index('ritual_pausing'), :<, ids.index('week_1')
   end
 
-  def test_rituals_are_prefilled_into_the_first_index_page_only
-    deck = BujoPdf::PdfDSL::PdfImport.new(File.expand_path('../../../assets/ritual_deck/manifest.yml', __dir__))
-    pages = evaluate_recipe(year: 2025, rituals: true).pages
-    expected = deck.pages.map { |entry| { title: entry.title, dest: :"ritual_#{entry.key}" } }
+  def test_rituals_are_not_prefilled_into_the_index
+    pages = evaluate_recipe(year: 2025, rituals: true).pages.select { |page| page.type == :index }
 
-    assert_equal expected, pages.find { |page| page.id == :index_1 }.params[:prefill]
-    refute pages.find { |page| page.id == :index_2 }.params.key?(:prefill)
+    assert(pages.none? { |page| page.params.key?(:prefill) }, 'the Rituals tab replaces the index listing')
   end
 
   def test_index_pages_have_no_prefill_without_rituals

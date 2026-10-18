@@ -300,7 +300,15 @@ This allows recipes to override built-in sidebars or define custom sidebars scop
 | `:month_sidebar` | `MonthSidebar` | Month navigation for daily planners |
 | `:tab_sidebar` | `TabSidebar` | Right-side navigation tabs |
 | `:right_sidebar` | `RightSidebar` | Legacy right sidebar |
+| `:calendar_nav` | `CalendarNav` | Months, the current month expanded to its quarterly plan, weeks and review (`nav_month`) |
+| `:section_nav` | `SectionNav` | Section tabs, the current section expanded to its pages (`nav_section`) |
 | `:inline_sidebar` | `InlineSidebar` | User-defined inline sidebars |
+
+`:calendar_nav` and `:section_nav` read the recipe's `nav_month` and `nav_section`
+declarations from the render context (`:nav_months`, `:nav_sections`). Sections are
+declared for navigation only, so a section's pages need not be contiguous in the PDF.
+`standard_planner` uses both on every page; imported pages get the chrome drawn over
+them through `Pages::ImportedPage`, with the source content wrapped in `q`/`Q`.
 
 ### Creating Custom Sidebars
 
