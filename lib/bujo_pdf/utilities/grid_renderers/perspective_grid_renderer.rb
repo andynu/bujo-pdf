@@ -45,6 +45,12 @@ module BujoPdf
         # @option options [Integer] :num_converging Number of converging lines per vanishing point
         # @option options [Boolean] :draw_guide_rectangles Draw concentric rectangles for 1-point (default: false)
         # @option options [Array<Float>] :rectangle_depths Depths for guide rectangles (default: [0.25, 0.5, 0.75])
+        # @option options [Boolean] :horizontal_lines Draw horizontal grid lines (default: true)
+        # @option options [Float, nil] :vertical_spacing Spacing for vertical guide lines (default: none)
+        # @option options [Float, nil] :ray_step_degrees Draw rays from each vanishing point at this
+        #   angle step instead of edge-to-vanishing-point lines (default: off)
+        # @option options [Float] :ray_span_degrees Rays fan out to this angle either side of the
+        #   horizon (used with :ray_step_degrees)
         def initialize(pdf, width, height, options = {})
           super
           @num_points = options.fetch(:num_points, 2)
@@ -53,6 +59,10 @@ module BujoPdf
           @num_converging = options.fetch(:num_converging, 12)
           @draw_guide_rectangles = options.fetch(:draw_guide_rectangles, false)
           @rectangle_depths = options.fetch(:rectangle_depths, [0.25, 0.5, 0.75])
+          @horizontal_lines = options.fetch(:horizontal_lines, true)
+          @vertical_spacing = options[:vertical_spacing]
+          @ray_step_degrees = options[:ray_step_degrees]
+          @ray_span_degrees = options[:ray_span_degrees]
         end
 
         # Render the perspective grid pattern
@@ -68,7 +78,7 @@ module BujoPdf
           # Skip for 1-point with guide rectangles (cleaner grid)
           unless @num_points == 1 && @draw_guide_rectangles
             # Draw horizontal grid lines
-            draw_horizontal_lines
+            draw_horizontal_lines if @horizontal_lines
 
             # Draw horizon line (slightly bolder)
             @pdf.line_width(line_width * 1.5)
@@ -77,6 +87,8 @@ module BujoPdf
             end
             @pdf.line_width(line_width)
           end
+
+          draw_vertical_guides if @vertical_spacing
 
           # Draw converging lines to vanishing points
           @vanishing_points.each do |vp|
@@ -113,6 +125,46 @@ module BujoPdf
             ]
           else
             raise ArgumentError, "num_points must be 1, 2, or 3"
+          end
+        end
+
+        # Draw vertical guide lines across the full height, one per spacing step.
+        #
+        # @return [void]
+        def draw_vertical_guides
+          x = @vertical_spacing
+          while x < @width
+            @pdf.stroke do
+              @pdf.line [x, 0], [x, @height]
+            end
+            x += @vertical_spacing
+          end
+        end
+
+        # Draw rays fanning from a vanishing point into the page at a fixed
+        # angle step, skipping the ray along the horizon (the horizon line
+        # already covers it).
+        #
+        # @param vp_x [Float] Vanishing point X coordinate
+        # @param vp_y [Float] Vanishing point Y coordinate
+        # @return [void]
+        def draw_angle_rays(vp_x, vp_y)
+          inward = vp_x < @width / 2.0 ? 1 : -1
+          distance = Math.sqrt(@width**2 + @height**2) * 2
+          steps = (@ray_span_degrees / @ray_step_degrees).round
+
+          (-steps..steps).each do |i|
+            next if i.zero?
+
+            angle = i * @ray_step_degrees * Math::PI / 180.0
+            end_x = vp_x + (inward * Math.cos(angle) * distance)
+            end_y = vp_y + (Math.sin(angle) * distance)
+            clipped = clip_line_to_bounds(vp_x, vp_y, end_x, end_y)
+            next unless clipped
+
+            @pdf.stroke do
+              @pdf.line(*clipped)
+            end
           end
         end
 
@@ -173,7 +225,9 @@ module BujoPdf
         # @param vp_y [Float] Vanishing point Y coordinate
         # @return [void]
         def draw_horizon_converging_lines(vp_x, vp_y)
-          if @num_points == 1 && @draw_guide_rectangles
+          if @ray_step_degrees
+            draw_angle_rays(vp_x, vp_y)
+          elsif @num_points == 1 && @draw_guide_rectangles
             # For 1-point with guides: draw radial lines 360° from vanishing point
             draw_radial_lines(vp_x, vp_y)
           else

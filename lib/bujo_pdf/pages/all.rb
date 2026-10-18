@@ -104,6 +104,7 @@ module BujoPdf
         base.include Grids::LinedGridPage::Mixin
         base.include Grids::IsometricGridPage::Mixin
         base.include Grids::PerspectiveGridPage::Mixin
+        base.include Grids::PerspectiveTwoPointGridPage::Mixin
         base.include Grids::HexagonGridPage::Mixin
 
         # Template pages

@@ -116,6 +116,7 @@ require_relative 'bujo_pdf/pages/grids/graph_grid_page'
 require_relative 'bujo_pdf/pages/grids/lined_grid_page'
 require_relative 'bujo_pdf/pages/grids/isometric_grid_page'
 require_relative 'bujo_pdf/pages/grids/perspective_grid_page'
+require_relative 'bujo_pdf/pages/grids/perspective_two_point_grid_page'
 require_relative 'bujo_pdf/pages/grids/hexagon_grid_page'
 
 # Load page verb aggregator (after all page classes)

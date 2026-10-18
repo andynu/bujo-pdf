@@ -192,6 +192,9 @@ module BujoPdf
         when :perspective
           # 1-point perspective with guide rectangles (matching original PerspectiveGridPage)
           { num_points: 1, draw_guide_rectangles: true, num_converging: 24, line_width: 0.35 }
+        when :perspective_2
+          # The 2-point geometry comes from GridFactory; the stamp only sets the weight
+          { line_width: 0.35 }
         when :hexagon
           # Flat-top orientation with slightly thicker lines (matching original HexagonGridPage)
           { line_width: 0.35, orientation: :flat_top }

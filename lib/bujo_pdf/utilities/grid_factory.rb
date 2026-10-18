@@ -63,6 +63,9 @@ module BujoPdf
         when :perspective
           require_relative 'grid_renderers/perspective_grid_renderer'
           GridRenderers::PerspectiveGridRenderer.new(pdf, width, height, options)
+        when :perspective_2
+          require_relative 'grid_renderers/perspective_grid_renderer'
+          GridRenderers::PerspectiveGridRenderer.new(pdf, width, height, two_point_options(width, height).merge(options))
         when :hexagon
           require_relative 'grid_renderers/hexagon_grid_renderer'
           GridRenderers::HexagonGridRenderer.new(pdf, width, height, options)
@@ -76,7 +79,27 @@ module BujoPdf
       #
       # @return [Array<Symbol>] Array of supported grid type symbols
       def self.supported_types
-        [:dots, :graph, :lined, :isometric, :perspective, :hexagon]
+        [:dots, :graph, :lined, :isometric, :perspective, :perspective_2, :hexagon]
+      end
+
+      # Drawing grid for 2-point perspective: a vanishing point on each side
+      # edge of the horizon, rays fanning from both, and vertical guides every
+      # two grid boxes. Horizontal lines are wrong in 2-point, so none are drawn.
+      #
+      # @param width [Float] Area width in points
+      # @param height [Float] Area height in points
+      # @return [Hash] Renderer options
+      def self.two_point_options(width, height)
+        horizon_y = height * 0.55
+        {
+          num_points: 2,
+          horizon_y: horizon_y,
+          vanishing_points: [[0, horizon_y], [width, horizon_y]],
+          horizontal_lines: false,
+          vertical_spacing: Styling::Grid::DOT_SPACING * 2,
+          ray_step_degrees: 4.5,
+          ray_span_degrees: 81
+        }
       end
 
       # Check if a grid type is supported
