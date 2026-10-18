@@ -16,6 +16,7 @@ module BujoPdf
     #     monthly:
     #       page: 3
     #       title: The Monthly Ritual   # optional outline title
+    #       nav: Monthly                # optional short label for navigation
     #
     # The manifest is checked against the PDF when loaded, so a regenerated deck
     # that no longer matches fails the build instead of linking to the wrong page.
@@ -30,9 +31,9 @@ module BujoPdf
       # Raised for any problem with the manifest or the PDF it names.
       class Error < ArgumentError; end
 
-      ImportedPage = Struct.new(:key, :page_number, :title, keyword_init: true)
+      ImportedPage = Struct.new(:key, :page_number, :title, :nav, keyword_init: true)
 
-      ENTRY_OPTIONS = %w[page title].freeze
+      ENTRY_OPTIONS = %w[page title nav].freeze
       KEY_PATTERN = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
       attr_reader :manifest_path, :pdf_path, :prefix, :pages, :page_count
@@ -107,24 +108,24 @@ module BujoPdf
           key = raw_key.to_s
           raise Error, "invalid page key #{raw_key.inspect} in #{manifest_path}" unless key.match?(KEY_PATTERN)
 
-          number, title = parse_entry(key, value)
+          number, title, nav = parse_entry(key, value)
           validate_page_number(key, number)
           if seen.key?(number)
             raise Error, "page #{number} is claimed by both :#{seen[number]} and :#{key}"
           end
 
           seen[number] = key
-          ImportedPage.new(key: key.to_sym, page_number: number, title: title || titleize(key))
+          ImportedPage.new(key: key.to_sym, page_number: number, title: title || titleize(key), nav: nav)
         end
       end
 
       def parse_entry(key, value)
-        return [value, nil] unless value.is_a?(Hash)
+        return [value, nil, nil] unless value.is_a?(Hash)
 
         unknown = value.keys.map(&:to_s) - ENTRY_OPTIONS
         raise Error, "unknown option(s) #{unknown.join(', ')} for :#{key} (allowed: #{ENTRY_OPTIONS.join(', ')})" if unknown.any?
 
-        [value['page'], value['title']&.to_s]
+        [value['page'], value['title']&.to_s, value['nav']&.to_s]
       end
 
       def validate_page_number(key, number)

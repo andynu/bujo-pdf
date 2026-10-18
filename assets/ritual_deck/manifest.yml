@@ -1,35 +1,46 @@
 # Page keys for bujo_ritual_deck.pdf, by page number (1-based).
 # Append a line when the deck grows. Keys become page ids (optionally
 # prefixed by import_pdf), so renaming one breaks links that use it.
+# `nav` is the short label the planner's section nav shows for the page.
 pdf: bujo_ritual_deck.pdf
 pages:
   daily:
     page: 1
     title: The Daily Protocol
+    nav: Daily
   weekly:
     page: 2
     title: The Weekly Review
+    nav: Weekly
   monthly:
     page: 3
     title: The Monthly Ritual
+    nav: Monthly
   seasonal:
     page: 4
     title: The Seasonal Check-in
+    nav: Seasonal
   quarterly:
     page: 5
     title: The Quarterly Review
+    nav: Quarterly
   yearly_migration:
     page: 6
     title: The Yearly Migration
+    nav: Migration
   birthday:
     page: 7
     title: The Birthday Review
+    nav: Birthday
   pausing:
     page: 8
     title: The Pausing Page
+    nav: Pausing
   feelings_wheel:
     page: 9
     title: The Feelings Wheel
+    nav: Feelings
   mood_grid:
     page: 10
     title: The Mood Meter
+    nav: Mood

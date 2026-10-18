@@ -51,6 +51,18 @@ class TestPdfImport < Minitest::Test
     end
   end
 
+  def test_nav_label_can_be_given_in_manifest
+    with_deck(manifest: "pages:\n  first:\n    page: 1\n    title: The First One\n    nav: First\n") do |_dir, manifest|
+      assert_equal 'First', load_deck(manifest).page(:first).nav
+    end
+  end
+
+  def test_nav_label_is_nil_when_not_given
+    with_deck do |_dir, manifest|
+      assert_nil load_deck(manifest).page(:second).nav
+    end
+  end
+
   def test_pages_are_in_pdf_order_not_manifest_order
     yaml = "pages:\n  last: 3\n  first: 1\n  middle: 2\n"
     with_deck(manifest: yaml) do |_dir, manifest|
