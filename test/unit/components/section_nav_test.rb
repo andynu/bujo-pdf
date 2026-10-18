@@ -27,6 +27,14 @@ class TestSectionNav < Minitest::Test
     refute_includes right_links(standard_pdf, :grid_dot), 'grid_hexagon'
   end
 
+  # A landing page outside the item list (like the grids index) still opens its section
+  def test_landing_page_expands_its_section
+    pdf = PdfInspector.new(build_pdf(sections: [[:a, [[:grid_dot, 'Dot'], [:grid_graph, 'Graph']], :grid_hexagon]],
+                                     pages: %i[grid_hexagon grid_dot grid_graph]))
+
+    assert_equal %w[grid_dot grid_graph], right_links(pdf, :grid_hexagon)
+  end
+
   def test_section_tab_is_current_only_on_landing
     links = right_links(standard_pdf, :grid_graph)
 

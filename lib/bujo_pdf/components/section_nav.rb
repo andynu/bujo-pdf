@@ -33,7 +33,7 @@ module BujoPdf
         @y = grid.y(0) - TabSidebar::START_Y_OFFSET_PT
         sections.each do |section|
           draw_tab(section)
-          draw_items(section) if section.items.any? { |item| item.id == current_key }
+          draw_items(section) if in_section?(section)
         end
       end
 
@@ -45,6 +45,11 @@ module BujoPdf
 
       def current_key
         page_context&.[](:page_key)
+      end
+
+      # The landing page counts even when it is not an item (the grids index).
+      def in_section?(section)
+        section.landing == current_key || section.items.any? { |item| item.id == current_key }
       end
 
       def draw_tab(section)

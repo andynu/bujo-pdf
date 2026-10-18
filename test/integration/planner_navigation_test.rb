@@ -98,6 +98,17 @@ class TestPlannerNavigation < Minitest::Test
     others.each { |id| assert_includes left_links(week), id.to_s }
   end
 
+  # Checks the drawn text, not the declared label: a label too wide for its box gets clipped
+  def test_review_label_is_drawn_whole
+    assert_includes pdf.text(:review_3), 'Review'
+  end
+
+  def test_grids_index_opens_the_grids_section
+    %i[grid_dot grid_isometric grid_perspective grid_perspective_2 grid_graph grid_lined grid_hexagon].each do |dest|
+      assert_includes right_links(:grids_index), dest.to_s
+    end
+  end
+
   def test_front_matter_comes_first
     assert_destination pdf, :seasonal, page: 1
     assert_destination pdf, :index_1, page: 2
@@ -134,5 +145,9 @@ class TestPlannerNavigation < Minitest::Test
 
   def left_links(page)
     pdf.links(page).select { |link| link.rect[0] < LEFT_EDGE_X }.sort_by { |link| -link.rect[3] }.map(&:dest)
+  end
+
+  def right_links(page)
+    pdf.links(page).select { |link| link.rect[0] > RIGHT_EDGE_X }.map(&:dest)
   end
 end
