@@ -51,6 +51,25 @@ class TestPdfImportGeneration < Minitest::Test
     end
   end
 
+  # The ritual deck's pages open with a top-level transform (cm) they never
+  # restore. Chrome drawn after it must still land in page coordinates.
+  def test_chrome_over_a_page_with_a_leftover_transform_lands_on_the_page_edge
+    manifest = File.expand_path('../../assets/ritual_deck/manifest.yml', __dir__)
+    pdf = BujoPdf::PdfDSL.generate(year: 2025) do
+      deck = import_pdf(manifest, prefix: :ritual)
+      chrome { right :section_nav }
+      nav_section :rituals, label: 'Rituals', items: deck.pages.map { |entry| [deck.page_id(entry.key), entry.nav] }
+      page(id: :front) { body { h1(2, 1, 'Front') } }
+      import_page(deck, :daily)
+    end
+    reader = PDF::Reader.new(StringIO.new(pdf.render))
+    # Rotated text reads back one character per run; the deck itself has no
+    # marks past x = 547, so anything in the right-hand column is the nav
+    right_column = reader.pages[1].runs(merge: false).select { |run| run.x > 590 }.map(&:text).join
+
+    assert_includes right_column, 'R', 'the Rituals tab sits in the right-hand column, not inside the deck transform'
+  end
+
   def test_imported_page_without_chrome_is_unchanged
     with_deck do |_dir, manifest|
       pdf = PdfInspector.new(build(manifest) { |deck| import_pages(deck) })

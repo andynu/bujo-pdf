@@ -294,10 +294,31 @@ module BujoPdf
         end
 
         pdf.start_new_page(template: page_decl.pdf_path, template_page: page_decl.template_page)
+        isolate_template_content(pdf)
         pdf.add_dest(page_decl.destination_key, pdf.dest_xyz(0, pdf.bounds.top))
 
         require_relative '../pages/imported_page'
         Pages::ImportedPage.new(pdf, build_page_context(page_decl, base_context, index)).generate
+      end
+
+      # Wrap an imported page's own content streams in q ... Q.
+      #
+      # A source PDF may leave a transform (cm) or other graphics state set at
+      # the end of its page content; without the wrapper everything drawn
+      # after it, chrome included, would inherit that state.
+      #
+      # @param pdf [Prawn::Document] The PDF document, on a page just started from a template
+      # @return [void]
+      def isolate_template_content(pdf)
+        contents = pdf.state.page.dictionary.data[:Contents]
+        return unless contents.is_a?(Array) && contents.size > 1
+
+        save = pdf.ref!({})
+        save << "q\n"
+        restore = pdf.ref!({})
+        restore << "Q\n"
+        contents.insert(-2, restore)
+        contents.unshift(save)
       end
 
       # Build context for a specific page.
