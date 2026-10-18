@@ -40,6 +40,19 @@ class TestCalendarNav < Minitest::Test
     assert_operator feb_inside[3], :<, feb_outside[3], 'February sits lower when January is expanded'
   end
 
+  # The item column is 1.7 boxes wide; a label wider than that must shrink, not wrap and clip
+  def test_long_label_is_drawn_whole
+    long = PdfInspector.new(
+      BujoPdf::PdfDSL.generate(year: 2026) do
+        chrome { left :calendar_nav }
+        nav_month 3, first_week: :grid_dot, items: [[:grid_dot, 'w10'], [:grid_graph, 'Mar Review']]
+        %i[grid_dot grid_graph].each { |type| page type }
+      end
+    )
+
+    assert_includes long.text(:grid_dot).delete(' '), 'MarReview'
+  end
+
   private
 
   def pdf

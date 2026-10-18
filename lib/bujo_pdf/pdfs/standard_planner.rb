@@ -100,7 +100,8 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
 
   emit_monthly_review = lambda do |month|
     page :monthly_review, id: :"review_#{month}", month: month, review_month: month, year: year
-    month_items[month] << [:"review_#{month}", "#{Date::ABBR_MONTHNAMES[month]} Review"]
+    # Listed under the month's own entry, so the label leaves the month name out
+    month_items[month] << [:"review_#{month}", 'Review']
   end
 
   weeks_in(year).each do |week|

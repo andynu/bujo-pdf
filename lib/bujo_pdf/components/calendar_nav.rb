@@ -52,11 +52,25 @@ module BujoPdf
         top = row
         month.items.each do |item|
           link_box(ITEM_COL, row, ITEM_WIDTH, 1, item.label,
-                   dest: item.id.to_s, current: item.id == current_key, font_size: ITEM_FONT_SIZE)
+                   dest: item.id.to_s, current: item.id == current_key, font_size: fitting_font_size(item.label))
           row += 1
         end
         draw_bracket(top, row)
         row
+      end
+
+      # An item box is one row tall, so a label too wide for it would wrap and
+      # lose its second line. Shrink such a label to fit on one line instead.
+      #
+      # @param label [String] Item label
+      # @return [Float] Font size in points, at most ITEM_FONT_SIZE
+      def fitting_font_size(label)
+        available = grid.width(ITEM_WIDTH) - 1
+        width = nil
+        pdf.font('Helvetica-Bold', size: ITEM_FONT_SIZE) { width = pdf.width_of(label) }
+        return ITEM_FONT_SIZE if width <= available
+
+        (ITEM_FONT_SIZE * available / width).floor(1)
       end
 
       def draw_bracket(top_row, bottom_row)

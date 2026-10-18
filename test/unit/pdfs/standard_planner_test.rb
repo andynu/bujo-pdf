@@ -339,7 +339,8 @@ class TestStandardPlannerRecipe < Minitest::Test
     assert_equal :quarter_2, april.items.first.id
     assert_equal 'Q2', april.items.first.label
     assert_equal :review_4, april.items.last.id
-    assert_equal 'Apr Review', april.items.last.label
+    # Listed under its month's own entry, so the month name would only crowd the narrow column
+    assert_equal 'Review', april.items.last.label
     assert_equal april.items.map(&:id), april.items.map(&:id).sort_by { |id| order.index(id) }
   end
 
