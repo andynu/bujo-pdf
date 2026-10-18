@@ -227,7 +227,9 @@ module BujoPdf
           event_store: event_store,
           sidebar_overrides: declaration_context.sidebar_overrides,
           chrome_config: declaration_context.chrome_config,
-          sidebar_definitions: declaration_context.sidebar_definitions
+          sidebar_definitions: declaration_context.sidebar_definitions,
+          nav_sections: declaration_context.nav_sections,
+          nav_months: declaration_context.nav_months
         }
       end
 

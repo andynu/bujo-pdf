@@ -5,6 +5,7 @@ require_relative 'page_declaration'
 require_relative 'imported_page'
 require_relative 'inline_page'
 require_relative 'metadata'
+require_relative 'nav'
 require_relative 'pdf_import'
 require_relative 'outline'
 require_relative 'sidebar_definition'
@@ -60,7 +61,15 @@ module BujoPdf
         @sidebar_definitions = {}
         @current_outline_mode = :manual
         @chrome_config = nil
+        @nav_sections = []
+        @nav_months = []
       end
+
+      # @return [Array<NavSection>] Declared nav sections, in declaration order
+      def nav_sections = @nav_sections.dup.freeze
+
+      # @return [Array<NavMonth>] Declared nav months, in declaration order
+      def nav_months = @nav_months.dup.freeze
 
       # Set the outline generation mode.
       #
@@ -341,6 +350,45 @@ module BujoPdf
         @chrome_config = ChromeBuilder.new
         @chrome_config.instance_eval(&block) if block_given?
         @chrome_config
+      end
+
+      # Declare a section of the right-hand navigation.
+      #
+      # @param key [Symbol] Section key
+      # @param label [String] Tab label
+      # @param items [Array<Array(Symbol, String)>] Page ids and their short labels, in nav order
+      # @param landing [Symbol, nil] Page the tab links to (default: the first item)
+      # @return [NavSection, nil] The section, or nil when it has no items (its tab is omitted)
+      # @raise [ArgumentError] If a section with this key was already declared
+      #
+      # @example
+      #   nav_section :grids, label: 'Grids', landing: :grids_index,
+      #               items: [[:grid_dot, 'Dot'], [:grid_isometric, 'Iso']]
+      def nav_section(key, label:, items:, landing: nil)
+        raise ArgumentError, "nav section :#{key} is already declared" if @nav_sections.any? { |s| s.key == key }
+        return nil if items.empty?
+
+        nav_items = items.map { |id, item_label| NavItem.new(id: id, label: item_label) }.freeze
+        section = NavSection.new(key: key, label: label, landing: landing || nav_items.first.id, items: nav_items)
+        @nav_sections << section
+        section
+      end
+
+      # Declare a month of the left-hand calendar navigation.
+      #
+      # @param month [Integer] Month number (1-12)
+      # @param first_week [Symbol] Page id the month links to
+      # @param items [Array<Array(Symbol, String)>] The month's calendar pages and labels, in PDF order
+      # @return [NavMonth]
+      # @raise [ArgumentError] If this month was already declared
+      def nav_month(month, first_week:, items:)
+        raise ArgumentError, "nav month #{month} is already declared" if @nav_months.any? { |m| m.month == month }
+
+        nav_items = items.map { |id, item_label| NavItem.new(id: id, label: item_label) }.freeze
+        nav = NavMonth.new(month: month, label: Date::ABBR_MONTHNAMES[month], first_week: first_week,
+                           items: nav_items)
+        @nav_months << nav
+        nav
       end
 
       # Define an inline sidebar for use in chrome configuration.
