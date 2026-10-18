@@ -84,6 +84,12 @@ class TestPlannerNavigation < Minitest::Test
     assert_equal 12, left_links(:tracker_example).size
   end
 
+  # Its rulers run along the physical left edge, so the calendar nav would cover them
+  def test_reference_page_keeps_its_left_ruler_clear
+    assert_empty left_links(:reference)
+    assert_link pdf, from_page: :reference, to: :tracker_example
+  end
+
   def test_a_weekly_page_opens_its_month
     march = self.class.declarations.nav_months.find { |month| month.month == 3 }
     week = march.items.find { |item| item.id.to_s.start_with?('week_') }.id

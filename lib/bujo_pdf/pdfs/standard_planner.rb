@@ -154,7 +154,8 @@ BujoPdf.define_pdf :standard_planner do |year:, theme: nil, rituals: false|
 
   # 5. Template pages - use outline: true to pull from registered page titles
   page :tracker_example, id: :tracker_example, outline: true
-  page :reference, id: :reference, outline: true
+  # Its calibration rulers run along the physical left edge, under the calendar nav
+  page :reference, id: :reference, outline: true, chrome: { left: false }
   page :daily_wheel, id: :daily_wheel, outline: true
   page :year_wheel, id: :year_wheel, outline: true
 
