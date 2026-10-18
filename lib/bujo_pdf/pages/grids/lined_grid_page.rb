@@ -39,11 +39,14 @@ module BujoPdf
           # No use_layout needed: inherits chrome: false from PDF definition
         end
 
-        # Render full-page ruled lines
-        def render
+        # The grid is the page's background, drawn before chrome so sidebars sit on top.
+        def setup_page
+          super
           # Draw ruled lines using pre-created stamp (efficient)
           draw_grid(:lined)
+        end
 
+        def render
           # Draw title/label at top
           draw_title
         end

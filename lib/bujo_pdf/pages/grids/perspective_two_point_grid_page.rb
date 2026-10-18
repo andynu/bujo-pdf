@@ -39,6 +39,7 @@ module BujoPdf
 
         # The grid is the page's background, drawn before chrome so sidebars sit on top.
         def setup_page
+          super
           draw_grid(:perspective_2)
         end
 

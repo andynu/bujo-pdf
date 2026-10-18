@@ -38,11 +38,14 @@ module BujoPdf
           # No use_layout needed: inherits chrome: false from PDF definition
         end
 
-        # Render full-page graph grid
-        def render
+        # The grid is the page's background, drawn before chrome so sidebars sit on top.
+        def setup_page
+          super
           # Draw graph grid using pre-created stamp (efficient)
           draw_grid(:graph)
+        end
 
+        def render
           # Draw title/label at top
           draw_title
         end

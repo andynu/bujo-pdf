@@ -38,13 +38,16 @@ module BujoPdf
           # No use_layout needed: inherits chrome: false from PDF definition
         end
 
-        # Render full-page dot grid
+        # The grid is the page's background, drawn before chrome so sidebars sit on top.
+        def setup_page
+          super
+          # Draw dot grid across entire page using the stamp
+          draw_dot_grid
+        end
+
         def render
           # Draw title/label at top
           draw_title
-
-          # Draw dot grid across entire page using the stamp
-          draw_dot_grid
         end
 
         private
