@@ -14,6 +14,8 @@ module BujoPdf
         text_black: '696953',       # Warm olive-green for calendar text
         text_gray: '6B7565',        # Olive-gray for secondary content
         empty_cell_overlay: '758C74', # Green overlay for empty cells (20% opacity)
+        night_bg: 'ECE9E3',         # Barely darker than the background, for night hours
+        twilight_bg: 'F1EDE5',      # Half as strong, for dawn and dusk
         diagnostic_red: 'D97757',   # Muted terracotta instead of bright red
         diagnostic_label_bg: 'F5F1E8' # Matches background
       }

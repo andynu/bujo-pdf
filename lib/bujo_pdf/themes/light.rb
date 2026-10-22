@@ -14,6 +14,8 @@ module BujoPdf
         text_black: '000000',       # Standard black text
         text_gray: '888888',        # Gray text for secondary content
         empty_cell_overlay: '000000', # Black overlay for empty cells (20% opacity)
+        night_bg: 'F2F3F6',         # Barely-there cool gray for night hours
+        twilight_bg: 'F8F9FA',      # Half as strong, for dawn and dusk
         diagnostic_red: 'FF0000',   # Red for diagnostic grid overlay
         diagnostic_label_bg: 'FFFFFF' # White background for diagnostic labels
       }

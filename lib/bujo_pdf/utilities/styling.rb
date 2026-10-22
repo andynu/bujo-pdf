@@ -43,6 +43,15 @@ module Styling
         theme_colors[:empty_cell_overlay]
       end
 
+      # Hour-band tints on weekly pages
+      def NIGHT_BG
+        theme_colors[:night_bg]
+      end
+
+      def TWILIGHT_BG
+        theme_colors[:twilight_bg]
+      end
+
       # Diagnostic/debug colors
       def DIAGNOSTIC_RED
         theme_colors[:diagnostic_red]
@@ -96,6 +105,16 @@ module Styling
     # @return [String] Empty cell overlay color hex value
     def color_empty_cell_overlay
       Colors.EMPTY_CELL_OVERLAY
+    end
+
+    # @return [String] Night hour-band color hex value
+    def color_night_bg
+      Colors.NIGHT_BG
+    end
+
+    # @return [String] Twilight hour-band color hex value
+    def color_twilight_bg
+      Colors.TWILIGHT_BG
     end
 
     # @return [String] Diagnostic red color hex value

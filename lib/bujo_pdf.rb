@@ -46,6 +46,7 @@ require_relative 'bujo_pdf/sidebars/sidebar_registry'
 # Load components (position-based components now inherit from Component)
 require_relative 'bujo_pdf/components/fieldset'
 require_relative 'bujo_pdf/components/week_column'
+require_relative 'bujo_pdf/components/daylight_bands'
 require_relative 'bujo_pdf/components/day_header'
 require_relative 'bujo_pdf/components/top_navigation'
 require_relative 'bujo_pdf/components/week_sidebar'
