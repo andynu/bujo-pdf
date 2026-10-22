@@ -358,6 +358,8 @@ module BujoPdf
           @pdf.fill_color color_text_black  # Reset to text color
         end
 
+        draw_underlay
+
         # Draw background pattern (dots, rules, etc.)
         case self.class.background_type
         when :dot_grid
@@ -367,6 +369,16 @@ module BujoPdf
         when :blank
           # Nothing
         end
+      end
+
+      # Hook: Draw fills that belong under the background pattern.
+      #
+      # Called by draw_background after the page color and before the dots,
+      # so anything drawn here sits behind the grid.
+      #
+      # @return [void]
+      def draw_underlay
+        # Default: no-op, subclasses can override
       end
 
       # Draw debug grid.

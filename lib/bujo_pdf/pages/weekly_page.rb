@@ -7,6 +7,7 @@ require_relative '../week_context'
 require_relative '../components/top_navigation'
 require_relative '../components/daily_section'
 require_relative '../components/cornell_notes'
+require_relative '../components/daylight_bands'
 
 module BujoPdf
   module Pages
@@ -116,6 +117,15 @@ module BujoPdf
       end
 
       protected
+
+      # Hour planner tints under the Cornell area, behind the dot grid
+      def draw_underlay
+        Components::DaylightBands.new(
+          canvas: canvas,
+          week_start: @week_start,
+          col: 2, row: 12, width: 40
+        ).render
+      end
 
       # Highlight this week in sidebar
       def current_week
