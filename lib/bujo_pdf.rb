@@ -22,6 +22,7 @@ require_relative 'bujo_pdf/utilities/dot_grid'
 require_relative 'bujo_pdf/utilities/diagnostics'
 require_relative 'bujo_pdf/debug/overlay'
 require_relative 'bujo_pdf/utilities/date_calculator'
+require_relative 'bujo_pdf/utilities/sun_times'
 
 # Load shared infrastructure
 require_relative 'bujo_pdf/dsl/runtime/page_ref'
