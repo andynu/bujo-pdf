@@ -32,9 +32,9 @@ class TestDaylightBands < Minitest::Test
     end
   end
 
-  # Hour (7..21) whose 2-row block contains a y coordinate
+  # Hour (6..21) whose 2-row block contains a y coordinate
   def hour_at(grid, y)
-    7 + ((grid.y(START_ROW) - y) / grid.height(2)).floor
+    6 + ((grid.y(START_ROW) - y) / grid.height(2)).floor
   end
 
   def test_midsummer_shades_only_the_last_two_evening_hours
@@ -47,6 +47,16 @@ class TestDaylightBands < Minitest::Test
     assert(shaded.all? { |color, *| [color_night_bg, color_twilight_bg].include?(color) })
   end
 
+  def test_midwinter_six_oclock_block_is_night_then_twilight
+    pdf, grid = render(Date.new(2026, 12, 14))
+    six = fills(pdf).select { |_, _, top, _, h| hour_at(grid, top - (h / 2)) == 6 }
+
+    assert_equal [color_night_bg, color_twilight_bg] * 7, six.map(&:first), 'dawn is near 6:35'
+    six.each_slice(2) do |(_, _, night_top, *), _|
+      assert_in_delta grid.y(START_ROW), night_top, 1.0
+    end
+  end
+
   def test_midwinter_morning_twilight_sits_at_the_top_of_the_seven_oclock_block
     pdf, grid = render(Date.new(2026, 12, 14))
     seven = fills(pdf).select { |_, _, top, _, h| hour_at(grid, top - (h / 2)) == 7 }
@@ -54,9 +64,15 @@ class TestDaylightBands < Minitest::Test
     assert_equal 7, seven.size, 'one morning twilight sliver per day'
     seven.each do |color, _, top, _, height|
       assert_equal color_twilight_bg, color
-      assert_in_delta grid.y(START_ROW), top, 1.0
+      assert_in_delta grid.y(START_ROW + 2), top, 1.0
       assert_operator height, :<, grid.height(2) / 3, 'sunrise is near 7:10'
     end
+  end
+
+  def test_midsummer_six_oclock_block_is_blank
+    pdf, grid = render(Date.new(2026, 6, 15))
+
+    assert(fills(pdf).none? { |_, _, top, _, h| hour_at(grid, top - (h / 2)) == 6 })
   end
 
   def test_midwinter_evening_is_night_from_five_onward
@@ -81,7 +97,7 @@ class TestDaylightBands < Minitest::Test
     pdf, grid = render(Date.new(2026, 6, 15))
     labels = pdf.calls.select { |c| c[:method] == :text_box }
 
-    assert_equal %w[7 8 9 10 11 12 1 2 3 4 5 6 7 8 9], labels.map { |c| c[:args][0] }
+    assert_equal %w[6 7 8 9 10 11 12 1 2 3 4 5 6 7 8 9], labels.map { |c| c[:args][0] }
     labels.each do |call|
       assert_operator call[:kwargs][:at][0], :<, grid.x(START_COL + 2)
     end

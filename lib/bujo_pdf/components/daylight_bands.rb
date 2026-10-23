@@ -22,7 +22,7 @@ module BujoPdf
       include Styling::Colors
       include Text::Mixin
 
-      FIRST_HOUR = 7
+      FIRST_HOUR = 6
       LAST_HOUR = 21
       ROWS_PER_HOUR = 2
       GAP = 0.5           # points between neighbouring hour blocks
